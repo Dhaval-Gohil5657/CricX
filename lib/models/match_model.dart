@@ -1,0 +1,106 @@
+import 'team_model.dart';
+import 'player_model.dart';
+
+enum MatchStatus { upcoming, live, completed }
+
+class BallEvent {
+  final int runs;
+  final bool isWide;
+  final bool isNoBall;
+  final bool isWicket;
+  final String wicketType; // 'Bowled', 'Caught', 'Run Out', 'LBW'
+  final String bowlerName;
+  final String batsmanName;
+  final String description;
+
+  BallEvent({
+    required this.runs,
+    this.isWide = false,
+    this.isNoBall = false,
+    this.isWicket = false,
+    this.wicketType = '',
+    required this.bowlerName,
+    required this.batsmanName,
+    required this.description,
+  });
+
+  int get runsAddedToTeam => runs + (isWide || isNoBall ? 1 : 0);
+  int get runsAddedToBatsman => (isWide || isNoBall) ? 0 : runs;
+  bool get countsAsBall => !isWide && !isNoBall;
+}
+
+class MatchTeamInnings {
+  final String teamId;
+  int runs;
+  int wickets;
+  int ballsBowled;
+  List<BallEvent> events;
+
+  MatchTeamInnings({
+    required this.teamId,
+    this.runs = 0,
+    this.wickets = 0,
+    this.ballsBowled = 0,
+    List<BallEvent>? events,
+  }) : this.events = events ?? [];
+
+  double get oversCompleted => (ballsBowled ~/ 6) + (ballsBowled % 6) / 10;
+  double get runRate => ballsBowled > 0 ? (runs / ballsBowled) * 6 : 0.0;
+}
+
+class CricketMatch {
+  final String id;
+  final Team teamA;
+  final Team teamB;
+  final int totalOvers;
+  
+  MatchStatus status;
+  String? tossWinnerId;
+  String? tossDecision; // 'Bat' or 'Bowl'
+  
+  // Scoring state
+  MatchTeamInnings? innings1;
+  MatchTeamInnings? innings2;
+  int currentInningsNum; // 1 or 2
+  
+  // Live player states
+  Player? striker;
+  Player? nonStriker;
+  Player? currentBowler;
+  
+  // Batting stats in active match
+  Map<String, int> playerRuns = {};
+  Map<String, int> playerBallsFaced = {};
+  // Bowling stats in active match
+  Map<String, int> bowlerRunsConceded = {};
+  Map<String, int> bowlerWickets = {};
+  Map<String, int> bowlerBallsBowled = {};
+
+  String resultString;
+  String venue;
+  DateTime matchDate;
+
+  CricketMatch({
+    required this.id,
+    required this.teamA,
+    required this.teamB,
+    required this.totalOvers,
+    this.status = MatchStatus.upcoming,
+    this.tossWinnerId,
+    this.tossDecision,
+    this.currentInningsNum = 1,
+    this.resultString = 'Match not started yet',
+    required this.venue,
+    required this.matchDate,
+  });
+
+  Team get battingTeam => currentInningsNum == 1 
+      ? (tossDecision == 'Bat' ? (tossWinnerId == teamA.id ? teamA : teamB) : (tossWinnerId == teamA.id ? teamB : teamA))
+      : (tossDecision == 'Bat' ? (tossWinnerId == teamA.id ? teamB : teamA) : (tossWinnerId == teamA.id ? teamA : teamB));
+
+  Team get bowlingTeam => battingTeam.id == teamA.id ? teamB : teamA;
+
+  MatchTeamInnings get currentInnings => currentInningsNum == 1 
+      ? (innings1 ??= MatchTeamInnings(teamId: battingTeam.id))
+      : (innings2 ??= MatchTeamInnings(teamId: battingTeam.id));
+}
