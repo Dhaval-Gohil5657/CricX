@@ -6,6 +6,7 @@ import '../../models/team_model.dart';
 import '../../models/player_model.dart';
 import 'live_scoring_screen.dart';
 import '../../constants/app_colors.dart';
+import '../main_navigation_screen.dart';
 
 class TossSetupScreen extends StatefulWidget {
   final CricketMatch match;
@@ -47,13 +48,35 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarGreen,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+          flexibleSpace: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: SizedBox.expand(
+              child: CustomPaint(
+                painter: PitchCreasePainter(
+                  groundColorLight: const Color(0xFF2E6B3E),
+                  groundColorDark: const Color(0xFF1F4D28),
+                ),
+              ),
+            ),
+          ),
+          title: const Text('Conduct Toss', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-        title: const Text('Conduct Toss', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -65,27 +88,107 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.cardBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderGreen),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.borderWood,
+                  width: 1.5,
+                ),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFF4D1A9), // Soft light willow wood edge
+                    Color(0xFFFCF7F0), // Extra light wood face
+                    Color(0xFFF4D1A9), // Soft light willow wood edge
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text(teamA.name, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14)),
-                  const Text('VS', style: TextStyle(color: AppColors.textDarkMuted, fontWeight: FontWeight.bold)),
-                  Text(teamB.name, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14)),
+                  // Team A Avatar & Name
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Color(teamA.logoColorHex).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Color(teamA.logoColorHex).withOpacity(0.5), width: 1),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(teamA.logoEmoji, style: const TextStyle(fontSize: 22)),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          teamA.name,
+                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Text(
+                    'VS',
+                    style: TextStyle(color: AppColors.textDarkMuted, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  // Team B Avatar & Name
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Color(teamB.logoColorHex).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Color(teamB.logoColorHex).withOpacity(0.5), width: 1),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(teamB.logoEmoji, style: const TextStyle(fontSize: 22)),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          teamB.name,
+                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
             if (!_isTossConducted) ...[
-              const Text('CONDUCT THE TOSS', style: TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
+              const Text(
+                'CONDUCT THE TOSS',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 16),
               
               // Select Toss Winner
-              const Text('Who won the toss?', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+              const Text('Who won the toss?', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -138,8 +241,8 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentCrease,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AppColors.primaryTurf,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: () {
@@ -215,8 +318,8 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accentCrease,
-                        foregroundColor: Colors.black,
+                        backgroundColor: AppColors.primaryTurf,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
@@ -243,18 +346,25 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.accentCrease.withOpacity(0.15) : AppColors.cardBg,
-          borderRadius: BorderRadius.circular(10),
+          color: isSelected ? AppColors.primaryTurf.withOpacity(0.12) : AppColors.cardBg,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.accentCrease : AppColors.borderGreen,
+            color: isSelected ? AppColors.primaryTurf : AppColors.borderGreen,
             width: 1.5,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         alignment: Alignment.center,
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? AppColors.accentCrease : Colors.white,
+            color: isSelected ? AppColors.primaryTurf : AppColors.textDarkSecondary,
             fontWeight: FontWeight.bold,
             fontSize: 14,
           ),
@@ -269,16 +379,23 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderGreen),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGreen, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<Player>(
           value: selectedValue,
           isExpanded: true,
-          dropdownColor: AppColors.appBarBg,
-          icon: const Icon(Icons.arrow_drop_down, color: AppColors.accentCrease),
-          style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+          dropdownColor: AppColors.cardBg,
+          icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryTurf),
+          style: const TextStyle(color: AppColors.textDark, fontSize: 14, fontWeight: FontWeight.w500),
           onChanged: onChanged,
           items: players.map((player) {
             return DropdownMenuItem(

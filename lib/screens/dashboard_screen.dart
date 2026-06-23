@@ -68,19 +68,18 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 
                 if (liveMatches.isNotEmpty)
-                  liveMatches.length == 1
-                      ? _buildLiveMatchCard(context, liveMatches[0], role, appState, isFullWidth: true)
-                      : SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: liveMatches.length,
-                            physics: const BouncingScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              return _buildLiveMatchCard(context, liveMatches[index], role, appState);
-                            },
-                          ),
-                        )
+                  ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: liveMatches.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: _buildLiveMatchCard(context, liveMatches[index], role, appState, isFullWidth: true),
+                      );
+                    },
+                  )
                 else
                   _buildEmptyLiveCard(context, role),
                 
@@ -112,6 +111,7 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 
                 ListView.builder(
+                  padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: completedMatches.length > 5 ? 5 : completedMatches.length,
@@ -131,21 +131,12 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildLiveMatchCard(BuildContext context, CricketMatch match, UserRole role, AppState appState, {bool isFullWidth = false}) {
     final innings1 = match.innings1;
-    final innings2 = match.innings2;
-
-    // Determine currently batting team score
-    final currentInnings = match.currentInnings;
     final isFirstInnings = match.currentInningsNum == 1;
-    final currentBattingTeam = match.battingTeam;
-    final currentBowlingTeam = match.bowlingTeam;
-    
-    final runs = currentInnings.runs;
-    final wickets = currentInnings.wickets;
-    final overs = currentInnings.oversCompleted;
+    final currentInnings = match.currentInnings;
 
     return Container(
       width: isFullWidth ? double.infinity : MediaQuery.of(context).size.width * 0.82,
-      height: 205,
+      height: role == UserRole.scorer ? 185 : 150,
       margin: isFullWidth ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -188,173 +179,270 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryTurf.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Overs: ${match.totalOvers}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.primaryTurf,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'LIVE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
                 // Score Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          currentBattingTeam.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
+                    // Team A
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  match.teamA.name,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: match.battingTeam.id == match.teamA.id ? FontWeight.bold : FontWeight.w500,
+                                    color: match.battingTeam.id == match.teamA.id ? AppColors.textDark : AppColors.textDarkSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (match.battingTeam.id == match.teamA.id) ...[
+                                const SizedBox(width: 4),
+                                const Text('🏏', style: TextStyle(fontSize: 12)),
+                              ],
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$runs/$wickets',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryTurf,
+                          const SizedBox(height: 4),
+                          Text(
+                            match.teamAInnings != null 
+                                ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' 
+                                : 'Yet to Bat',
+                            style: TextStyle(
+                              fontSize: match.battingTeam.id == match.teamA.id ? 22 : 14,
+                              fontWeight: FontWeight.bold,
+                              color: match.battingTeam.id == match.teamA.id ? AppColors.primaryTurf : AppColors.textDarkSecondary,
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Overs: $overs',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textDarkSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Text(
-                      'VS',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDarkSecondary,
+                          if (match.teamAInnings != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Overs: ${match.teamAInnings!.oversCompleted}/${match.totalOvers}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textDarkSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          currentBowlingTeam.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textDarkSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        if (!isFirstInnings && innings1 != null) ...[
-                          Text(
-                            'Target: ${innings1.runs + 1}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.woodMahogany,
-                            ),
+                    
+                    // VS with Live Indication above it
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            'Need ${innings1.runs + 1 - runs} off ${(match.totalOvers * 6) - currentInnings.ballsBowled} balls',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textDarkSecondary,
-                            ),
-                          )
-                        ] else ...[
                           const Text(
-                            'Yet to Bat',
+                            'VS',
                             style: TextStyle(
                               fontSize: 14,
+                              fontWeight: FontWeight.bold,
                               color: AppColors.textDarkSecondary,
                             ),
                           ),
                         ],
-                      ],
+                      ),
+                    ),
+
+                    // Team B
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (match.battingTeam.id == match.teamB.id) ...[
+                                const Text('🏏', style: TextStyle(fontSize: 12)),
+                                const SizedBox(width: 4),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  match.teamB.name,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: match.battingTeam.id == match.teamB.id ? FontWeight.bold : FontWeight.w500,
+                                    color: match.battingTeam.id == match.teamB.id ? AppColors.textDark : AppColors.textDarkSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            match.teamBInnings != null 
+                                ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' 
+                                : 'Yet to Bat',
+                            style: TextStyle(
+                              fontSize: match.battingTeam.id == match.teamB.id ? 22 : 14,
+                              fontWeight: FontWeight.bold,
+                              color: match.battingTeam.id == match.teamB.id ? AppColors.primaryTurf : AppColors.textDarkSecondary,
+                            ),
+                          ),
+                          if (match.teamBInnings != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Overs: ${match.teamBInnings!.oversCompleted}/${match.totalOvers}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textDarkSecondary,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
+
+                if (!isFirstInnings && innings1 != null) ...[
+                  const Spacer(),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.woodMahogany.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Target: ${innings1.runs + 1} | Need ${innings1.runs + 1 - currentInnings.runs} off ${(match.totalOvers * 6) - currentInnings.ballsBowled} balls',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.woodMahogany,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 
                 // Batsman & Bowler footer info
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        match.striker != null 
-                            ? '🏏 ${match.striker!.name} ${match.playerRuns[match.striker!.id] ?? 0}(${match.playerBallsFaced[match.striker!.id] ?? 0})*'
-                            : '🏏 Select Batsman',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textDarkSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      flex: 6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (match.striker != null)
+                            Row(
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  child: Text('🏏', style: TextStyle(fontSize: 11)),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '${match.striker!.name} ${match.playerRuns[match.striker!.id] ?? 0}(${match.playerBallsFaced[match.striker!.id] ?? 0})*',
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      color: AppColors.textDarkSecondary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            const Text(
+                              '🏏 Select Batsman',
+                              style: TextStyle(fontSize: 10.5, color: AppColors.textDarkSecondary),
+                            ),
+                          if (match.nonStriker != null) ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    '${match.nonStriker!.name} ${match.playerRuns[match.nonStriker!.id] ?? 0}(${match.playerBallsFaced[match.nonStriker!.id] ?? 0})',
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      color: AppColors.textDarkSecondary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        match.currentBowler != null
-                            ? '⚾ ${match.currentBowler!.name} ${match.bowlerWickets[match.currentBowler!.id] ?? 0}/${match.bowlerRunsConceded[match.currentBowler!.id] ?? 0}'
-                            : '⚾ Select Bowler',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textDarkSecondary,
-                        ),
-                        textAlign: TextAlign.right,
-                        overflow: TextOverflow.ellipsis,
+                      flex: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (match.currentBowler != null) ...[
+                            Text(
+                              '⚾ ${match.currentBowler!.name}',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: AppColors.textDarkSecondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${match.bowlerWickets[match.currentBowler!.id] ?? 0}/${match.bowlerRunsConceded[match.currentBowler!.id] ?? 0} (${(match.bowlerBallsBowled[match.currentBowler!.id] ?? 0) ~/ 6}.${(match.bowlerBallsBowled[match.currentBowler!.id] ?? 0) % 6} Ov)',
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                color: AppColors.textDarkSecondary,
+                              ),
+                            ),
+                          ] else
+                            const Text(
+                              '⚾ Select Bowler',
+                              style: TextStyle(fontSize: 10.5, color: AppColors.textDarkSecondary),
+                              textAlign: TextAlign.right,
+                            ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                
-                // Action Button (Scoring or View Scorecard)
-                if (role == UserRole.scorer)
+                if (role == UserRole.scorer) ...[
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     height: 30,
@@ -387,12 +475,11 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),
-        ),
-      ),
-    );
+        )));
   }
 
   Widget _buildEmptyLiveCard(BuildContext context, UserRole role) {
@@ -456,7 +543,7 @@ class DashboardScreen extends StatelessWidget {
       actions.addAll([
         _buildActionItem(
           context,
-          icon: Icons.add_circle_outline_rounded,
+          icon: Icons.sports_cricket_rounded,
           label: 'Create Match',
           color: AppColors.accentCrease,
           onTap: () {
@@ -738,7 +825,7 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      match.innings1 != null ? '${match.innings1!.runs}/${match.innings1!.wickets}' : '-',
+                      match.teamAInnings != null ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' : '-',
                       style: const TextStyle(
                         color: AppColors.textDark,
                         fontWeight: FontWeight.bold,
@@ -776,7 +863,7 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      match.innings2 != null ? '${match.innings2!.runs}/${match.innings2!.wickets}' : '-',
+                      match.teamBInnings != null ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' : '-',
                       style: const TextStyle(
                         color: AppColors.textDark,
                         fontWeight: FontWeight.bold,

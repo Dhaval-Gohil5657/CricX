@@ -19,11 +19,24 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  final List<bool> _activatedTabs = [true, false, false, false, false, false];
+  UserRole? _lastRole;
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
+
+    if (_lastRole != role) {
+      _lastRole = role;
+      for (int i = 1; i < _activatedTabs.length; i++) {
+        _activatedTabs[i] = false;
+      }
+    }
+
+    if (_selectedIndex < _activatedTabs.length) {
+      _activatedTabs[_selectedIndex] = true;
+    }
 
     // Define items and screens based on role
     final List<Widget> screens = [];
@@ -43,21 +56,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       'label': 'Matches',
     });
 
+
+    if (role == UserRole.scorer || role == UserRole.organizer) {
+      // Manage Tab
+      screens.add(const ScorerDashboard());
+      navItems.add({
+        'icon': Icons.scoreboard_rounded,
+        'label': 'Manage',
+      });
+    }
+
     if (role == UserRole.organizer) {
       // Tournaments Tab
       screens.add(const OrganizerDashboard());
       navItems.add({
         'icon': Icons.emoji_events_rounded,
         'label': 'Tournaments',
-      });
-    }
-
-    if (role == UserRole.scorer || role == UserRole.organizer) {
-      // Manage Tab
-      screens.add(const ScorerDashboard());
-      navItems.add({
-        'icon': Icons.edit_note_rounded,
-        'label': 'Manage',
       });
     }
 
@@ -220,9 +234,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
     ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: screens,
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 70),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: List.generate(screens.length, (index) {
+            if (index < _activatedTabs.length && _activatedTabs[index]) {
+              return screens[index];
+            } else {
+              return const SizedBox.shrink();
+            }
+          }),
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(

@@ -119,7 +119,7 @@ class AppState extends ChangeNotifier {
     final strikerId = match.striker?.id;
     if (strikerId != null) {
       match.playerRuns[strikerId] = (match.playerRuns[strikerId] ?? 0) + event.runsAddedToBatsman;
-      if (event.countsAsBall) {
+      if (!event.isWide) {
         match.playerBallsFaced[strikerId] = (match.playerBallsFaced[strikerId] ?? 0) + 1;
       }
     }
@@ -127,7 +127,8 @@ class AppState extends ChangeNotifier {
     // Update bowler statistics in current match state
     final bowlerId = match.currentBowler?.id;
     if (bowlerId != null) {
-      match.bowlerRunsConceded[bowlerId] = (match.bowlerRunsConceded[bowlerId] ?? 0) + event.runsAddedToTeam; // wide/noball runs count against bowler
+      final runsConceded = event.isLegBye || event.isPenalty || event.isBye ? 0 : event.runsAddedToTeam;
+      match.bowlerRunsConceded[bowlerId] = (match.bowlerRunsConceded[bowlerId] ?? 0) + runsConceded; // wide/noball runs count against bowler, but legbyes/byes/penalties don't
       if (event.countsAsBall) {
         match.bowlerBallsBowled[bowlerId] = (match.bowlerBallsBowled[bowlerId] ?? 0) + 1;
       }
@@ -136,9 +137,8 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // Switch striker if odd runs (and not wide/noball extra run that doesn't switch striker, or if striker ran)
-    // For simplicity, let's toggle striker on odd runs scored by batsman
-    if (event.runsAddedToBatsman % 2 != 0) {
+    // Switch striker if odd runs scored off the bat or run as extras (e.g. wide byes, no ball byes)
+    if (event.runs % 2 != 0) {
       final temp = match.striker;
       match.striker = match.nonStriker;
       match.nonStriker = temp;
@@ -307,17 +307,19 @@ class AppState extends ChangeNotifier {
   }
 
   void _initializeMockData() {
-    // Generate 12 Players
+    // Generate 20 Players (5 players per team)
     final playerNames = [
-      'Virat Sharma', 'Rohit Rahul', 'Hardik Bumrah', 'Jasprit Pandya',
-      'Rishabh Gill', 'Shubman Pant', 'Ravindra Jadeja', 'Axar Patel',
-      'Suryakumar Yadav', 'Kevon Pollard', 'Rashid Khan', 'MS Dhoni'
+      'Virat Sharma', 'Rohit Rahul', 'Hardik Bumrah', 'Jasprit Pandya', 'Kevon Pollard',
+      'Rishabh Gill', 'Shubman Pant', 'Ravindra Jadeja', 'Ravichandran Ashwin', 'Rashid Khan',
+      'Axar Patel', 'MS Dhoni', 'Kuldeep Yadav', 'Shreyas Iyer', 'Sanju Samson',
+      'Ishana Kishan', 'Yashasvi Jaiswal', 'Rinku Singh', 'Shivam Dube', 'Arshdeep Singh'
     ];
     
     final roles = [
-      'Batsman', 'Batsman', 'All-Rounder', 'Bowler',
-      'Wicketkeeper', 'Batsman', 'All-Rounder', 'Bowler',
-      'Batsman', 'All-Rounder', 'Bowler', 'Wicketkeeper'
+      'Batsman', 'Batsman', 'All-Rounder', 'Bowler', 'All-Rounder',
+      'Wicketkeeper', 'Batsman', 'All-Rounder', 'Bowler', 'Bowler',
+      'All-Rounder', 'Wicketkeeper', 'Bowler', 'Batsman', 'Wicketkeeper',
+      'Batsman', 'Batsman', 'Batsman', 'All-Rounder', 'Bowler'
     ];
 
     for (int i = 0; i < playerNames.length; i++) {
@@ -348,11 +350,13 @@ class AppState extends ChangeNotifier {
     final colorHexes = [0xFF2196F3, 0xFFFF9800, 0xFF4CAF50, 0xFFFFEB3B]; // Primary theme color for team logo
 
     for (int i = 0; i < teamNames.length; i++) {
-      // Assign 3 players to each team
+      // Assign 5 players to each team
       final teamPlayers = [
-        _players[i * 3],
-        _players[i * 3 + 1],
-        _players[i * 3 + 2],
+        _players[i * 5],
+        _players[i * 5 + 1],
+        _players[i * 5 + 2],
+        _players[i * 5 + 3],
+        _players[i * 5 + 4],
       ];
 
       _teams.add(
@@ -384,9 +388,139 @@ class AppState extends ChangeNotifier {
       venue: 'Wankhede Cricket Ground',
       matchDate: DateTime.now().subtract(const Duration(days: 2)),
     );
-    match1.innings1 = MatchTeamInnings(teamId: 't1', runs: 95, wickets: 4, ballsBowled: 60);
-    match1.innings2 = MatchTeamInnings(teamId: 't2', runs: 80, wickets: 7, ballsBowled: 60);
     
+    // Innings 1 (Mumbai Titans batting)
+    final m1Innings1 = MatchTeamInnings(teamId: 't1', runs: 95, wickets: 4, ballsBowled: 60);
+    m1Innings1.events.addAll([
+      BallEvent(runs: 4, batsmanName: 'Virat Sharma', bowlerName: 'Ravindra Jadeja', description: 'Boundary!'),
+      BallEvent(runs: 6, batsmanName: 'Virat Sharma', bowlerName: 'Ravindra Jadeja', description: 'Six!'),
+      BallEvent(runs: 4, batsmanName: 'Rohit Rahul', bowlerName: 'Ravindra Jadeja', description: 'Boundary!'),
+      BallEvent(runs: 6, batsmanName: 'Rohit Rahul', bowlerName: 'Ravindra Jadeja', description: 'Six!'),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Caught',
+        batsmanName: 'Rohit Rahul',
+        bowlerName: 'Ravindra Jadeja',
+        description: 'Rohit Rahul caught by MS Dhoni.',
+      ),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Bowled',
+        batsmanName: 'Hardik Bumrah',
+        bowlerName: 'Ravichandran Ashwin',
+        description: 'Hardik Bumrah clean bowled by Ravichandran Ashwin.',
+      ),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Run Out',
+        batsmanName: 'Jasprit Pandya',
+        bowlerName: 'Ravichandran Ashwin',
+        description: 'Jasprit Pandya run out.',
+      ),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Caught',
+        batsmanName: 'Kevon Pollard',
+        bowlerName: 'Rashid Khan',
+        description: 'Kevon Pollard caught.',
+      ),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Virat Sharma', bowlerName: 'Ravindra Jadeja', description: 'Wide.'),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Virat Sharma', bowlerName: 'Ravindra Jadeja', description: 'Wide.'),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Virat Sharma', bowlerName: 'Ravindra Jadeja', description: 'Wide.'),
+    ]);
+    match1.innings1 = m1Innings1;
+
+    // Innings 2 (Bangalore Strikers batting)
+    final m1Innings2 = MatchTeamInnings(teamId: 't2', runs: 80, wickets: 3, ballsBowled: 60);
+    m1Innings2.events.addAll([
+      BallEvent(runs: 4, batsmanName: 'Rishabh Gill', bowlerName: 'Hardik Bumrah', description: 'Boundary!'),
+      BallEvent(runs: 6, batsmanName: 'Rishabh Gill', bowlerName: 'Hardik Bumrah', description: 'Six!'),
+      BallEvent(runs: 4, batsmanName: 'Shubman Pant', bowlerName: 'Jasprit Pandya', description: 'Boundary!'),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Caught',
+        batsmanName: 'Rishabh Gill',
+        bowlerName: 'Hardik Bumrah',
+        description: 'Rishabh Gill caught by Virat Sharma.',
+      ),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'LBW',
+        batsmanName: 'Shubman Pant',
+        bowlerName: 'Jasprit Pandya',
+        description: 'Shubman Pant LBW.',
+      ),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Bowled',
+        batsmanName: 'Ravindra Jadeja',
+        bowlerName: 'Kevon Pollard',
+        description: 'Ravindra Jadeja clean bowled by Kevon Pollard.',
+      ),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Rishabh Gill', bowlerName: 'Hardik Bumrah', description: 'Wide.'),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Rishabh Gill', bowlerName: 'Hardik Bumrah', description: 'Wide.'),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Rishabh Gill', bowlerName: 'Hardik Bumrah', description: 'Wide.'),
+      BallEvent(runs: 1, isWide: true, batsmanName: 'Rishabh Gill', bowlerName: 'Hardik Bumrah', description: 'Wide.'),
+    ]);
+    match1.innings2 = m1Innings2;
+
+    // Innings 1 Batsmen stats
+    match1.playerRuns[_players[0].id] = 42; // Virat Sharma
+    match1.playerBallsFaced[_players[0].id] = 26;
+    match1.playerRuns[_players[1].id] = 28; // Rohit Rahul
+    match1.playerBallsFaced[_players[1].id] = 18;
+    match1.playerRuns[_players[2].id] = 15; // Hardik Bumrah
+    match1.playerBallsFaced[_players[2].id] = 10;
+    match1.playerRuns[_players[3].id] = 4;  // Jasprit Pandya
+    match1.playerBallsFaced[_players[3].id] = 4;
+    match1.playerRuns[_players[4].id] = 2;  // Kevon Pollard
+    match1.playerBallsFaced[_players[4].id] = 2;
+
+    // Innings 1 Bowlers stats
+    match1.bowlerBallsBowled[_players[7].id] = 24; // Ravindra Jadeja
+    match1.bowlerRunsConceded[_players[7].id] = 32;
+    match1.bowlerWickets[_players[7].id] = 2;
+
+    match1.bowlerBallsBowled[_players[8].id] = 18; // Ravichandran Ashwin
+    match1.bowlerRunsConceded[_players[8].id] = 28;
+    match1.bowlerWickets[_players[8].id] = 1;
+ 
+    match1.bowlerBallsBowled[_players[9].id] = 18; // Rashid Khan
+    match1.bowlerRunsConceded[_players[9].id] = 31;
+    match1.bowlerWickets[_players[9].id] = 1;
+ 
+    // Innings 2 Batsmen stats
+    match1.playerRuns[_players[5].id] = 35; // Rishabh Gill
+    match1.playerBallsFaced[_players[5].id] = 20;
+    match1.playerRuns[_players[6].id] = 18; // Shubman Pant
+    match1.playerBallsFaced[_players[6].id] = 14;
+    match1.playerRuns[_players[7].id] = 12; // Ravindra Jadeja
+    match1.playerBallsFaced[_players[7].id] = 12;
+    match1.playerRuns[_players[8].id] = 5;  // Ravichandran Ashwin
+    match1.playerBallsFaced[_players[8].id] = 6;
+    match1.playerRuns[_players[9].id] = 4;  // Rashid Khan
+    match1.playerBallsFaced[_players[9].id] = 8;
+
+    // Innings 2 Bowlers stats
+    match1.bowlerBallsBowled[_players[2].id] = 24; // Hardik Bumrah
+    match1.bowlerRunsConceded[_players[2].id] = 28;
+    match1.bowlerWickets[_players[2].id] = 1;
+
+    match1.bowlerBallsBowled[_players[3].id] = 18; // Jasprit Pandya
+    match1.bowlerRunsConceded[_players[3].id] = 22;
+    match1.bowlerWickets[_players[3].id] = 1;
+
+    match1.bowlerBallsBowled[_players[4].id] = 18; // Kevon Pollard
+    match1.bowlerRunsConceded[_players[4].id] = 24;
+    match1.bowlerWickets[_players[4].id] = 1;
+
     final match2 = CricketMatch(
       id: 'm2',
       teamA: _teams[2],
@@ -395,20 +529,114 @@ class AppState extends ChangeNotifier {
       status: MatchStatus.live,
       tossWinnerId: 't3',
       tossDecision: 'Bowl',
+      resultString: 'Delhi Blasters won toss & elected to bowl',
       venue: 'Chinnaswamy Turf',
       matchDate: DateTime.now(),
     );
-    match2.innings1 = MatchTeamInnings(teamId: 't4', runs: 58, wickets: 3, ballsBowled: 32); // Chennai batting first
-    match2.striker = _players[9]; // Kevon Pollard
-    match2.nonStriker = _players[11]; // MS Dhoni
-    match2.currentBowler = _players[6]; // Ravindra Jadeja
-    match2.playerRuns[_players[9].id] = 24;
-    match2.playerBallsFaced[_players[9].id] = 12;
-    match2.playerRuns[_players[11].id] = 15;
-    match2.playerBallsFaced[_players[11].id] = 9;
-    match2.bowlerBallsBowled[_players[6].id] = 8;
-    match2.bowlerRunsConceded[_players[6].id] = 10;
-    match2.bowlerWickets[_players[6].id] = 1;
+    
+    // Chennai (t4) batting first. Delhi (t3) bowling first.
+    final innings1 = MatchTeamInnings(teamId: 't4', runs: 58, wickets: 2, ballsBowled: 32);
+    
+    // Add real event history to generate exact scorecard lists
+    innings1.events.addAll([
+      // Rinku Singh's innings (12 runs off 8 balls)
+      BallEvent(runs: 4, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'Boundary off the first ball!'),
+      BallEvent(runs: 0, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      BallEvent(runs: 6, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'MASSIVE SIX over long-on!'),
+      BallEvent(runs: 1, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'Single to deep mid-wicket.'),
+      BallEvent(runs: 0, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      BallEvent(runs: 1, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'Single.'),
+      BallEvent(runs: 0, batsmanName: 'Rinku Singh', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Caught',
+        batsmanName: 'Rinku Singh',
+        bowlerName: 'Axar Patel',
+        description: 'Rinku Singh caught at deep mid-wicket.',
+      ),
+
+      // Shivam Dube's innings (4 runs off 3 balls)
+      BallEvent(runs: 4, batsmanName: 'Shivam Dube', bowlerName: 'Kuldeep Yadav', description: 'Shivam Dube hits a boundary through covers!'),
+      BallEvent(runs: 0, batsmanName: 'Shivam Dube', bowlerName: 'Kuldeep Yadav', description: 'Dot ball.'),
+      BallEvent(
+        runs: 0,
+        isWicket: true,
+        wicketType: 'Bowled',
+        batsmanName: 'Shivam Dube',
+        bowlerName: 'Kuldeep Yadav',
+        description: 'Clean bowled! Shivam Dube missed the straight delivery.',
+      ),
+
+      // Ishana Kishan's innings (24 runs off 12 balls, two 4s and two 6s)
+      BallEvent(runs: 4, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Boundary to backward point!'),
+      BallEvent(runs: 4, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Boundary through extra cover!'),
+      BallEvent(runs: 6, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Pulled away for six!'),
+      BallEvent(runs: 6, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Six over wide long-on!'),
+      BallEvent(runs: 1, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Single.'),
+      BallEvent(runs: 0, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      BallEvent(runs: 0, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      BallEvent(runs: 0, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      BallEvent(runs: 0, batsmanName: 'Ishana Kishan', bowlerName: 'Axar Patel', description: 'Dot ball.'),
+      // Wides faced by Ishana Kishan (does not count as ball faced, adds 2 wide extras: 1 wide + 1 runs)
+      BallEvent(
+        runs: 1, 
+        isWide: true, 
+        batsmanName: 'Ishana Kishan', 
+        bowlerName: 'Axar Patel', 
+        description: 'Wide delivery plus one extra run.',
+      ),
+
+      // Yashasvi Jaiswal's innings (15 runs off 9 balls, one 4 and one 6)
+      BallEvent(runs: 4, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Boundary through mid-wicket!'),
+      BallEvent(runs: 6, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Huge six over deep square leg!'),
+      BallEvent(runs: 1, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Single.'),
+      BallEvent(runs: 1, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Single.'),
+      BallEvent(runs: 0, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Dot.'),
+      BallEvent(runs: 0, batsmanName: 'Yashasvi Jaiswal', bowlerName: 'Kuldeep Yadav', description: 'Dot.'),
+      // Leg bye faced by Yashasvi Jaiswal (counts as ball faced but batsman runs = 0)
+      BallEvent(
+        runs: 1, 
+        isLegBye: true, 
+        batsmanName: 'Yashasvi Jaiswal', 
+        bowlerName: 'Kuldeep Yadav', 
+        description: 'Leg bye. Ball deflecting off pads.',
+      ),
+    ]);
+    
+    match2.innings1 = innings1;
+    
+    // Active batsmen from Chennai Kings (t4)
+    match2.striker = _players[15]; // Ishana Kishan
+    match2.nonStriker = _players[16]; // Yashasvi Jaiswal
+    
+    // Active bowler from Delhi Blasters (t3)
+    match2.currentBowler = _players[12]; // Kuldeep Yadav
+    
+    // Batsmen runs and balls faced (ordered by batting order: Rinku and Shivam opened, then Ishana and Yashasvi came in)
+    match2.playerRuns[_players[17].id] = 12; // Rinku Singh (Out)
+    match2.playerBallsFaced[_players[17].id] = 8;
+    match2.playerRuns[_players[18].id] = 4;  // Shivam Dube (Out)
+    match2.playerBallsFaced[_players[18].id] = 3;
+    match2.playerRuns[_players[15].id] = 24; // Ishana
+    match2.playerBallsFaced[_players[15].id] = 12;
+    match2.playerRuns[_players[16].id] = 15; // Yashasvi
+    match2.playerBallsFaced[_players[16].id] = 9;
+    
+    // Bowlers balls bowled and runs conceded
+    match2.bowlerBallsBowled[_players[10].id] = 18; // Axar Patel: 3.0 overs
+    match2.bowlerRunsConceded[_players[10].id] = 31;
+    match2.bowlerWickets[_players[10].id] = 1;
+    
+    match2.bowlerBallsBowled[_players[12].id] = 14; // Kuldeep Yadav: 2.2 overs
+    match2.bowlerRunsConceded[_players[12].id] = 26;
+    match2.bowlerWickets[_players[12].id] = 1;
 
     final match3 = CricketMatch(
       id: 'm3',

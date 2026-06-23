@@ -12,6 +12,10 @@ class BallEvent {
   final String bowlerName;
   final String batsmanName;
   final String description;
+  final bool isRunsOffBat;
+  final bool isLegBye;
+  final bool isPenalty;
+  final bool isBye;
 
   BallEvent({
     required this.runs,
@@ -22,11 +26,15 @@ class BallEvent {
     required this.bowlerName,
     required this.batsmanName,
     required this.description,
+    this.isRunsOffBat = true,
+    this.isLegBye = false,
+    this.isPenalty = false,
+    this.isBye = false,
   });
 
   int get runsAddedToTeam => runs + (isWide || isNoBall ? 1 : 0);
-  int get runsAddedToBatsman => (isWide || isNoBall) ? 0 : runs;
-  bool get countsAsBall => !isWide && !isNoBall;
+  int get runsAddedToBatsman => (isWide || isLegBye || isPenalty || isBye) ? 0 : (isNoBall ? (isRunsOffBat ? runs : 0) : runs);
+  bool get countsAsBall => !isWide && !isNoBall && !isPenalty;
 }
 
 class MatchTeamInnings {
@@ -46,6 +54,13 @@ class MatchTeamInnings {
 
   double get oversCompleted => (ballsBowled ~/ 6) + (ballsBowled % 6) / 10;
   double get runRate => ballsBowled > 0 ? (runs / ballsBowled) * 6 : 0.0;
+
+  int get wideExtras => events.where((e) => e.isWide).fold(0, (sum, e) => sum + e.runs + 1);
+  int get noBallExtras => events.where((e) => e.isNoBall).fold(0, (sum, e) => sum + 1 + (!e.isRunsOffBat ? e.runs : 0));
+  int get legByeExtras => events.where((e) => e.isLegBye).fold(0, (sum, e) => sum + e.runs);
+  int get byeExtras => events.where((e) => e.isBye).fold(0, (sum, e) => sum + e.runs);
+  int get penaltyExtras => events.where((e) => e.isPenalty).fold(0, (sum, e) => sum + e.runs);
+  int get totalExtras => wideExtras + noBallExtras + legByeExtras + byeExtras + penaltyExtras;
 }
 
 class CricketMatch {
@@ -103,4 +118,12 @@ class CricketMatch {
   MatchTeamInnings get currentInnings => currentInningsNum == 1 
       ? (innings1 ??= MatchTeamInnings(teamId: battingTeam.id))
       : (innings2 ??= MatchTeamInnings(teamId: battingTeam.id));
+
+  MatchTeamInnings? get teamAInnings => innings1?.teamId == teamA.id 
+      ? innings1 
+      : (innings2?.teamId == teamA.id ? innings2 : null);
+
+  MatchTeamInnings? get teamBInnings => innings1?.teamId == teamB.id 
+      ? innings1 
+      : (innings2?.teamId == teamB.id ? innings2 : null);
 }

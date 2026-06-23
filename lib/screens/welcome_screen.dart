@@ -199,12 +199,16 @@ class WelcomeScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.0),
           onTap: () {
             appState.changeRole(role);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MainNavigationScreen(),
-              ),
-            );
+            Future.delayed(Duration.zero, () {
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MainNavigationScreen(),
+                  ),
+                );
+              }
+            });
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),

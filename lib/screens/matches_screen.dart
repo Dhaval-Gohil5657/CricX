@@ -235,7 +235,7 @@ class MatchesScreen extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        match.innings1 != null ? '${match.innings1!.runs}/${match.innings1!.wickets}' : '-',
+                        match.teamAInnings != null ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' : '-',
                         style: const TextStyle(
                           color: AppColors.textDark,
                           fontWeight: FontWeight.bold,
@@ -274,7 +274,7 @@ class MatchesScreen extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        match.innings2 != null ? '${match.innings2!.runs}/${match.innings2!.wickets}' : '-',
+                        match.teamBInnings != null ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' : '-',
                         style: const TextStyle(
                           color: AppColors.textDark,
                           fontWeight: FontWeight.bold,
