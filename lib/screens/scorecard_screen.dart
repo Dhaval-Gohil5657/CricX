@@ -4,6 +4,7 @@ import '../models/team_model.dart';
 import '../state/app_state.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import 'main_navigation_screen.dart';
 
 class ScorecardScreen extends StatelessWidget {
   final CricketMatch match;
@@ -20,30 +21,67 @@ class ScorecardScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.appBarBg,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
-            'Match Scorecard',
-            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
-          ),
-          bottom: const TabBar(
-            indicatorColor: AppColors.accentCrease,
-            labelColor: AppColors.accentCrease,
-            unselectedLabelColor: AppColors.textDarkMuted,
-            tabs: [
-              Tab(text: 'SCORECARD'),
-              Tab(text: 'BALL-BY-BALL'),
-            ],
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
+            flexibleSpace: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+              child: SizedBox.expand(
+                child: CustomPaint(
+                  painter: PitchCreasePainter(
+                    groundColorLight: const Color(0xFF2E6B3E),
+                    groundColorDark: const Color(0xFF1F4D28),
+                  ),
+                ),
+              ),
+            ),
+            title: const Text(
+              'Match Scorecard',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildScorecardTab(context, currentMatch, appState),
-            _buildBallByBallTab(context, currentMatch, appState),
+            Container(
+              color: Colors.transparent,
+              height: 38,
+              child: const TabBar(
+                indicatorColor: AppColors.primaryTurf,
+                indicatorWeight: 3,
+                indicatorSize: TabBarIndicatorSize.label,
+                indicatorPadding: EdgeInsets.only(bottom: 4),
+                labelColor: AppColors.primaryTurf,
+                unselectedLabelColor: AppColors.textDarkMuted,
+                dividerColor: Colors.transparent,
+                labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                tabs: [
+                  Tab(text: 'SCORECARD'),
+                  Tab(text: 'BALL-BY-BALL'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildScorecardTab(context, currentMatch, appState),
+                  _buildBallByBallTab(context, currentMatch, appState),
+                ],
+              ),
+            ),
           ],
         ),
       ),

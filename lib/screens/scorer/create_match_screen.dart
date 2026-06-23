@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../models/match_model.dart';
 import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
+import '../main_navigation_screen.dart';
 
 class CreateMatchScreen extends StatefulWidget {
   const CreateMatchScreen({super.key});
@@ -29,13 +30,35 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBg,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+          flexibleSpace: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: SizedBox.expand(
+              child: CustomPaint(
+                painter: PitchCreasePainter(
+                  groundColorLight: const Color(0xFF2E6B3E),
+                  groundColorDark: const Color(0xFF1F4D28),
+                ),
+              ),
+            ),
+          ),
+          title: const Text('Schedule New Match', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-        title: const Text('Schedule New Match', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
       ),
       body: Form(
         key: _formKey,
@@ -208,8 +231,8 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentCrease,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _createMatch,

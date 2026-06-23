@@ -36,13 +36,18 @@ class MyApp extends StatelessWidget {
           onSurface: AppColors.textDark,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.appBarBg,
+          backgroundColor: AppColors.appBarGreen,
           elevation: 0,
-          iconTheme: IconThemeData(color: AppColors.textDark),
+          iconTheme: IconThemeData(color: Colors.white),
           titleTextStyle: TextStyle(
-            color: AppColors.textDark,
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
           ),
         ),
         textTheme: const TextTheme(

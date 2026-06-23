@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/player_model.dart';
 import '../constants/app_colors.dart';
+import 'main_navigation_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -36,43 +37,63 @@ class ProfileScreen extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               itemBuilder: (context, index) {
                 final player = players[index];
-                return Card(
-                  color: AppColors.cardBg,
+                return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
+                  decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.borderGreen, width: 1),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.accentCrease.withOpacity(0.15),
-                      child: Text(
-                        player.name[0],
-                        style: const TextStyle(color: AppColors.accentCrease, fontWeight: FontWeight.bold),
+                    border: Border.all(
+                      color: AppColors.borderWood.withOpacity(0.5),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
                       ),
+                    ],
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFFFDFBF7),
+                        Color(0xFFFAF2E6),
+                      ],
                     ),
-                    title: Text(
-                      player.name,
-                      style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      '${player.role} • ${player.battingStyle}',
-                      style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: AppColors.accentCrease,
-                      size: 14,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PlayerDetailScreen(player: player),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primaryTurf.withOpacity(0.15),
+                        child: Text(
+                          player.name[0],
+                          style: const TextStyle(color: AppColors.primaryTurf, fontWeight: FontWeight.bold),
                         ),
-                      );
-                    },
+                      ),
+                      title: Text(
+                        player.name,
+                        style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        '${player.role} • ${player.battingStyle}',
+                        style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                      ),
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios,
+                        color: AppColors.primaryTurf,
+                        size: 14,
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PlayerDetailScreen(player: player),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 );
               },
@@ -93,15 +114,37 @@ class PlayerDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBg,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          player.name,
-          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+          flexibleSpace: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: SizedBox.expand(
+              child: CustomPaint(
+                painter: PitchCreasePainter(
+                  groundColorLight: const Color(0xFF2E6B3E),
+                  groundColorDark: const Color(0xFF1F4D28),
+                ),
+              ),
+            ),
+          ),
+          title: Text(
+            player.name,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -116,28 +159,35 @@ class PlayerDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryTurf, AppColors.woodMahogany],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.borderWood.withOpacity(0.8),
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.accentCrease.withOpacity(0.1),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFFDFBF7),
+                      Color(0xFFFAF2E6),
+                    ],
+                  ),
                 ),
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 36,
-                      backgroundColor: Colors.white.withOpacity(0.15),
+                      backgroundColor: AppColors.primaryTurf,
                       child: Text(
                         player.name[0],
-                        style: const TextStyle(color: AppColors.textDark, fontSize: 32, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -149,12 +199,13 @@ class PlayerDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black26,
+                        color: AppColors.primaryTurf.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryTurf.withOpacity(0.2), width: 1),
                       ),
                       child: Text(
                         player.role,
-                        style: const TextStyle(color: AppColors.textMint, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: AppColors.primaryTurf, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 16),

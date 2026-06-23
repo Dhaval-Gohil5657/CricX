@@ -48,12 +48,12 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.appBarBg,
+        backgroundColor: AppColors.appBarGreen,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Conduct Toss', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+        title: const Text('Conduct Toss', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),

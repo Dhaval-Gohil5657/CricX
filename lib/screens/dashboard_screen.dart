@@ -145,14 +145,30 @@ class DashboardScreen extends StatelessWidget {
 
     return Container(
       width: isFullWidth ? double.infinity : MediaQuery.of(context).size.width * 0.82,
-      height: 190,
+      height: 205,
       margin: isFullWidth ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.accentCrease.withOpacity(0.3),
-          width: 1,
+          color: AppColors.borderWood,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF4D1A9), // Soft light willow wood edge
+            Color(0xFFFCF7F0), // Extra light wood face
+            Color(0xFFF4D1A9), // Soft light willow wood edge
+          ],
+          stops: [0.0, 0.5, 1.0],
         ),
       ),
       child: Material(
@@ -178,14 +194,14 @@ class DashboardScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.accentCrease.withOpacity(0.1),
+                        color: AppColors.primaryTurf.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'Overs: ${match.totalOvers}',
                         style: const TextStyle(
                           fontSize: 10,
-                          color: AppColors.accentCrease,
+                          color: AppColors.primaryTurf,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -238,7 +254,7 @@ class DashboardScreen extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.accentCrease,
+                            color: AppColors.primaryTurf,
                           ),
                         ),
                         Text(
@@ -255,7 +271,7 @@ class DashboardScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDarkDisabled,
+                        color: AppColors.textDarkSecondary,
                       ),
                     ),
                     Column(
@@ -274,16 +290,16 @@ class DashboardScreen extends StatelessWidget {
                         if (!isFirstInnings && innings1 != null) ...[
                           Text(
                             'Target: ${innings1.runs + 1}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.pitchGold,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.woodMahogany,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Need ${innings1.runs + 1 - runs} off ${(match.totalOvers * 6) - currentInnings.ballsBowled} balls',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10,
                               color: AppColors.textDarkSecondary,
                             ),
@@ -293,7 +309,7 @@ class DashboardScreen extends StatelessWidget {
                             'Yet to Bat',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.textDarkMuted,
+                              color: AppColors.textDarkSecondary,
                             ),
                           ),
                         ],
@@ -344,11 +360,13 @@ class DashboardScreen extends StatelessWidget {
                     height: 30,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accentCrease,
+                        backgroundColor: AppColors.primaryTurf,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: () {
                         appState.setActiveScoringMatch(match);
@@ -364,7 +382,7 @@ class DashboardScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -569,31 +587,66 @@ class DashboardScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: Card(
-        color: AppColors.cardBg,
-        shape: RoundedRectangleBorder(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.borderWood, width: 1),
+          border: Border.all(
+            color: AppColors.borderWood.withOpacity(0.7),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFAF0E3), // Soft warm golden cream (Cricket bat willow)
+              Color(0xFFF2DFCB), // Warm light stump/willow tan
+            ],
+          ),
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 28),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.w500,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: color.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(icon, color: color, size: 22),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textDark,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -602,142 +655,162 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildRecentMatchCard(BuildContext context, CricketMatch match) {
-    return Card(
-      color: AppColors.appBarBg,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.dividerGreen, width: 1),
+        border: Border.all(
+          color: AppColors.borderWood.withOpacity(0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFDFBF7), // Extremely light wood face
+            Color(0xFFFAF2E6), // Light wood face
+          ],
+        ),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScorecardScreen(match: match),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    match.venue,
-                    style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                  ),
-                  Text(
-                    '${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year}',
-                    style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                  ),
-                ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ScorecardScreen(match: match),
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Team A name & score
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Color(match.teamA.logoColorHex).withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 12)),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        match.teamA.name,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    match.innings1 != null ? '${match.innings1!.runs}/${match.innings1!.wickets}' : '-',
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      match.venue,
+                      style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Team B name & score
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Color(match.teamB.logoColorHex).withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 12)),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        match.teamB.name,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    match.innings2 != null ? '${match.innings2!.runs}/${match.innings2!.wickets}' : '-',
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                    Text(
+                      '${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year}',
+                      style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
                     ),
-                  ),
-                ],
-              ),
-              const Divider(color: AppColors.dividerGreen, height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      match.resultString,
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Team A name & score
+                    Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(match.teamA.logoColorHex).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 12)),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          match.teamA.name,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      match.innings1 != null ? '${match.innings1!.runs}/${match.innings1!.wickets}' : '-',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Team B name & score
+                    Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(match.teamB.logoColorHex).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 12)),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          match.teamB.name,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      match.innings2 != null ? '${match.innings2!.runs}/${match.innings2!.wickets}' : '-',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(color: AppColors.dividerGreen, height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        match.resultString,
+                        style: const TextStyle(
+                          color: AppColors.woodMahogany,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      'Full Scorecard ➜',
                       style: TextStyle(
-                        color: AppColors.pitchGold,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: AppColors.primaryTurf,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  const Text(
-                    'Full Scorecard ➜',
-                    style: TextStyle(
-                      color: AppColors.accentCrease,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

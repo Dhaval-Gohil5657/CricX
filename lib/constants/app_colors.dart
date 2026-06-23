@@ -10,8 +10,9 @@ class AppColors {
   static const Color leatherWhite = Color(0xFFFFFFFF);     // Cricket Ball White
   
   // Background Colors (Warm Cream & Light Wood Gradients)
-  static const Color background = Color(0xFFFAF7F2);       // Clean light ivory/cream background
-  static const Color appBarBg = Color(0xFFF3ECE4);         // Warm cream header background
+  static const Color background = Color(0xFFFDFCF9);       // Clean, extra light warm off-white background
+  static const Color appBarBg = Color(0xFFF3ECE4);         // Warm cream card / container background
+  static const Color appBarGreen = Color(0xFF1F4D28);      // Deep turf green app bar background
   static const Color topGradient = Color(0xFFEFE5D9);      // Soft wood gradient start
   
   // Card & Container Colors

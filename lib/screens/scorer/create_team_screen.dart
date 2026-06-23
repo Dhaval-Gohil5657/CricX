@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../models/team_model.dart';
 import '../../models/player_model.dart';
 import '../../constants/app_colors.dart';
+import '../main_navigation_screen.dart';
 
 class CreateTeamScreen extends StatefulWidget {
   const CreateTeamScreen({super.key});
@@ -33,13 +34,35 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBg,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+          flexibleSpace: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: SizedBox.expand(
+              child: CustomPaint(
+                painter: PitchCreasePainter(
+                  groundColorLight: const Color(0xFF2E6B3E),
+                  groundColorDark: const Color(0xFF1F4D28),
+                ),
+              ),
+            ),
+          ),
+          title: const Text('Create New Team', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-        title: const Text('Create New Team', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
       ),
       body: Form(
         key: _formKey,
@@ -166,15 +189,35 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                   itemCount: _addedPlayers.length,
                   itemBuilder: (context, index) {
                     final p = _addedPlayers[index];
-                    return Card(
-                      color: AppColors.cardBg,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    return Container(
                       margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.borderWood.withOpacity(0.5),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFFFDFBF7),
+                            Color(0xFFFAF2E6),
+                          ],
+                        ),
+                      ),
                       child: ListTile(
                         dense: true,
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.dividerGreen,
-                          child: Text('${index + 1}', style: const TextStyle(color: AppColors.textDark)),
+                          backgroundColor: AppColors.primaryTurf.withOpacity(0.1),
+                          child: Text('${index + 1}', style: const TextStyle(color: AppColors.primaryTurf, fontWeight: FontWeight.bold)),
                         ),
                         title: Text(p.name, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
                         subtitle: Text('${p.role} • ${p.battingStyle}', style: const TextStyle(color: AppColors.textDarkSecondary)),
@@ -192,14 +235,21 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.appBarBg,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderGreen, width: 1),
+                  border: Border.all(color: AppColors.borderWood.withOpacity(0.8), width: 1),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFFDFBF7),
+                      Color(0xFFFAF2E6),
+                    ],
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('ADD PLAYER TO SQUAD', style: TextStyle(color: AppColors.accentCrease, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text('ADD PLAYER TO SQUAD', style: TextStyle(color: AppColors.primaryTurf, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _playerNameController,
@@ -250,8 +300,8 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentCrease,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _saveTeam,

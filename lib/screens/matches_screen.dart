@@ -26,14 +26,19 @@ class MatchesScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(50.0),
+          preferredSize: const Size.fromHeight(38.0),
           child: Container(
-            color: AppColors.appBarBg,
+            color: Colors.transparent,
+            height: 38,
             child: const TabBar(
-              indicatorColor: AppColors.accentCrease,
+              indicatorColor: AppColors.primaryTurf,
               indicatorWeight: 3,
-              labelColor: AppColors.accentCrease,
+              indicatorSize: TabBarIndicatorSize.label,
+              indicatorPadding: EdgeInsets.only(bottom: 4),
+              labelColor: AppColors.primaryTurf,
               unselectedLabelColor: AppColors.textDarkMuted,
+              dividerColor: Colors.transparent,
+              labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               tabs: [
                 Tab(text: 'LIVE'),
                 Tab(text: 'UPCOMING'),
@@ -86,31 +91,49 @@ class MatchesScreen extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       itemBuilder: (context, index) {
         final match = matchList[index];
-        return Card(
-          color: AppColors.cardBg,
+        return Container(
           margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: AppColors.accentCrease.withOpacity(match.status == MatchStatus.live ? 0.3 : 0.1),
-              width: 1,
+            border: Border.all(
+              color: match.status == MatchStatus.live
+                  ? AppColors.primaryTurf.withOpacity(0.4)
+                  : AppColors.borderWood.withOpacity(0.5),
+              width: match.status == MatchStatus.live ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFDFBF7), // Extremely light wood
+                Color(0xFFFAF2E6), // Light wood
+              ],
             ),
           ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ScorecardScreen(match: match),
-                ),
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScorecardScreen(match: match),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -168,13 +191,13 @@ class MatchesScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color:AppColors.woodMahogany.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
                             'UPCOMING',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: AppColors.woodMahogany,
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
@@ -272,9 +295,9 @@ class MatchesScreen extends StatelessWidget {
                               ? 'Scheduled: ${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}'
                               : match.resultString,
                           style: TextStyle(
-                            color: match.status == MatchStatus.completed ? AppColors.pitchGold : AppColors.textDarkSecondary,
+                            color: match.status == MatchStatus.completed ? AppColors.woodMahogany : AppColors.textDarkSecondary,
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
@@ -283,9 +306,10 @@ class MatchesScreen extends StatelessWidget {
                       if (role == UserRole.scorer && match.status == MatchStatus.live)
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accentCrease,
-                            foregroundColor: Colors.black,
+                            backgroundColor: AppColors.primaryTurf,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -302,9 +326,10 @@ class MatchesScreen extends StatelessWidget {
                       else if (role == UserRole.scorer && match.status == MatchStatus.upcoming)
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: AppColors.woodMahogany,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -326,6 +351,7 @@ class MatchesScreen extends StatelessWidget {
                     ],
                   ),
                 ],
+              ),
               ),
             ),
           ),

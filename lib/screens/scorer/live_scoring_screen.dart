@@ -35,9 +35,9 @@ class LiveScoringScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.appBarBg,
+        backgroundColor: AppColors.appBarGreen,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () {
             appState.setActiveScoringMatch(null);
             Navigator.pop(context);
@@ -45,11 +45,11 @@ class LiveScoringScreen extends StatelessWidget {
         ),
         title: Text(
           'Live Scoring – Overs: ${currentMatch.totalOvers}',
-          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 16),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.done_all_rounded, color: AppColors.accentCrease),
+            icon: const Icon(Icons.done_all_rounded, color: Colors.white),
             tooltip: 'Complete Match',
             onPressed: () => _showCompleteMatchDialog(context, currentMatch, appState),
           ),

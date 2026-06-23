@@ -88,13 +88,14 @@ class ScorerDashboard extends StatelessWidget {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   itemCount: liveMatches.length,
                   itemBuilder: (context, index) {
                     final match = liveMatches[index];
                     return _buildScoringMatchTile(context, match, appState, isLive: true);
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
               ],
 
               const Text(
@@ -132,6 +133,7 @@ class ScorerDashboard extends StatelessWidget {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   itemCount: upcomingMatches.length,
                   itemBuilder: (context, index) {
                     final match = upcomingMatches[index];
@@ -153,39 +155,63 @@ class ScorerDashboard extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      color: AppColors.cardBg,
-      shape: RoundedRectangleBorder(
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.borderGreen, width: 1),
+        border: Border.all(
+          color: AppColors.borderWood.withOpacity(0.7),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFAF0E3), // Soft warm golden cream
+            Color(0xFFF2DFCB), // Warm light stump/willow tan
+          ],
+        ),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(icon, color: color, size: 28),
                 ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -193,14 +219,28 @@ class ScorerDashboard extends StatelessWidget {
   }
 
   Widget _buildScoringMatchTile(BuildContext context, CricketMatch match, AppState appState, {required bool isLive}) {
-    return Card(
-      color: AppColors.appBarBg,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isLive ? AppColors.accentCrease.withOpacity(0.3) : AppColors.borderGreen,
-          width: 1,
+        border: Border.all(
+          color: isLive ? AppColors.primaryTurf : AppColors.borderWood.withOpacity(0.5),
+          width: isLive ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFDFBF7),
+            Color(0xFFFAF2E6),
+          ],
         ),
       ),
       child: Padding(
@@ -241,9 +281,12 @@ class ScorerDashboard extends StatelessWidget {
                 const SizedBox(width: 12),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isLive ? AppColors.accentCrease : Colors.blue,
-                    foregroundColor: isLive ? Colors.black : Colors.white,
+                    backgroundColor: isLive ? AppColors.primaryTurf : AppColors.woodMahogany,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                   onPressed: () {
                     if (isLive) {

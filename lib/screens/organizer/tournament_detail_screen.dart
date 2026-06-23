@@ -6,6 +6,7 @@ import '../../models/match_model.dart';
 import '../../models/team_model.dart';
 import '../scorecard_screen.dart';
 import '../../constants/app_colors.dart';
+import '../main_navigation_screen.dart';
 
 class TournamentDetailScreen extends StatelessWidget {
   final Tournament tournament;
@@ -25,27 +26,64 @@ class TournamentDetailScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.appBarBg,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(currentTour.name, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 16)),
-          bottom: const TabBar(
-            indicatorColor: AppColors.accentCrease,
-            labelColor: AppColors.accentCrease,
-            unselectedLabelColor: AppColors.textDarkMuted,
-            tabs: [
-              Tab(text: 'STANDINGS'),
-              Tab(text: 'FIXTURES'),
-            ],
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
+            flexibleSpace: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+              child: SizedBox.expand(
+                child: CustomPaint(
+                  painter: PitchCreasePainter(
+                    groundColorLight: const Color(0xFF2E6B3E),
+                    groundColorDark: const Color(0xFF1F4D28),
+                  ),
+                ),
+              ),
+            ),
+            title: Text(currentTour.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildPointsTableTab(context, currentTour),
-            _buildFixturesTab(context, currentTour, appState),
+            Container(
+              color: Colors.transparent,
+              height: 38,
+              child: const TabBar(
+                indicatorColor: AppColors.primaryTurf,
+                indicatorWeight: 3,
+                indicatorSize: TabBarIndicatorSize.label,
+                indicatorPadding: EdgeInsets.only(bottom: 4),
+                labelColor: AppColors.primaryTurf,
+                unselectedLabelColor: AppColors.textDarkMuted,
+                dividerColor: Colors.transparent,
+                labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                tabs: [
+                  Tab(text: 'STANDINGS'),
+                  Tab(text: 'FIXTURES'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPointsTableTab(context, currentTour),
+                  _buildFixturesTab(context, currentTour, appState),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -62,12 +100,12 @@ class TournamentDetailScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             color: AppColors.appBarBg,
             child: const Row(
               children: [
                 Expanded(flex: 1, child: Text('Pos', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
-                Expanded(flex: 4, child: Text('Team', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
+                Expanded(flex: 6, child: Text('Team', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
                 Expanded(child: Text('P', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
                 Expanded(child: Text('W', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
                 Expanded(child: Text('L', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
@@ -86,7 +124,7 @@ class TournamentDetailScreen extends StatelessWidget {
               final isTopTwo = index < 2;
 
               return Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: AppColors.dividerGreen, width: 1)),
                 ),
@@ -106,15 +144,16 @@ class TournamentDetailScreen extends StatelessWidget {
                     ),
                     // Team Name
                     Expanded(
-                      flex: 4,
+                      flex: 6,
                       child: Row(
                         children: [
                           Text(entry.team.logoEmoji, style: const TextStyle(fontSize: 14)),
-                          const SizedBox(width: 8),
-                          Text(
-                            entry.team.name,
-                            style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              entry.team.name,
+                              style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
                           ),
                         ],
                       ),
@@ -200,8 +239,8 @@ class TournamentDetailScreen extends StatelessWidget {
               if (appState.currentRole == UserRole.organizer)
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentCrease,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
@@ -220,43 +259,69 @@ class TournamentDetailScreen extends StatelessWidget {
       itemCount: matches.length,
       itemBuilder: (context, index) {
         final match = matches[index];
-        return Card(
-          color: AppColors.cardBg,
+        return Container(
           margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: AppColors.borderWood),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('${match.teamA.name} vs ${match.teamB.name}', style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14)),
-                _buildMatchBadge(match.status),
+            border: Border.all(
+              color: AppColors.borderWood.withOpacity(0.5),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFDFBF7),
+                Color(0xFFFAF2E6),
               ],
             ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 6.0),
-              child: Text(
-                match.status == MatchStatus.completed 
-                    ? match.resultString 
-                    : 'Venue: ${match.venue} • Overs: ${match.totalOvers}',
-                style: TextStyle(
-                  color: match.status == MatchStatus.completed ? AppColors.pitchGold : AppColors.textDarkMuted,
-                  fontSize: 12,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${match.teamA.name} vs ${match.teamB.name}',
+                      style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildMatchBadge(match.status),
+                ],
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: Text(
+                  match.status == MatchStatus.completed 
+                      ? match.resultString 
+                      : 'Venue: ${match.venue} • Overs: ${match.totalOvers}',
+                  style: TextStyle(
+                    color: match.status == MatchStatus.completed ? AppColors.woodMahogany : AppColors.textDarkMuted,
+                    fontSize: 12,
+                  ),
                 ),
               ),
+              trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.primaryTurf, size: 14),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScorecardScreen(match: match),
+                  ),
+                );
+              },
             ),
-            trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.accentCrease, size: 14),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ScorecardScreen(match: match),
-                ),
-              );
-            },
           ),
         );
       },

@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../models/tournament_model.dart';
 import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
+import '../main_navigation_screen.dart';
 
 class CreateTournamentScreen extends StatefulWidget {
   const CreateTournamentScreen({super.key});
@@ -26,13 +27,35 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBg,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => Navigator.pop(context),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+          flexibleSpace: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: SizedBox.expand(
+              child: CustomPaint(
+                painter: PitchCreasePainter(
+                  groundColorLight: const Color(0xFF2E6B3E),
+                  groundColorDark: const Color(0xFF1F4D28),
+                ),
+              ),
+            ),
+          ),
+          title: const Text('Create Tournament', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-        title: const Text('Create Tournament', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
       ),
       body: Form(
         key: _formKey,
@@ -145,8 +168,8 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accentCrease,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _saveTournament,
@@ -170,10 +193,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.accentCrease.withOpacity(0.15) : AppColors.cardBg,
+          color: isSelected ? AppColors.primaryTurf.withOpacity(0.12) : AppColors.cardBg,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.accentCrease : AppColors.borderGreen,
+            color: isSelected ? AppColors.primaryTurf : AppColors.borderGreen,
             width: 1.5,
           ),
         ),
@@ -181,7 +204,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? AppColors.accentCrease : Colors.white,
+            color: isSelected ? AppColors.primaryTurf : AppColors.textDark,
             fontWeight: FontWeight.bold,
             fontSize: 13,
           ),

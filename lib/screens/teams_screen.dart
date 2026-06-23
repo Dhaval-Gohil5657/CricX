@@ -29,14 +29,28 @@ class _TeamsScreenState extends State<TeamsScreen> {
           final team = teams[index];
           final isExpanded = _expandedTeamId == team.id;
 
-          return Card(
-            color: AppColors.cardBg,
+          return Container(
             margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              side: BorderSide(
-                color: isExpanded ? AppColors.accentCrease : AppColors.borderGreen,
-                width: 1,
+              border: Border.all(
+                color: isExpanded ? AppColors.primaryTurf : AppColors.borderWood.withOpacity(0.5),
+                width: isExpanded ? 1.5 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFDFBF7),
+                  Color(0xFFFAF2E6),
+                ],
               ),
             ),
             child: Column(
@@ -67,7 +81,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                   ),
                   trailing: Icon(
                     isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: AppColors.accentCrease,
+                    color: AppColors.primaryTurf,
                   ),
                   onTap: () {
                     setState(() {
@@ -76,7 +90,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                   },
                 ),
                 if (isExpanded) ...[
-                  const Divider(color: AppColors.borderGreen, height: 1),
+                  const Divider(color: AppColors.dividerGreen, height: 1),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
