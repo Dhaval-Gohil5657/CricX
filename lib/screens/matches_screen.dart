@@ -147,7 +147,6 @@ class MatchesScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
                           ),
                           child: Row(
                             children: [
@@ -293,9 +292,13 @@ class MatchesScreen extends StatelessWidget {
                         child: Text(
                           match.status == MatchStatus.upcoming
                               ? 'Scheduled: ${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}'
-                              : match.resultString,
+                              : match.statusText,
                           style: TextStyle(
-                            color: match.status == MatchStatus.completed ? AppColors.woodMahogany : AppColors.textDarkSecondary,
+                            color: match.status == MatchStatus.completed
+                                ? AppColors.woodMahogany
+                                : (match.status == MatchStatus.live
+                                    ? AppColors.primaryTurf
+                                    : AppColors.textDarkSecondary),
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -304,48 +307,54 @@ class MatchesScreen extends StatelessWidget {
                       
                       // Role specific quick actions
                       if (role == UserRole.scorer && match.status == MatchStatus.live)
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryTurf,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 5),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryTurf,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: () {
+                              appState.setActiveScoringMatch(match);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => LiveScoringScreen(match: match)),
+                              );
+                            },
+                            child: const Text('SCORE'),
                           ),
-                          onPressed: () {
-                            appState.setActiveScoringMatch(match);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => LiveScoringScreen(match: match)),
-                            );
-                          },
-                          child: const Text('SCORE'),
                         )
                       else if (role == UserRole.scorer && match.status == MatchStatus.upcoming)
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.woodMahogany,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 5),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.woodMahogany,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
+                              );
+                            },
+                            child: const Text('START'),
                           ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
-                            );
-                          },
-                          child: const Text('START'),
                         )
                       else
                         const Icon(
                           Icons.arrow_forward_ios,
-                          color: AppColors.accentCrease,
+                          color: AppColors.woodMahogany,
                           size: 14,
                         ),
                     ],

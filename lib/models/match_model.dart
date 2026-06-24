@@ -129,4 +129,27 @@ class CricketMatch {
   MatchTeamInnings? get teamBInnings => innings1?.teamId == teamB.id 
       ? innings1 
       : (innings2?.teamId == teamB.id ? innings2 : null);
+
+  String get statusText {
+    if (status == MatchStatus.upcoming) {
+      return 'Match not started yet';
+    } else if (status == MatchStatus.live) {
+      if (tossWinnerId != null && tossDecision != null) {
+        final tossWinnerTeam = tossWinnerId == teamA.id ? teamA : teamB;
+        if (currentInningsNum == 1) {
+          return "${tossWinnerTeam.name} won toss & elected to ${tossDecision!.toLowerCase()} first";
+        } else {
+          final target = (innings1?.runs ?? 0) + 1;
+          final currentRuns = innings2?.runs ?? 0;
+          final runsNeeded = target - currentRuns;
+          final ballsBowled = innings2?.ballsBowled ?? 0;
+          final ballsRemaining = (totalOvers * 6) - ballsBowled;
+          return "${battingTeam.name} needs $runsNeeded runs from $ballsRemaining balls";
+        }
+      }
+      return 'Match in progress';
+    } else {
+      return resultString;
+    }
+  }
 }

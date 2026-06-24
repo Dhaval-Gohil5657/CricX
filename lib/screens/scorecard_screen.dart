@@ -189,20 +189,30 @@ class ScorecardScreen extends StatelessWidget {
     final wicketsA = match.teamAInnings?.wickets;
     final oversA = match.teamAInnings?.oversCompleted;
     final scoreAStr = runsA != null ? '$runsA/$wicketsA' : 'Yet to Bat';
-    final oversAStr = oversA != null ? '($oversA Ov)' : '';
+    final oversAStr = oversA != null ? '($oversA/${match.totalOvers})' : '';
 
     final runsB = match.teamBInnings?.runs;
     final wicketsB = match.teamBInnings?.wickets;
     final oversB = match.teamBInnings?.oversCompleted;
     final scoreBStr = runsB != null ? '$runsB/$wicketsB' : 'Yet to Bat';
-    final oversBStr = oversB != null ? '($oversB Ov)' : '';
+    final oversBStr = oversB != null ? '($oversB/${match.totalOvers})' : '';
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        // color: AppColors.cardBg,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF4D1A9), // Soft light willow wood edge
+            Color(0xFFFCF7F0), // Extra light wood face
+            Color(0xFFF4D1A9), // Soft light willow wood edge
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderGreen, width: 1.5),
+        border: Border.all(color: AppColors.borderWood, width: 1.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -263,7 +273,7 @@ class ScorecardScreen extends StatelessWidget {
                         Text(
                           scoreAStr,
                           style: TextStyle(
-                            color: runsA != null ? AppColors.accentCrease : AppColors.textDarkMuted,
+                            color: runsA != null ? AppColors.woodMahogany : AppColors.textDarkMuted,
                             fontWeight: FontWeight.bold,
                             fontSize: runsA != null ? 15 : 11,
                           ),
@@ -271,7 +281,7 @@ class ScorecardScreen extends StatelessWidget {
                         if (oversAStr.isNotEmpty)
                           Text(
                             oversAStr,
-                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10,fontWeight: FontWeight.w500),
                           ),
                       ],
                     ),
@@ -302,7 +312,7 @@ class ScorecardScreen extends StatelessWidget {
                         Text(
                           scoreBStr,
                           style: TextStyle(
-                            color: runsB != null ? AppColors.accentCrease : AppColors.textDarkMuted,
+                            color: runsB != null ? AppColors.woodMahogany : AppColors.textDarkMuted,
                             fontWeight: FontWeight.bold,
                             fontSize: runsB != null ? 15 : 11,
                           ),
@@ -310,7 +320,7 @@ class ScorecardScreen extends StatelessWidget {
                         if (oversBStr.isNotEmpty)
                           Text(
                             oversBStr,
-                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10,fontWeight: FontWeight.w500),
                           ),
                       ],
                     ),
@@ -346,18 +356,18 @@ class ScorecardScreen extends StatelessWidget {
             ],
           ),
           if (match.status == MatchStatus.completed) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               match.resultString,
-              style: const TextStyle(color: AppColors.pitchGold, fontSize: 12, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.woodMahogany, fontSize: 12, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
               softWrap: true,
             ),
           ] else if (match.tossWinnerId != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               '${appState.teams.firstWhere((t) => t.id == match.tossWinnerId).name} won toss & elected to ${match.tossDecision}',
-              style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11),
+              style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11,fontWeight:FontWeight.w500),
               textAlign: TextAlign.center,
               softWrap: true,
             ),
