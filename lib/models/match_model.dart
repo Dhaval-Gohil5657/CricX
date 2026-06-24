@@ -43,6 +43,7 @@ class MatchTeamInnings {
   int wickets;
   int ballsBowled;
   List<BallEvent> events;
+  List<String> battingOrder;
 
   MatchTeamInnings({
     required this.teamId,
@@ -50,7 +51,9 @@ class MatchTeamInnings {
     this.wickets = 0,
     this.ballsBowled = 0,
     List<BallEvent>? events,
-  }) : this.events = events ?? [];
+    List<String>? battingOrder,
+  }) : this.events = events ?? [],
+       this.battingOrder = battingOrder ?? [];
 
   double get oversCompleted => (ballsBowled ~/ 6) + (ballsBowled % 6) / 10;
   double get runRate => ballsBowled > 0 ? (runs / ballsBowled) * 6 : 0.0;

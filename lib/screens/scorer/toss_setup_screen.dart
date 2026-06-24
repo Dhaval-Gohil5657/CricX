@@ -418,11 +418,15 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
 
     final appState = Provider.of<AppState>(context, listen: false);
     
-    // Conduct toss
-    appState.updateMatchToss(widget.match.id, _tossWinner!.id, _tossDecision);
-    
-    // Set up players
-    appState.setupLiveScoringPlayers(widget.match.id, _striker!, _nonStriker!, _bowler!);
+    // Conduct toss and setup opening players atomically
+    appState.startMatch(
+      matchId: widget.match.id,
+      tossWinnerId: _tossWinner!.id,
+      decision: _tossDecision,
+      striker: _striker!,
+      nonStriker: _nonStriker!,
+      bowler: _bowler!,
+    );
     
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Match started successfully!')),

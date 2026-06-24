@@ -196,11 +196,17 @@ class ScorecardScreen extends StatelessWidget {
           ),
           const Divider(color: AppColors.borderGreen, height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildOverviewTeam(match.teamA, match.teamAInnings?.runs, match.teamAInnings?.wickets, match.teamAInnings?.oversCompleted),
-              const Text('VS', style: TextStyle(color: AppColors.textDarkDisabled, fontWeight: FontWeight.bold, fontSize: 18)),
-              _buildOverviewTeam(match.teamB, match.teamBInnings?.runs, match.teamBInnings?.wickets, match.teamBInnings?.oversCompleted),
+              Expanded(
+                child: _buildOverviewTeam(match.teamA, match.teamAInnings?.runs, match.teamAInnings?.wickets, match.teamAInnings?.oversCompleted),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('VS', style: TextStyle(color: AppColors.textDarkDisabled, fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+              Expanded(
+                child: _buildOverviewTeam(match.teamB, match.teamBInnings?.runs, match.teamBInnings?.wickets, match.teamBInnings?.oversCompleted),
+              ),
             ],
           ),
           const Divider(color: AppColors.borderGreen, height: 20),
@@ -212,13 +218,17 @@ class ScorecardScreen extends StatelessWidget {
                     : 'Toss details not updated'),
             style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
             textAlign: TextAlign.center,
+            softWrap: true,
+            maxLines: null,
           ),
           if (match.status == MatchStatus.completed) ...[
             const SizedBox(height: 8),
             Text(
               match.resultString,
-              style: TextStyle(color: AppColors.pitchGold, fontSize: 14, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.pitchGold, fontSize: 14, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
+              softWrap: true,
+              maxLines: null,
             ),
           ],
         ],
@@ -244,6 +254,7 @@ class ScorecardScreen extends StatelessWidget {
         Text(
           team.name,
           style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
         Text(
@@ -281,7 +292,7 @@ class ScorecardScreen extends StatelessWidget {
     }).toList();
 
     if (hasStarted) {
-      final battingOrder = match.playerRuns.keys.toList();
+      final battingOrder = innings.battingOrder;
       battedPlayers.sort((a, b) {
         final indexA = battingOrder.indexOf(a.id);
         final indexB = battingOrder.indexOf(b.id);

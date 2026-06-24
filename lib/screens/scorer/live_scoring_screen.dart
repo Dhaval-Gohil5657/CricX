@@ -153,15 +153,30 @@ class LiveScoringScreen extends StatelessWidget {
                             'Target: $target',
                             style: const TextStyle(color: AppColors.pitchGold, fontSize: 14, fontWeight: FontWeight.bold),
                           ),
-                          Text(
-                            'Need ${target - innings.runs} from ${(currentMatch.totalOvers * 6) - innings.ballsBowled} balls',
-                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
-                          ),
+                          if (currentMatch.status != MatchStatus.completed)
+                            Text(
+                              'Need ${target - innings.runs <= 0 ? 0 : target - innings.runs} from ${(currentMatch.totalOvers * 6) - innings.ballsBowled} balls',
+                              style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                            ),
                         ],
                       ],
                     ),
                   ],
                 ),
+                if (currentMatch.status == MatchStatus.completed) ...[
+                  const Divider(color: AppColors.borderGreen, height: 16),
+                  Text(
+                    currentMatch.resultString,
+                    style: const TextStyle(
+                      color: AppColors.pitchGold,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    softWrap: true,
+                    maxLines: null,
+                  ),
+                ],
                 const Divider(color: AppColors.borderGreen, height: 24),
                 
                 // Current Over Tracker
@@ -383,7 +398,7 @@ class LiveScoringScreen extends StatelessWidget {
     Team battingTeam,
     AppState appState,
   ) {
-    if (player == null) {
+    if (player == null || player.id == 'dummy') {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -394,9 +409,20 @@ class LiveScoringScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               minimumSize: Size.zero,
             ),
-            onPressed: () => _showPlayerSelector(context, battingTeam.players, (newPlayer) {
-              appState.changeStrikerPlayer(newPlayer, isStriker);
-            }),
+            onPressed: () {
+              final otherBatsman = isStriker ? match.nonStriker : match.striker;
+              final dismissedNames = match.currentInnings.events
+                  .where((e) => e.isWicket)
+                  .map((e) => e.batsmanName)
+                  .toSet();
+              final availablePlayers = battingTeam.players.where((p) {
+                return p.id != otherBatsman?.id && !dismissedNames.contains(p.name);
+              }).toList();
+
+              _showPlayerSelector(context, availablePlayers, (newPlayer) {
+                appState.changeStrikerPlayer(newPlayer, isStriker);
+              });
+            },
             child: const Text('Select', style: TextStyle(color: AppColors.textDark, fontSize: 11)),
           ),
         ],
@@ -555,6 +581,60 @@ class LiveScoringScreen extends StatelessWidget {
   }
 
   Widget _buildScoringPad(BuildContext context, CricketMatch match, AppState appState) {
+    if (match.status == MatchStatus.completed) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.emoji_events_rounded,
+              color: AppColors.pitchGold,
+              size: 56,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'MATCH COMPLETED',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              match.resultString,
+              style: const TextStyle(
+                color: AppColors.accentCrease,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+              softWrap: true,
+              maxLines: null,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                appState.setActiveScoringMatch(null);
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
+              label: const Text('Return to Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTurf,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final hasPlayers = match.striker != null && match.nonStriker != null && match.currentBowler != null;
 
     return Column(
@@ -875,6 +955,9 @@ class LiveScoringScreen extends StatelessWidget {
                         ? 'WICKET! Run Out! ${outBatsman.name} is run out after completing $runs run(s).'
                         : 'WICKET! ${outBatsman.name} is out ($wicketType) bowled by ${match.currentBowler!.name}.';
                     
+                    // Determine if striker is out BEFORE recordBall resets the innings/strikers
+                    final isStrikerOut = match.striker != null && outBatsman.id == match.striker!.id;
+
                     // Record Wicket event
                     appState.recordBall(match.id, BallEvent(
                       runs: runs,
@@ -886,10 +969,29 @@ class LiveScoringScreen extends StatelessWidget {
                     ));
                     
                     // Replace out batsman in UI
-                    final isStrikerOut = outBatsman.id == match.striker!.id;
-                    appState.changeStrikerPlayer(Player(id: 'dummy', name: 'Select Batsman', role: '-', battingStyle: '-', bowlingStyle: '-'), isStrikerOut);
+                    appState.changeStrikerPlayer(null, isStrikerOut);
 
                     Navigator.pop(context);
+
+                    // Automatically prompt to choose the next batsman of the batting team (if same innings and match still live)
+                    final latestMatch = appState.matches.firstWhere((m) => m.id == match.id, orElse: () => match);
+                    if (latestMatch.status == MatchStatus.live && latestMatch.currentInningsNum == match.currentInningsNum) {
+                      final battingTeam = latestMatch.battingTeam;
+                      final otherBatsman = isStrikerOut ? latestMatch.nonStriker : latestMatch.striker;
+                      final dismissedNames = latestMatch.currentInnings.events
+                          .where((e) => e.isWicket)
+                          .map((e) => e.batsmanName)
+                          .toSet();
+                      final availablePlayers = battingTeam.players.where((p) {
+                        return p.id != otherBatsman?.id && !dismissedNames.contains(p.name);
+                      }).toList();
+
+                      if (availablePlayers.isNotEmpty) {
+                        _showPlayerSelector(context, availablePlayers, (newPlayer) {
+                          appState.changeStrikerPlayer(newPlayer, isStrikerOut);
+                        });
+                      }
+                    }
                   },
                   child: const Text('RECORD WICKET', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),

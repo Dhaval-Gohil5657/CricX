@@ -110,15 +110,46 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 
-                ListView.builder(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: completedMatches.length > 5 ? 5 : completedMatches.length,
-                  itemBuilder: (context, index) {
-                    return _buildRecentMatchCard(context, completedMatches[index]);
-                  },
-                ),
+                if (completedMatches.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderGreen, width: 1.5),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.emoji_events_outlined,
+                          color: AppColors.textDarkMuted,
+                          size: 40,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'No recent matches played yet',
+                          style: TextStyle(
+                            color: AppColors.textDarkMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: completedMatches.length > 5 ? 5 : completedMatches.length,
+                    itemBuilder: (context, index) {
+                      return _buildRecentMatchCard(context, completedMatches[index]);
+                    },
+                  ),
               ],
             ),
           ),
@@ -136,7 +167,6 @@ class DashboardScreen extends StatelessWidget {
 
     return Container(
       width: isFullWidth ? double.infinity : MediaQuery.of(context).size.width * 0.82,
-      height: role == UserRole.scorer ? 185 : 150,
       margin: isFullWidth ? EdgeInsets.zero : const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -175,7 +205,7 @@ class DashboardScreen extends StatelessWidget {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(vertical: 14,horizontal: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -198,8 +228,6 @@ class DashboardScreen extends StatelessWidget {
                                     fontWeight: match.battingTeam.id == match.teamA.id ? FontWeight.bold : FontWeight.w500,
                                     color: match.battingTeam.id == match.teamA.id ? AppColors.textDark : AppColors.textDarkSecondary,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (match.battingTeam.id == match.teamA.id) ...[
@@ -294,8 +322,6 @@ class DashboardScreen extends StatelessWidget {
                                     fontWeight: match.battingTeam.id == match.teamB.id ? FontWeight.bold : FontWeight.w500,
                                     color: match.battingTeam.id == match.teamB.id ? AppColors.textDark : AppColors.textDarkSecondary,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -328,7 +354,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
 
                 if (!isFirstInnings && innings1 != null) ...[
-                  const Spacer(),
+                  SizedBox(height: 3),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -337,7 +363,7 @@ class DashboardScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'Target: ${innings1.runs + 1} | Need ${innings1.runs + 1 - currentInnings.runs} off ${(match.totalOvers * 6) - currentInnings.ballsBowled} balls',
+                        'Target: ${innings1.runs + 1} | Need ${(innings1.runs + 1 - currentInnings.runs) <= 0 ? 0 : (innings1.runs + 1 - currentInnings.runs)} off ${(match.totalOvers * 6) - currentInnings.ballsBowled} balls',
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -347,7 +373,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-                const Spacer(),
+                SizedBox(height: 8),
                 
                 // Batsman & Bowler footer info
                 Row(
@@ -513,8 +539,8 @@ class DashboardScreen extends StatelessWidget {
           if (role == UserRole.scorer)
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accentCrease,
-                foregroundColor: Colors.black,
+                backgroundColor: AppColors.primaryTurf,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

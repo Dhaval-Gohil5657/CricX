@@ -16,12 +16,79 @@ class CreateMatchScreen extends StatefulWidget {
 class _CreateMatchScreenState extends State<CreateMatchScreen> {
   final _formKey = GlobalKey<FormState>();
   final _venueController = TextEditingController();
+  final _customOversController = TextEditingController();
   
   Team? _teamA;
   Team? _teamB;
   int _selectedOvers = 10;
+  bool _isManualOvers = false;
   
-  final List<int> _overOptions = [5, 8, 10, 12, 15, 20];
+  final List<int> _overOptions = [5, 10, 20, 30, 50];
+
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 18, minute: 0);
+
+  Future<void> _selectDate(BuildContext context) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate.isBefore(today) ? today : _selectedDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365 * 5)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryTurf,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textDark,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryTurf,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryTurf,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textDark,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryTurf,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,22 +219,27 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Overs Selection (Dropdown)
+              // Overs Selection Grid
               const Text('NUMBER OF OVERS', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 40,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _overOptions.length,
-                  itemBuilder: (context, index) {
-                    final over = _overOptions[index];
-                    final isSelected = _selectedOvers == over;
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 3,
+                childAspectRatio: 2.8,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                children: [
+                  ..._overOptions.map((over) {
+                    final isSelected = !_isManualOvers && _selectedOvers == over;
                     return GestureDetector(
-                      onTap: () => setState(() => _selectedOvers = over),
+                      onTap: () {
+                        setState(() {
+                          _selectedOvers = over;
+                          _isManualOvers = false;
+                        });
+                      },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
                           color: isSelected ? AppColors.accentCrease.withOpacity(0.2) : AppColors.cardBg,
                           borderRadius: BorderRadius.circular(8),
@@ -187,8 +259,157 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                         ),
                       ),
                     );
+                  }).toList(),
+                  // Manual option button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isManualOvers = true;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _isManualOvers ? AppColors.accentCrease.withOpacity(0.2) : AppColors.cardBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _isManualOvers ? AppColors.accentCrease : AppColors.borderGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Manual',
+                        style: TextStyle(
+                          color: _isManualOvers ? AppColors.accentCrease : AppColors.textDarkSecondary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (_isManualOvers) ...[
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _customOversController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                  decoration: InputDecoration(
+                    labelText: 'Enter Overs (e.g. 45)',
+                    labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                    filled: true,
+                    fillColor: AppColors.cardBg,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.borderGreen),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.borderGreen),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.accentCrease),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.redAccent),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Colors.redAccent),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter number of overs';
+                    }
+                    final overs = int.tryParse(value);
+                    if (overs == null || overs <= 0) {
+                      return 'Enter a valid number of overs';
+                    }
+                    if (overs > 100) {
+                      return 'Overs cannot exceed 100';
+                    }
+                    return null;
                   },
                 ),
+              ],
+              const SizedBox(height: 20),
+
+              // Date & Time Picker
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('MATCH DATE', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        InkWell(
+                          onTap: () => _selectDate(context),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBg,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.borderGreen),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_rounded, color: AppColors.accentCrease, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}",
+                                    style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('START TIME', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        InkWell(
+                          onTap: () => _selectTime(context),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBg,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.borderGreen),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.access_time_rounded, color: AppColors.accentCrease, size: 16),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _selectedTime.format(context),
+                                    style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
 
@@ -246,6 +467,13 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     );
   }
 
+  @override
+  void dispose() {
+    _venueController.dispose();
+    _customOversController.dispose();
+    super.dispose();
+  }
+
   void _createMatch() {
     if (!_formKey.currentState!.validate()) return;
     
@@ -256,14 +484,26 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       return;
     }
 
+    final combinedDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+
+    final finalOvers = _isManualOvers
+        ? (int.tryParse(_customOversController.text.trim()) ?? 10)
+        : _selectedOvers;
+
     final id = 'm_new_${DateTime.now().millisecondsSinceEpoch}';
     final newMatch = CricketMatch(
       id: id,
       teamA: _teamA!,
       teamB: _teamB!,
-      totalOvers: _selectedOvers,
+      totalOvers: finalOvers,
       venue: _venueController.text.trim(),
-      matchDate: DateTime.now(),
+      matchDate: combinedDateTime,
     );
 
     Provider.of<AppState>(context, listen: false).createMatch(newMatch);

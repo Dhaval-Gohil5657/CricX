@@ -310,6 +310,8 @@ class TournamentDetailScreen extends StatelessWidget {
                     color: match.status == MatchStatus.completed ? AppColors.woodMahogany : AppColors.textDarkMuted,
                     fontSize: 12,
                   ),
+                  softWrap: true,
+                  maxLines: null,
                 ),
               ),
               trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.primaryTurf, size: 14),

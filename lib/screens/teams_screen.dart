@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/team_model.dart';
+import '../models/player_model.dart';
 import '../constants/app_colors.dart';
+import 'scorer/create_team_screen.dart';
 
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({super.key});
@@ -21,8 +23,81 @@ class _TeamsScreenState extends State<TeamsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+      body: teams.isEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryTurf.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.sports_cricket_rounded,
+                        color: AppColors.primaryTurf,
+                        size: 64,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'No Teams Created',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Create a team and add players to start scheduling and scoring matches.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final role = appState.currentRole;
+                        if (role == UserRole.scorer || role == UserRole.organizer) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CreateTeamScreen(),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please switch your role to Scorer or Organizer to create teams.'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.add_rounded, color: Colors.white),
+                      label: const Text('Create New Team'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTurf,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
         itemCount: teams.length,
         physics: const BouncingScrollPhysics(),
         itemBuilder: (context, index) {
@@ -109,31 +184,67 @@ class _TeamsScreenState extends State<TeamsScreen> {
                         ),
                         const SizedBox(height: 20),
                         
-                        // Squad Header
-                        const Text(
-                          'SQUAD PLAYERS',
-                          style: TextStyle(
-                            color: AppColors.textDarkSecondary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'SQUAD PLAYERS',
+                              style: TextStyle(
+                                color: AppColors.textDarkSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            if (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer)
+                              TextButton.icon(
+                                onPressed: () => _showAddPlayerDialog(context, team, appState),
+                                icon: const Icon(Icons.add_rounded, size: 16, color: AppColors.primaryTurf),
+                                label: const Text(
+                                  'Add Player',
+                                  style: TextStyle(
+                                    color: AppColors.primaryTurf,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         
                         // Players List
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: team.players.length,
-                          itemBuilder: (context, pIndex) {
-                            final player = team.players[pIndex];
-                            return Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: const BoxDecoration(
-                                border: Border(bottom: BorderSide(color: AppColors.dividerGreen, width: 0.5)),
-                              ),
-                              child: Row(
+                        if (team.players.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              'No players added to squad yet.',
+                              style: TextStyle(color: AppColors.textDarkMuted, fontSize: 12),
+                            ),
+                          )
+                        else
+                          ListView.builder(
+                            padding: EdgeInsets.zero,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: team.players.length,
+                            itemBuilder: (context, pIndex) {
+                              final player = team.players[pIndex];
+                              final isLast = pIndex == team.players.length - 1;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: isLast
+                                        ? BorderSide.none
+                                        : const BorderSide(color: AppColors.dividerGreen, width: 0.5),
+                                  ),
+                                ),
+                                child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Column(
@@ -205,6 +316,213 @@ class _TeamsScreenState extends State<TeamsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showAddPlayerDialog(BuildContext context, Team team, AppState appState) {
+    final nameController = TextEditingController();
+    String selectedRole = 'Batsman';
+    String selectedBatting = 'Right-hand bat';
+    String selectedBowling = 'Right-arm medium';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: AppColors.borderWood, width: 1),
+              ),
+              title: Text(
+                'Add Player to ${team.name}',
+                style: const TextStyle(
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Player Name',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
+                      decoration: InputDecoration(
+                        labelText: 'Role',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper']
+                          .map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(color: AppColors.textDark))))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedRole = val;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedBatting,
+                      decoration: InputDecoration(
+                        labelText: 'Batting Style',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: ['Right-hand bat', 'Left-hand bat', 'None']
+                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(color: AppColors.textDark))))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedBatting = val;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedBowling,
+                      decoration: InputDecoration(
+                        labelText: 'Bowling Style',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.borderWood),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: [
+                        'Right-arm fast',
+                        'Right-arm medium',
+                        'Right-arm spin',
+                        'Left-arm fast',
+                        'Left-arm medium',
+                        'Left-arm spin',
+                        'None',
+                      ]
+                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(color: AppColors.textDark))))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedBowling = val;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a player name.'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    final player = Player(
+                      id: 'p_${DateTime.now().millisecondsSinceEpoch}',
+                      name: name,
+                      role: selectedRole,
+                      battingStyle: selectedBatting == 'None' ? '-' : selectedBatting,
+                      bowlingStyle: selectedBowling == 'None' ? '-' : selectedBowling,
+                    );
+                    
+                    appState.addPlayerToTeam(team.id, player);
+                    Navigator.pop(context);
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('$name added to ${team.name}!'),
+                        backgroundColor: AppColors.accentCrease,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

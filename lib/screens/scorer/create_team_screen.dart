@@ -184,6 +184,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                 )
               else
                 ListView.builder(
+                  padding: EdgeInsets.zero,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _addedPlayers.length,
@@ -265,13 +266,21 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                     const SizedBox(height: 12),
                     
                     // Batting Style
-                    _buildDropdown('Batting Style', _selectedBattingStyle, ['Right-hand bat', 'Left-hand bat'], (val) {
+                    _buildDropdown('Batting Style', _selectedBattingStyle, ['Right-hand bat', 'Left-hand bat', 'None'], (val) {
                       if (val != null) setState(() => _selectedBattingStyle = val);
                     }),
                     const SizedBox(height: 12),
 
                     // Bowling Style
-                    _buildDropdown('Bowling Style', _selectedBowlingStyle, ['Right-arm medium', 'Right-arm spin', 'Left-arm orthodox', 'None'], (val) {
+                    _buildDropdown('Bowling Style', _selectedBowlingStyle, [
+                      'Right-arm fast',
+                      'Right-arm medium',
+                      'Right-arm spin',
+                      'Left-arm fast',
+                      'Left-arm medium',
+                      'Left-arm spin',
+                      'None',
+                    ], (val) {
                       if (val != null) setState(() => _selectedBowlingStyle = val);
                     }),
                     const SizedBox(height: 16),
@@ -329,7 +338,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
       id: id,
       name: name,
       role: _selectedPlayerRole,
-      battingStyle: _selectedBattingStyle,
+      battingStyle: _selectedBattingStyle == 'None' ? '-' : _selectedBattingStyle,
       bowlingStyle: _selectedBowlingStyle == 'None' ? '-' : _selectedBowlingStyle,
     );
 
@@ -361,11 +370,6 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
 
     final appState = Provider.of<AppState>(context, listen: false);
     appState.addTeam(newTeam);
-    
-    // Register players in global list too
-    for (var player in _addedPlayers) {
-      appState.players.add(player);
-    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Team "${newTeam.name}" created successfully!')),
