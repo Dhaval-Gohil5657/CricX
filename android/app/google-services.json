@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "150586901568",
+    "project_id": "cricx-54adf",
+    "storage_bucket": "cricx-54adf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:150586901568:android:101c6a1866d73f6a7ccba5",
+        "android_client_info": {
+          "package_name": "karma.cricx"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "150586901568-jsspd9b52h98rgio6lakaqkb885gso9f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "karma.cricx",
+            "certificate_hash": "c4d3980f45ead2326928ccaaecd69a955f6b0e63"
+          }
+        },
+        {
+          "client_id": "150586901568-jl2pinrk0pqi4ut5m71hr6cq61df5tdg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJqQP12-yrSn3DPha66dmcBoU1H4IsSso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "150586901568-jl2pinrk0pqi4ut5m71hr6cq61df5tdg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

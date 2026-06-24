@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../state/app_state.dart';
 import 'dashboard_screen.dart';
 import 'matches_screen.dart';
@@ -7,6 +8,7 @@ import 'teams_screen.dart';
 import 'profile_screen.dart';
 import 'scorer/scorer_dashboard.dart';
 import 'organizer/organizer_dashboard.dart';
+import 'welcome_screen.dart';
 import '../constants/app_colors.dart';
 
 
@@ -161,6 +163,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ],
         ),
         actions: [
+          if (_selectedIndex == screens.length - 1 && FirebaseAuth.instance.currentUser != null)
+            IconButton(
+              icon: const Icon(Icons.logout_rounded, color: Colors.white),
+              tooltip: 'Sign Out',
+              onPressed: () async {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                try {
+                  await FirebaseAuth.instance.signOut();
+                  appState.changeRole(UserRole.guest);
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Logged out successfully.'),
+                      backgroundColor: AppColors.accentCrease,
+                    ),
+                  );
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const WelcomeScreen(),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Logout failed: $e'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              },
+            ),
           // Premium Dynamic Role Switcher Badge in App Bar
           Padding(
             padding: const EdgeInsets.only(right: 12.0),

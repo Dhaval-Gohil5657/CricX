@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../state/app_state.dart';
 import 'main_navigation_screen.dart';
+import 'login_screen.dart';
 import '../constants/app_colors.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -198,17 +200,26 @@ class WelcomeScreen extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16.0),
           onTap: () {
-            appState.changeRole(role);
-            Future.delayed(Duration.zero, () {
-              if (context.mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MainNavigationScreen(),
-                  ),
-                );
-              }
-            });
+            if (role == UserRole.guest || FirebaseAuth.instance.currentUser != null) {
+              appState.changeRole(role);
+              Future.delayed(Duration.zero, () {
+                if (context.mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainNavigationScreen(),
+                    ),
+                  );
+                }
+              });
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoginScreen(targetRole: role),
+                ),
+              );
+            }
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
