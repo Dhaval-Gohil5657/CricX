@@ -111,11 +111,13 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                         width: 44,
                         margin: const EdgeInsets.only(right: 10),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.accentCrease.withOpacity(0.2) : AppColors.cardBg,
+                          color: isSelected
+                              ? Color(_selectedColorHex).withOpacity(0.15)
+                              : AppColors.cardBg,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? AppColors.accentCrease : AppColors.borderGreen,
-                            width: 2,
+                            color: isSelected ? Color(_selectedColorHex) : AppColors.borderGreen,
+                            width: isSelected ? 1.5 : 1,
                           ),
                         ),
                         alignment: Alignment.center,
@@ -142,14 +144,29 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                       onTap: () => setState(() => _selectedColorHex = colorHex),
                       child: Container(
                         width: 36,
+                        height: 36,
                         margin: const EdgeInsets.only(right: 12),
+                        padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
-                          color: Color(colorHex),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? Colors.white : Colors.transparent,
-                            width: 2,
+                            color: isSelected ? Color(colorHex) : Colors.transparent,
+                            width: 1.5,
                           ),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(colorHex),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: isSelected
+                              ? Icon(
+                                  Icons.check_rounded,
+                                  color: colorHex == 0xFFFFEB3B ? Colors.black87 : Colors.white,
+                                  size: 16,
+                                )
+                              : null,
                         ),
                       ),
                     );

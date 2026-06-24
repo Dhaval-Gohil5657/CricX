@@ -643,7 +643,7 @@ class DashboardScreen extends StatelessWidget {
         _buildActionItem(
           context,
           icon: Icons.sports_cricket_rounded,
-          label: 'Create Match',
+          label: 'Schedule Match',
           color: AppColors.accentCrease,
           onTap: () {
             Navigator.push(
