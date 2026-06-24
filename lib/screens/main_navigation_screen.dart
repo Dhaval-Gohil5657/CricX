@@ -86,11 +86,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       });
     }
 
-    // Add Profile tab
+    // Add Players tab
     screens.add(const ProfileScreen());
     navItems.add({
-      'icon': Icons.account_circle_rounded,
-      'label': 'Profile',
+      'icon': Icons.person_pin,
+      'label': 'Players',
     });
 
     // Safeguard index out of bounds when changing roles

@@ -6,6 +6,7 @@ import 'scorecard_screen.dart';
 import 'scorer/live_scoring_screen.dart';
 import 'scorer/create_match_screen.dart';
 import 'scorer/create_team_screen.dart';
+import 'scorer/toss_setup_screen.dart';
 import 'organizer/create_tournament_screen.dart';
 import '../constants/app_colors.dart';
 
@@ -18,6 +19,7 @@ class DashboardScreen extends StatelessWidget {
     final role = appState.currentRole;
     final liveMatches = appState.matches.where((m) => m.status == MatchStatus.live).toList();
     final completedMatches = appState.matches.where((m) => m.status == MatchStatus.completed).toList();
+    final upcomingMatches = appState.matches.where((m) => m.status == MatchStatus.upcoming).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -99,57 +101,108 @@ class DashboardScreen extends StatelessWidget {
                 _buildQuickActions(context, role, appState),
                 const SizedBox(height: 24),
                 
-                // Recent Matches (Completed)
-                const Text(
-                  'RECENT MATCHES',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                if (completedMatches.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBg,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.borderGreen, width: 1.5),
+                // Scorer / Organizer sees Next Matches, Guest / Player sees Recent Matches
+                if (role == UserRole.scorer || role == UserRole.organizer) ...[
+                  const Text(
+                    'NEXT MATCHES',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.emoji_events_outlined,
-                          color: AppColors.textDarkMuted,
-                          size: 40,
-                        ),
-                        SizedBox(height: 12),
-                        Text(
-                          'No recent matches played yet',
-                          style: TextStyle(
+                  ),
+                  const SizedBox(height: 12),
+                  if (upcomingMatches.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderGreen, width: 1.5),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_month_outlined,
                             color: AppColors.textDarkMuted,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                            size: 40,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                          SizedBox(height: 12),
+                          Text(
+                            'No matches scheduled yet',
+                            style: TextStyle(
+                              color: AppColors.textDarkMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: upcomingMatches.length > 5 ? 5 : upcomingMatches.length,
+                      itemBuilder: (context, index) {
+                        return _buildUpcomingMatchCard(context, upcomingMatches[index], appState);
+                      },
                     ),
-                  )
-                else
-                  ListView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: completedMatches.length > 5 ? 5 : completedMatches.length,
-                    itemBuilder: (context, index) {
-                      return _buildRecentMatchCard(context, completedMatches[index]);
-                    },
+                ] else ...[
+                  const Text(
+                    'RECENT MATCHES',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  const SizedBox(height: 12),
+                  if (completedMatches.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borderGreen, width: 1.5),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.emoji_events_outlined,
+                            color: AppColors.textDarkMuted,
+                            size: 40,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'No recent matches played yet',
+                            style: TextStyle(
+                              color: AppColors.textDarkMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: completedMatches.length > 5 ? 5 : completedMatches.length,
+                      itemBuilder: (context, index) {
+                        return _buildRecentMatchCard(context, completedMatches[index]);
+                      },
+                    ),
+                ],
               ],
             ),
           ),
@@ -925,6 +978,150 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingMatchCard(BuildContext context, CricketMatch match, AppState appState) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.borderWood.withOpacity(0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFDFBF7),
+            Color(0xFFFAF2E6),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  match.venue,
+                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                ),
+                Text(
+                  '${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}',
+                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Color(match.teamA.logoColorHex).withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 12)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              match.teamA.name,
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Color(match.teamB.logoColorHex).withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 12)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              match.teamB.name,
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  height: 35,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.woodMahogany,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
+                      );
+                    },
+                    icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                    label: const Text('START'),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: AppColors.dividerGreen, height: 16),
+            Text(
+              'Overs: ${match.totalOvers} Overs Match',
+              style: const TextStyle(
+                color: AppColors.woodMahogany,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -269,6 +269,153 @@ class AppState extends ChangeNotifier {
     _db.updateMatch(match);
   }
 
+  void undoLastBall(String matchId) {
+    final match = _matches.firstWhere((m) => m.id == matchId);
+    
+    if (match.status == MatchStatus.completed) {
+      final oldResultString = match.resultString;
+      match.status = MatchStatus.live;
+      match.resultString = '';
+      
+      final teamA = _teams.firstWhere((t) => t.id == match.teamA.id);
+      final teamB = _teams.firstWhere((t) => t.id == match.teamB.id);
+      teamA.matchesPlayed--;
+      teamB.matchesPlayed--;
+      if (oldResultString.contains(teamA.name)) {
+        teamA.matchesWon--;
+        teamB.matchesLost--;
+      } else if (oldResultString.contains(teamB.name)) {
+        teamB.matchesWon--;
+        teamA.matchesLost--;
+      }
+      _db.addTeam(teamA);
+      _db.addTeam(teamB);
+
+      for (var tournament in _tournaments) {
+        if (tournament.matches.any((m) => m.id == matchId)) {
+          tournament.updatePointsTable();
+          _db.updateTournament(tournament);
+        }
+      }
+
+      match.playerRuns.forEach((playerId, runs) {
+        final p = _players.firstWhere((pl) => pl.id == playerId);
+        p.matchesPlayed--;
+        p.runsScored -= runs;
+        final balls = match.playerBallsFaced[playerId] ?? 0;
+        p.ballsFaced -= balls;
+        _db.updatePlayerStats(p);
+      });
+
+      match.bowlerBallsBowled.forEach((bowlerId, balls) {
+        final p = _players.firstWhere((pl) => pl.id == bowlerId);
+        if (!match.playerRuns.containsKey(bowlerId)) {
+          p.matchesPlayed--;
+        }
+        p.ballsBowled -= balls;
+        p.runsConceded -= match.bowlerRunsConceded[bowlerId] ?? 0;
+        p.wicketsTaken -= match.bowlerWickets[bowlerId] ?? 0;
+        _db.updatePlayerStats(p);
+      });
+    }
+
+    var innings = match.currentInnings;
+    
+    // Check if we need to transition back from innings 2 to innings 1
+    if (match.currentInningsNum == 2 && innings.events.isEmpty && match.innings1 != null) {
+      match.currentInningsNum = 1;
+      match.innings2 = null;
+      innings = match.innings1!;
+    }
+    
+    if (innings.events.isEmpty) return;
+
+    final event = innings.events.removeLast();
+    innings.runs -= event.runsAddedToTeam;
+    if (event.isWicket) {
+      innings.wickets--;
+    }
+    if (event.countsAsBall) {
+      innings.ballsBowled--;
+    }
+
+    // 1. Revert over-end strike rotation and bowler clearing
+    final wasOverEnd = event.countsAsBall && (innings.ballsBowled + 1) % 6 == 0;
+    if (wasOverEnd) {
+      final temp = match.striker;
+      match.striker = match.nonStriker;
+      match.nonStriker = temp;
+      
+      final bowlingTeam = match.bowlingTeam;
+      try {
+        final prevBowler = bowlingTeam.players.firstWhere((p) => p.name == event.bowlerName);
+        match.currentBowler = prevBowler;
+      } catch (_) {}
+    }
+
+    // 2. Revert run-based strike rotation
+    if (event.runs % 2 != 0) {
+      final temp = match.striker;
+      match.striker = match.nonStriker;
+      match.nonStriker = temp;
+    }
+
+    // 3. Revert batsman stats
+    final strikerId = match.striker?.id;
+    if (strikerId != null) {
+      match.playerRuns[strikerId] = (match.playerRuns[strikerId] ?? 0) - event.runsAddedToBatsman;
+      if (!event.isWide) {
+        match.playerBallsFaced[strikerId] = (match.playerBallsFaced[strikerId] ?? 0) - 1;
+      }
+    }
+
+    // 4. Revert bowler stats
+    final bowlerId = match.currentBowler?.id;
+    if (bowlerId != null) {
+      final runsConceded = event.isLegBye || event.isPenalty || event.isBye ? 0 : event.runsAddedToTeam;
+      match.bowlerRunsConceded[bowlerId] = (match.bowlerRunsConceded[bowlerId] ?? 0) - runsConceded;
+      if (event.countsAsBall) {
+        match.bowlerBallsBowled[bowlerId] = (match.bowlerBallsBowled[bowlerId] ?? 0) - 1;
+      }
+      if (event.isWicket && event.wicketType != 'Run Out') {
+        match.bowlerWickets[bowlerId] = (match.bowlerWickets[bowlerId] ?? 0) - 1;
+      }
+    }
+
+    // 5. Revert wicket replacement/dismissal
+    if (event.isWicket) {
+      final battingTeam = match.battingTeam;
+      Player? outBatsman;
+      try {
+        outBatsman = battingTeam.players.firstWhere((p) => p.name == event.batsmanName);
+      } catch (_) {}
+      
+      if (outBatsman != null) {
+        if (match.striker == null) {
+          match.striker = outBatsman;
+        } else if (match.nonStriker == null) {
+          match.nonStriker = outBatsman;
+        } else {
+          final order = innings.battingOrder;
+          if (order.isNotEmpty) {
+            final replacementId = order.last;
+            if (match.striker?.id == replacementId) {
+              match.striker = outBatsman;
+              order.removeLast();
+            } else if (match.nonStriker?.id == replacementId) {
+              match.nonStriker = outBatsman;
+              order.removeLast();
+            }
+          }
+        }
+      }
+    }
+
+    _activeScoringMatch = match;
+    _db.updateMatch(match);
+    notifyListeners();
+  }
+
   void changeStriker() {
     if (_activeScoringMatch != null) {
       final temp = _activeScoringMatch!.striker;

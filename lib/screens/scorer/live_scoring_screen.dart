@@ -637,6 +637,13 @@ class LiveScoringScreen extends StatelessWidget {
 
     final hasPlayers = match.striker != null && match.nonStriker != null && match.currentBowler != null;
 
+    // Row 4: OUT button & UNDO button
+    final canUndo = match.currentInnings.events.isNotEmpty ||
+        (match.currentInningsNum == 2 &&
+            match.innings2?.events.isEmpty == true &&
+            match.innings1 != null &&
+            match.innings1!.events.isNotEmpty);
+
     return Column(
       children: [
         GridView.count(
@@ -691,43 +698,89 @@ class LiveScoringScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        // Row 4: Full-width OUT button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: hasPlayers ? Colors.red.shade900 : Colors.grey.shade200,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: hasPlayers ? Colors.transparent : AppColors.borderGreen,
-                  width: 1,
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasPlayers ? Colors.red.shade900 : Colors.grey.shade200,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: hasPlayers ? Colors.transparent : AppColors.borderGreen,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  onPressed: hasPlayers ? () => _showWicketDialog(context, match, appState) : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select striker, non-striker, and bowler first!')),
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.sports_baseball, color: hasPlayers ? Colors.white : Colors.black38, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'OUT (WICKET)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: hasPlayers ? Colors.white : Colors.black38,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            onPressed: hasPlayers ? () => _showWicketDialog(context, match, appState) : () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please select striker, non-striker, and bowler first!')),
-              );
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.sports_baseball, color: hasPlayers ? Colors.white : Colors.black38, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  'OUT (WICKET)',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: hasPlayers ? Colors.white : Colors.black38,
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 1,
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: canUndo ? Colors.blueGrey.shade800 : Colors.grey.shade200,
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: canUndo ? Colors.transparent : AppColors.borderGreen,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  onPressed: canUndo ? () => _undoLastAction(context, match, appState) : null,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.undo_rounded,
+                        color: canUndo ? Colors.white : Colors.black38,
+                        size: 18,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        'Undo',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: canUndo ? Colors.white : Colors.black38,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -797,6 +850,16 @@ class LiveScoringScreen extends StatelessWidget {
       bowlerName: match.currentBowler!.name,
       description: desc,
     ));
+  }
+
+  void _undoLastAction(BuildContext context, CricketMatch match, AppState appState) {
+    appState.undoLastBall(match.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Last action undone successfully.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showPlayerSelector(BuildContext context, List<Player> players, Function(Player) onSelected) {

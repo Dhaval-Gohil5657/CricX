@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/match_model.dart';
-import '../models/team_model.dart';
 import '../models/player_model.dart';
 import '../state/app_state.dart';
 import 'package:provider/provider.dart';
@@ -28,8 +27,6 @@ class ScorecardScreen extends StatelessWidget {
         : (currentMatch.innings1 != null 
             ? (currentMatch.innings1!.teamId == currentMatch.teamA.id ? currentMatch.teamB : currentMatch.teamA) 
             : currentMatch.teamB);
-    final String label1 = team1.name;
-    final String label2 = team2.name;
 
     return DefaultTabController(
       length: 2,
@@ -88,8 +85,24 @@ class ScorecardScreen extends StatelessWidget {
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 13.0),
                 tabs: [
-                  Tab(text: label1),
-                  Tab(text: label2),
+                  Tab(
+                    child: Text(
+                      team1.name,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(height: 1.1),
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      team2.name,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(height: 1.1),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -172,105 +185,185 @@ class ScorecardScreen extends StatelessWidget {
   }
 
   Widget _buildMatchOverviewCard(CricketMatch match, AppState appState) {
+    final runsA = match.teamAInnings?.runs;
+    final wicketsA = match.teamAInnings?.wickets;
+    final oversA = match.teamAInnings?.oversCompleted;
+    final scoreAStr = runsA != null ? '$runsA/$wicketsA' : 'Yet to Bat';
+    final oversAStr = oversA != null ? '($oversA Ov)' : '';
+
+    final runsB = match.teamBInnings?.runs;
+    final wicketsB = match.teamBInnings?.wickets;
+    final oversB = match.teamBInnings?.oversCompleted;
+    final scoreBStr = runsB != null ? '$runsB/$wicketsB' : 'Yet to Bat';
+    final oversBStr = oversB != null ? '($oversB Ov)' : '';
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderGreen, width: 1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderGreen, width: 1.5),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 match.venue,
-                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 12),
+                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
               ),
               Text(
                 '${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year}',
-                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 12),
+                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
               ),
             ],
           ),
-          const Divider(color: AppColors.borderGreen, height: 20),
+          const SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Team A (Left aligned completely)
               Expanded(
-                child: _buildOverviewTeam(match.teamA, match.teamAInnings?.runs, match.teamAInnings?.wickets, match.teamAInnings?.oversCompleted),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Color(match.teamA.logoColorHex).withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 18)),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          match.teamA.abbreviation.toUpperCase(),
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          scoreAStr,
+                          style: TextStyle(
+                            color: runsA != null ? AppColors.accentCrease : AppColors.textDarkMuted,
+                            fontWeight: FontWeight.bold,
+                            fontSize: runsA != null ? 15 : 11,
+                          ),
+                        ),
+                        if (oversAStr.isNotEmpty)
+                          Text(
+                            oversAStr,
+                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('VS', style: TextStyle(color: AppColors.textDarkDisabled, fontWeight: FontWeight.bold, fontSize: 18)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  match.status == MatchStatus.live ? 'LIVE' : 'VS',
+                  style: TextStyle(
+                    color: match.status == MatchStatus.live ? Colors.redAccent : AppColors.textDarkDisabled,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
               ),
+              // Team B (Right aligned completely)
               Expanded(
-                child: _buildOverviewTeam(match.teamB, match.teamBInnings?.runs, match.teamBInnings?.wickets, match.teamBInnings?.oversCompleted),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          scoreBStr,
+                          style: TextStyle(
+                            color: runsB != null ? AppColors.accentCrease : AppColors.textDarkMuted,
+                            fontWeight: FontWeight.bold,
+                            fontSize: runsB != null ? 15 : 11,
+                          ),
+                        ),
+                        if (oversBStr.isNotEmpty)
+                          Text(
+                            oversBStr,
+                            style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Color(match.teamB.logoColorHex).withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 18)),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          match.teamB.abbreviation.toUpperCase(),
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-          const Divider(color: AppColors.borderGreen, height: 20),
-          Text(
-            match.status == MatchStatus.upcoming
-                ? 'Match starting soon'
-                : (match.tossWinnerId != null
-                    ? '${appState.teams.firstWhere((t) => t.id == match.tossWinnerId).name} won the toss & elected to ${match.tossDecision}'
-                    : 'Toss details not updated'),
-            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
-            textAlign: TextAlign.center,
-            softWrap: true,
-            maxLines: null,
           ),
           if (match.status == MatchStatus.completed) ...[
             const SizedBox(height: 8),
             Text(
               match.resultString,
-              style: const TextStyle(color: AppColors.pitchGold, fontSize: 14, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.pitchGold, fontSize: 12, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
               softWrap: true,
-              maxLines: null,
+            ),
+          ] else if (match.tossWinnerId != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${appState.teams.firstWhere((t) => t.id == match.tossWinnerId).name} won toss & elected to ${match.tossDecision}',
+              style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11),
+              textAlign: TextAlign.center,
+              softWrap: true,
             ),
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildOverviewTeam(Team team, int? runs, int? wickets, double? overs) {
-    return Column(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Color(team.logoColorHex).withOpacity(0.15),
-            shape: BoxShape.circle,
-            border: Border.all(color: Color(team.logoColorHex).withOpacity(0.5), width: 1.5),
-          ),
-          alignment: Alignment.center,
-          child: Text(team.logoEmoji, style: const TextStyle(fontSize: 24)),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          team.name,
-          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          runs != null ? '$runs/$wickets' : 'Yet to Bat',
-          style: TextStyle(
-            color: runs != null ? AppColors.accentCrease : AppColors.textDarkMuted,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        if (overs != null)
-          Text(
-            '($overs Ov)',
-            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
-          ),
-      ],
     );
   }
 
@@ -576,8 +669,173 @@ class ScorecardScreen extends StatelessWidget {
             );
           },
         ),
+        if (innings.events.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const Text(
+            'BALL BY BALL TIMELINE',
+            style: TextStyle(
+              color: AppColors.primaryTurf,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildOversTimelineList(innings),
+        ],
       ],
     );
   }
 
+  Widget _buildOversTimelineList(MatchTeamInnings innings) {
+    final List<List<BallEvent>> oversList = [];
+    List<BallEvent> currentOver = [];
+    int legalBalls = 0;
+    
+    for (var event in innings.events) {
+      currentOver.add(event);
+      if (event.countsAsBall) {
+        legalBalls++;
+        if (legalBalls == 6) {
+          oversList.add(currentOver);
+          currentOver = [];
+          legalBalls = 0;
+        }
+      }
+    }
+    if (currentOver.isNotEmpty) {
+      oversList.add(currentOver);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGreen, width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: oversList.length,
+        separatorBuilder: (context, index) => const Divider(color: AppColors.dividerGreen, height: 12),
+        itemBuilder: (context, index) {
+          final overEvents = oversList[index];
+          final runs = overEvents.fold<int>(0, (sum, ev) => sum + ev.runsAddedToTeam);
+          final wickets = overEvents.where((ev) => ev.isWicket).length;
+          
+          String overSummary = '$runs run${runs != 1 ? 's' : ''}';
+          if (wickets > 0) {
+            overSummary += ', $wickets Wkt${wickets != 1 ? 's' : ''}';
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 90,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Over ${index + 1}',
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        overSummary,
+                        style: const TextStyle(
+                          color: AppColors.textDarkMuted,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: overEvents.map((ev) => _buildOverBallCircle(ev)).toList(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOverBallCircle(BallEvent event) {
+    Color bg = AppColors.logoBg;
+    Color textCol = Colors.black;
+    String text = '${event.runs}';
+
+    if (event.isWicket) {
+      bg = Colors.red;
+      text = event.runs > 0 ? 'W+${event.runs}' : 'W';
+      textCol = Colors.white;
+    } else if (event.isWide) {
+      bg = Colors.amber.shade900;
+      text = event.runs > 0 ? 'Wd+${event.runs}' : 'Wd';
+      textCol = Colors.white;
+    } else if (event.isNoBall) {
+      bg = Colors.orange.shade800;
+      text = event.runs > 0 ? 'Nb+${event.runs}' : 'Nb';
+      textCol = Colors.white;
+    } else if (event.isLegBye) {
+      bg = Colors.teal.shade800;
+      text = event.runs > 0 ? 'Lb+${event.runs}' : 'Lb';
+      textCol = Colors.white;
+    } else if (event.isBye) {
+      bg = Colors.cyan.shade800;
+      text = event.runs > 0 ? 'B+${event.runs}' : 'B';
+      textCol = Colors.white;
+    } else if (event.isPenalty) {
+      bg = Colors.deepPurple.shade800;
+      text = 'Pen+${event.runs}';
+      textCol = Colors.white;
+    } else if (event.runs == 4) {
+      bg = AppColors.woodLight;
+      text = '4';
+      textCol = Colors.black;
+    } else if (event.runs == 6) {
+      bg = AppColors.accentCrease;
+      text = '6';
+      textCol = Colors.black;
+    } else if (event.runs == 0) {
+      bg = AppColors.leatherWhite;
+      text = '•';
+      textCol = Colors.black;
+    }
+
+    return Container(
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        color: bg,
+        shape: BoxShape.circle,
+        border: bg == AppColors.leatherWhite 
+            ? Border.all(color: AppColors.borderGreen, width: 1) 
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textCol,
+          fontWeight: FontWeight.bold,
+          fontSize: text.length > 3 ? 7 : (text.length > 2 ? 8 : 10),
+        ),
+      ),
+    );
+  }
 }

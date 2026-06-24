@@ -219,7 +219,7 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
                   children: [
                     Expanded(
                       child: _buildSelectionTile(
-                        label: '👀 Bat First',
+                        label: '🏏 Bat First',
                         isSelected: _tossDecision == 'Bat',
                         onTap: () => setState(() => _tossDecision = 'Bat'),
                       ),
@@ -281,7 +281,11 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
               // Striker Dropdown
               const Text('Opening Batsman (Striker)', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
               const SizedBox(height: 6),
-              _buildPlayerDropdown(battingTeam!.players, _striker, (val) => setState(() => _striker = val)),
+              _buildPlayerDropdown(
+                battingTeam!.players.where((p) => p.id != _nonStriker?.id).toList(),
+                _striker,
+                (val) => setState(() => _striker = val),
+              ),
               const SizedBox(height: 16),
 
               // Non-Striker Dropdown
