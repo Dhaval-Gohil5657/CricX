@@ -16,9 +16,20 @@ class CreateTournamentScreen extends StatefulWidget {
 class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _venueController = TextEditingController(text: 'CricX Turf Arena');
+  final _oversController = TextEditingController(text: '10');
   
-  String _selectedType = 'League'; // 'League' or 'Knockout'
+  String _selectedPlayoffType = 'Direct Final'; // 'Direct Final' or 'Semifinals & Final'
+  DateTime _selectedStartDate = DateTime.now();
   final List<Team> _selectedTeams = [];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _venueController.dispose();
+    _oversController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,24 +88,121 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Type Selector
-              const Text('Tournament Type', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+              // Venue
+              TextFormField(
+                controller: _venueController,
+                style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                decoration: _buildInputDecoration('Default Venue (e.g. CricX Turf Arena)'),
+                validator: (value) => value == null || value.isEmpty ? 'Please enter default venue' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Overs & Start Date Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Overs
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Overs', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _oversController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                          decoration: _buildInputDecoration('Overs (e.g. 10)'),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Enter overs';
+                            final o = int.tryParse(value);
+                            if (o == null || o <= 0) return 'Invalid';
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Start Date
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Start Date', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+                        const SizedBox(height: 6),
+                        InkWell(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _selectedStartDate,
+                              firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                              lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: const ColorScheme.light(
+                                      primary: AppColors.primaryTurf,
+                                      onPrimary: Colors.white,
+                                      onSurface: AppColors.textDark,
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _selectedStartDate = picked;
+                              });
+                            }
+                          },
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBg,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.borderGreen),
+                            ),
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "${_selectedStartDate.day}/${_selectedStartDate.month}/${_selectedStartDate.year}",
+                                  style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                                ),
+                                const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryTurf),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Playoff stage selector
+              const Text('Playoff Stage Format', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
               const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
                     child: _buildSelectionTile(
-                      label: '🏆 League Format',
-                      isSelected: _selectedType == 'League',
-                      onTap: () => setState(() => _selectedType = 'League'),
+                      label: '🏆 Direct Final\n(Top 2 Teams)',
+                      isSelected: _selectedPlayoffType == 'Direct Final',
+                      onTap: () => setState(() => _selectedPlayoffType = 'Direct Final'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildSelectionTile(
-                      label: '⚔️ Knockout Format',
-                      isSelected: _selectedType == 'Knockout',
-                      onTap: () => setState(() => _selectedType = 'Knockout'),
+                      label: '⚡ Semi-Finals & Final\n(Top 4 Teams)',
+                      isSelected: _selectedPlayoffType == 'Semifinals & Final',
+                      onTap: () => setState(() => _selectedPlayoffType = 'Semifinals & Final'),
                     ),
                   ),
                 ],
@@ -191,7 +299,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryTurf.withOpacity(0.12) : AppColors.cardBg,
           borderRadius: BorderRadius.circular(10),
@@ -203,10 +311,11 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
         alignment: Alignment.center,
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected ? AppColors.primaryTurf : AppColors.textDark,
             fontWeight: FontWeight.bold,
-            fontSize: 13,
+            fontSize: 12,
           ),
         ),
       ),
@@ -242,21 +351,28 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
   void _saveTournament() {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedTeams.length < 2) {
+    final playoffReqTeams = _selectedPlayoffType == 'Semifinals & Final' ? 4 : 2;
+    if (_selectedTeams.length < playoffReqTeams) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least 2 teams to register')),
+        SnackBar(content: Text('Please select at least $playoffReqTeams teams for this format')),
       );
       return;
     }
 
     final id = 'tour_new_${DateTime.now().millisecondsSinceEpoch}';
+    final overs = int.tryParse(_oversController.text.trim()) ?? 10;
+
     final newTour = Tournament(
       id: id,
       name: _nameController.text.trim(),
-      type: _selectedType,
+      type: 'League',
       teams: List.from(_selectedTeams),
       matches: [],
       status: 'Ongoing',
+      playoffType: _selectedPlayoffType,
+      defaultOvers: overs,
+      startDate: _selectedStartDate,
+      venue: _venueController.text.trim(),
     );
 
     newTour.updatePointsTable();

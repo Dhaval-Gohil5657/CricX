@@ -514,6 +514,37 @@ class AppState extends ChangeNotifier {
       for (var tournament in _tournaments) {
         if (tournament.matches.any((m) => m.id == matchId)) {
           tournament.updatePointsTable();
+
+          // 1. Check if all league matches are completed, and no playoffs have been generated yet
+          final leagueMatches = tournament.matches.where((m) => m.id.contains('_league_')).toList();
+          final playoffMatches = tournament.matches.where((m) => m.id.contains('_sf') || m.id.contains('_final')).toList();
+          final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
+          
+          if (allLeagueCompleted && playoffMatches.isEmpty) {
+            _autoGeneratePlayoffs(tournament);
+          }
+          // 2. Check if Semifinals are completed, and Final is not generated yet
+          else if (playoffMatches.isNotEmpty && tournament.playoffType == 'Semifinals & Final') {
+            final sfMatches = playoffMatches.where((m) => m.id.contains('_sf')).toList();
+            final finalGenerated = playoffMatches.any((m) => m.id.contains('_final'));
+            final sfCompleted = sfMatches.length == 2 && sfMatches.every((m) => m.status == MatchStatus.completed);
+            
+            if (sfCompleted && !finalGenerated) {
+              _autoGenerateFinalFromSemis(tournament);
+            }
+          }
+          
+          // 3. Auto-detect tournament winner if Final match is completed
+          if (matchId.endsWith('_final')) {
+            if (match.resultString.contains(match.teamA.name)) {
+              tournament.winnerTeamId = match.teamA.id;
+              tournament.status = 'Completed';
+            } else if (match.resultString.contains(match.teamB.name)) {
+              tournament.winnerTeamId = match.teamB.id;
+              tournament.status = 'Completed';
+            }
+          }
+          
           _db.updateTournament(tournament);
         }
       }
@@ -560,6 +591,121 @@ class AppState extends ChangeNotifier {
     
     _db.createMatch(match);
     _db.updateTournament(t);
+  }
+
+  void addTournamentMatches(String tournamentId, List<CricketMatch> newMatches) {
+    final t = _tournaments.firstWhere((t) => t.id == tournamentId);
+    t.matches.addAll(newMatches);
+    t.updatePointsTable();
+    
+    for (var match in newMatches) {
+      _db.createMatch(match);
+    }
+    _db.updateTournament(t);
+  }
+
+  void _autoGeneratePlayoffs(Tournament tour) {
+    tour.updatePointsTable();
+    final standings = tour.pointsTable;
+    if (standings.length < 2) return;
+
+    final List<CricketMatch> playoffMatches = [];
+
+    if (tour.playoffType == 'Direct Final') {
+      final top1 = standings[0].team;
+      final top2 = standings[1].team;
+
+      final match = CricketMatch(
+        id: 'tour_m_${tour.id}_final',
+        teamA: top1,
+        teamB: top2,
+        totalOvers: tour.defaultOvers,
+        venue: tour.venue.isNotEmpty ? '${tour.venue} (Final)' : 'Final Venue',
+        matchDate: DateTime.now().add(const Duration(days: 1)),
+      );
+      playoffMatches.add(match);
+      
+      tour.matches.add(match);
+      _db.createMatch(match);
+    } else if (tour.playoffType == 'Semifinals & Final') {
+      if (standings.length < 4) return;
+      final top1 = standings[0].team;
+      final top2 = standings[1].team;
+      final top3 = standings[2].team;
+      final top4 = standings[3].team;
+
+      // SF1: Top 1 vs Top 2
+      final sf1 = CricketMatch(
+        id: 'tour_m_${tour.id}_sf1',
+        teamA: top1,
+        teamB: top2,
+        totalOvers: tour.defaultOvers,
+        venue: tour.venue.isNotEmpty ? '${tour.venue} (Semi-Final 1)' : 'SF1 Venue',
+        matchDate: DateTime.now().add(const Duration(days: 1)),
+      );
+
+      // SF2: Top 3 vs Top 4
+      final sf2 = CricketMatch(
+        id: 'tour_m_${tour.id}_sf2',
+        teamA: top3,
+        teamB: top4,
+        totalOvers: tour.defaultOvers,
+        venue: tour.venue.isNotEmpty ? '${tour.venue} (Semi-Final 2)' : 'SF2 Venue',
+        matchDate: DateTime.now().add(const Duration(days: 2)),
+      );
+
+      playoffMatches.addAll([sf1, sf2]);
+      
+      tour.matches.addAll([sf1, sf2]);
+      for (var match in playoffMatches) {
+        _db.createMatch(match);
+      }
+    }
+    
+    tour.updatePointsTable();
+    _db.updateTournament(tour);
+  }
+
+  void _autoGenerateFinalFromSemis(Tournament tour) {
+    CricketMatch? sf1;
+    CricketMatch? sf2;
+    try {
+      sf1 = tour.matches.firstWhere((m) => m.id.endsWith('_sf1'));
+      sf2 = tour.matches.firstWhere((m) => m.id.endsWith('_sf2'));
+    } catch (_) {}
+
+    if (sf1 == null || sf2 == null) return;
+    if (sf1.status != MatchStatus.completed || sf2.status != MatchStatus.completed) return;
+
+    Team? winner1;
+    if (sf1.resultString.contains(sf1.teamA.name)) {
+      winner1 = sf1.teamA;
+    } else if (sf1.resultString.contains(sf1.teamB.name)) {
+      winner1 = sf1.teamB;
+    }
+
+    Team? winner2;
+    if (sf2.resultString.contains(sf2.teamA.name)) {
+      winner2 = sf2.teamA;
+    } else if (sf2.resultString.contains(sf2.teamB.name)) {
+      winner2 = sf2.teamB;
+    }
+
+    if (winner1 == null || winner2 == null) return;
+
+    final finalMatch = CricketMatch(
+      id: 'tour_m_${tour.id}_final',
+      teamA: winner1,
+      teamB: winner2,
+      totalOvers: tour.defaultOvers,
+      venue: tour.venue.isNotEmpty ? '${tour.venue} (Final)' : 'Final Venue',
+      matchDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    
+    tour.matches.add(finalMatch);
+    _db.createMatch(finalMatch);
+    tour.updatePointsTable();
+    _db.updateTournament(tour);
   }
 }
 

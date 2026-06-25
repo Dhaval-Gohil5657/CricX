@@ -410,13 +410,8 @@ class LiveScoringScreen extends StatelessWidget {
               minimumSize: Size.zero,
             ),
             onPressed: () {
-              final otherBatsman = isStriker ? match.nonStriker : match.striker;
-              final dismissedNames = match.currentInnings.events
-                  .where((e) => e.isWicket)
-                  .map((e) => e.batsmanName)
-                  .toSet();
               final availablePlayers = battingTeam.players.where((p) {
-                return p.id != otherBatsman?.id && !dismissedNames.contains(p.name);
+                return !match.currentInnings.battingOrder.contains(p.id);
               }).toList();
 
               _showPlayerSelector(context, availablePlayers, (newPlayer) {
@@ -1040,13 +1035,8 @@ class LiveScoringScreen extends StatelessWidget {
                     final latestMatch = appState.matches.firstWhere((m) => m.id == match.id, orElse: () => match);
                     if (latestMatch.status == MatchStatus.live && latestMatch.currentInningsNum == match.currentInningsNum) {
                       final battingTeam = latestMatch.battingTeam;
-                      final otherBatsman = isStrikerOut ? latestMatch.nonStriker : latestMatch.striker;
-                      final dismissedNames = latestMatch.currentInnings.events
-                          .where((e) => e.isWicket)
-                          .map((e) => e.batsmanName)
-                          .toSet();
                       final availablePlayers = battingTeam.players.where((p) {
-                        return p.id != otherBatsman?.id && !dismissedNames.contains(p.name);
+                        return !latestMatch.currentInnings.battingOrder.contains(p.id);
                       }).toList();
 
                       if (availablePlayers.isNotEmpty) {

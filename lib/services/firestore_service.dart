@@ -381,7 +381,31 @@ class FirestoreService implements DatabaseService {
 
     final List<CricketMatch> tMatches = [];
     for (var mid in matchIds) {
-      final match = allMatches.firstWhere((m) => m.id == mid, orElse: () => allMatches.first);
+      final match = allMatches.firstWhere(
+        (m) => m.id == mid,
+        orElse: () => CricketMatch(
+          id: mid,
+          teamA: Team(
+            id: 'placeholder_${mid}_a',
+            name: 'TBD',
+            abbreviation: 'TBD',
+            logoEmoji: '🏏',
+            logoColorHex: 0xFF9E9E9E,
+            players: [],
+          ),
+          teamB: Team(
+            id: 'placeholder_${mid}_b',
+            name: 'TBD',
+            abbreviation: 'TBD',
+            logoEmoji: '🏏',
+            logoColorHex: 0xFF9E9E9E,
+            players: [],
+          ),
+          totalOvers: data['defaultOvers'] ?? 10,
+          venue: data['venue'] ?? 'CricX Turf Arena',
+          matchDate: DateTime.now(),
+        ),
+      );
       tMatches.add(match);
     }
 
@@ -393,6 +417,10 @@ class FirestoreService implements DatabaseService {
       matches: tMatches,
       status: data['status'] ?? 'Upcoming',
       winnerTeamId: data['winnerTeamId'],
+      playoffType: data['playoffType'] ?? 'Direct Final',
+      defaultOvers: data['defaultOvers'] ?? 10,
+      startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      venue: data['venue'] ?? 'CricX Turf Arena',
     );
 
     // Reconstruct Points Table
@@ -422,6 +450,10 @@ class FirestoreService implements DatabaseService {
       'matchIds': tournament.matches.map((m) => m.id).toList(),
       'status': tournament.status,
       'winnerTeamId': tournament.winnerTeamId,
+      'playoffType': tournament.playoffType,
+      'defaultOvers': tournament.defaultOvers,
+      'startDate': Timestamp.fromDate(tournament.startDate),
+      'venue': tournament.venue,
       'pointsTable': tournament.pointsTable.map((e) => {
         'teamId': e.team.id,
         'played': e.played,
