@@ -178,8 +178,6 @@ class _TeamsScreenState extends State<TeamsScreen> {
                             _buildStatBox('Played', '${team.matchesPlayed}', AppColors.textDarkSecondary),
                             _buildStatBox('Won', '${team.matchesWon}', AppColors.accentCrease),
                             _buildStatBox('Lost', '${team.matchesLost}', Colors.redAccent),
-                            _buildStatBox('Points', '${team.points}', AppColors.pitchGold),
-                            _buildStatBox('NRR', team.netRunRate.toStringAsFixed(2), Colors.blueAccent),
                           ],
                         ),
                         const SizedBox(height: 20),

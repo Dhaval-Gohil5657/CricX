@@ -19,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 10, 16, 8),
             child: Text(
               'CRICX PLAYERS DIRECTORY',
               style: TextStyle(

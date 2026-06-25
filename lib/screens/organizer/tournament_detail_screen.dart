@@ -7,6 +7,9 @@ import '../../models/team_model.dart';
 import '../scorecard_screen.dart';
 import '../../constants/app_colors.dart';
 import '../main_navigation_screen.dart';
+import 'fixture_draft_screen.dart';
+import '../scorer/toss_setup_screen.dart';
+import '../scorer/live_scoring_screen.dart';
 
 class TournamentDetailScreen extends StatelessWidget {
   final Tournament tournament;
@@ -330,232 +333,325 @@ class TournamentDetailScreen extends StatelessWidget {
       }
     }
 
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Champion Banner
-        if (tournamentCompleted) ...[
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber, width: 1.5),
+    // Default to playoffs sub-tab if playoffs are already generated or all league matches are completed,
+    // otherwise default to league matches.
+    String activeSubTab = (hasPlayoffs || allLeagueCompleted) ? 'playoffs' : 'league';
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        Widget _buildSegmentButton(String tab, String label, IconData icon) {
+          final isSelected = activeSubTab == tab;
+          return Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  activeSubTab = tab;
+                });
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryTurf : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 16,
+                      color: isSelected ? Colors.white : AppColors.textDarkMuted,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.textDarkSecondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Column(
-              children: [
-                const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 48),
+          );
+        }
+
+        final switcher = Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.borderGreen.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              _buildSegmentButton('league', 'League Stage', Icons.sports_cricket_rounded),
+              _buildSegmentButton('playoffs', 'Playoffs', Icons.emoji_events),
+            ],
+          ),
+        );
+
+        return ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            switcher,
+            
+            if (activeSubTab == 'league') ...[
+              // League Stage Header & Fixtures
+              if (leagueMatches.isNotEmpty) ...[
+                const Row(
+                  children: [
+                    Icon(Icons.sports_cricket_rounded, color: AppColors.primaryTurf, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'LEAGUE STAGE',
+                      style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
-                const Text(
-                  '🏆 TOURNAMENT CHAMPION 🏆',
-                  style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  finalMatch.resultString.split(' won').first,
-                  style: const TextStyle(color: AppColors.primaryTurf, fontWeight: FontWeight.w900, fontSize: 20),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  finalMatch.resultString,
-                  style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
-                  textAlign: TextAlign.center,
+                ...leagueMatches.map((m) => _buildMatchCard(context, m)),
+              ] else ...[
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.0),
+                    child: Text(
+                      'No league stage matches generated yet.',
+                      style: TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
+                    ),
+                  ),
                 ),
               ],
-            ),
-          ),
-        ],
+            ],
 
-        // Playoff Actions & Status
-        if (allLeagueCompleted && !hasPlayoffs) ...[
-          if (appState.currentRole == UserRole.organizer) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryTurf.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'League matches completed! Ready for playoffs.',
-                    style: TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold),
+            if (activeSubTab == 'playoffs') ...[
+              // Champion Banner
+              if (tournamentCompleted) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber, width: 1.5),
                   ),
-                  const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryTurf,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () => _generatePlayoffs(context, tour, appState),
-                    icon: const Icon(Icons.auto_awesome),
-                    label: Text('GENERATE PLAYOFFS (${tour.playoffType})'),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryTurf.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.auto_awesome, color: AppColors.primaryTurf, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'All league matches are completed. Playoff matches are generated automatically.',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                  child: Column(
+                    children: [
+                      const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 48),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '🏆 TOURNAMENT CHAMPION 🏆',
+                        style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ] else if (hasPlayoffs && sfCompleted && !finalGenerated && tour.playoffType == 'Semifinals & Final') ...[
-          if (appState.currentRole == UserRole.organizer) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryTurf.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Semi-Final matches completed! Ready for Final.',
-                    style: TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryTurf,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () => _generateFinalFromSemis(context, tour, appState),
-                    icon: const Icon(Icons.emoji_events),
-                    label: const Text('GENERATE FINAL MATCH'),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryTurf.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.emoji_events, color: AppColors.primaryTurf, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Semi-Final matches are completed. The Final match is generated automatically.',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 6),
+                      Text(
+                        finalMatch!.resultString.split(' won').first,
+                        style: const TextStyle(color: AppColors.primaryTurf, fontWeight: FontWeight.w900, fontSize: 20),
+                        textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        finalMatch.resultString,
+                        style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Playoff Actions & Status
+              if (allLeagueCompleted && !hasPlayoffs) ...[
+                if (appState.currentRole == UserRole.organizer) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryTurf.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'League matches completed! Ready for playoffs.',
+                          style: TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryTurf,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () => _generatePlayoffs(context, tour, appState),
+                          icon: const Icon(Icons.auto_awesome),
+                          label: Text('GENERATE PLAYOFFS (${tour.playoffType})'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryTurf.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: AppColors.primaryTurf, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'All league matches are completed. Playoff matches are generated automatically.',
+                            style: TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
+              ] else if (hasPlayoffs && sfCompleted && !finalGenerated && tour.playoffType == 'Semifinals & Final') ...[
+                if (appState.currentRole == UserRole.organizer) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryTurf.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Semi-Final matches completed! Ready for Final.',
+                          style: TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryTurf,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () => _generateFinalFromSemis(context, tour, appState),
+                          icon: const Icon(Icons.emoji_events),
+                          label: const Text('GENERATE FINAL MATCH'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryTurf.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.emoji_events, color: AppColors.primaryTurf, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Semi-Final matches are completed. The Final match is generated automatically.',
+                            style: TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+
+              // Semifinals Header & Fixtures (only show if tour has Semifinals & Final playoff type)
+              if (tour.playoffType == 'Semifinals & Final' && semifinalWidgets.isNotEmpty) ...[
+                const Row(
+                  children: [
+                    Icon(Icons.flash_on, color: Colors.amber, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'SEMI-FINALS',
+                      style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...semifinalWidgets,
+                const SizedBox(height: 20),
+              ],
+
+              // Final Header & Fixtures
+              if (finalWidgets.isNotEmpty) ...[
+                const Row(
+                  children: [
+                    Icon(Icons.emoji_events, color: Colors.amber, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'FINAL',
+                      style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...finalWidgets,
+              ],
+            ],
           ],
-        ],
-
-        // League Stage Header & Fixtures
-        if (leagueMatches.isNotEmpty) ...[
-          const Row(
-            children: [
-              Icon(Icons.format_list_bulleted, color: AppColors.primaryTurf, size: 16),
-              SizedBox(width: 6),
-              Text(
-                'LEAGUE STAGE',
-                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...leagueMatches.map((m) => _buildMatchCard(context, m)),
-          const SizedBox(height: 20),
-        ],
-
-        // Semifinals Header & Fixtures (only show if tour has Semifinals & Final playoff type)
-        if (tour.playoffType == 'Semifinals & Final' && semifinalWidgets.isNotEmpty) ...[
-          const Row(
-            children: [
-              Icon(Icons.flash_on, color: Colors.amber, size: 16),
-              SizedBox(width: 6),
-              Text(
-                'SEMI-FINALS',
-                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...semifinalWidgets,
-          const SizedBox(height: 20),
-        ],
-
-        // Final Header & Fixtures
-        if (finalWidgets.isNotEmpty) ...[
-          const Row(
-            children: [
-              Icon(Icons.emoji_events, color: Colors.amber, size: 16),
-              SizedBox(width: 6),
-              Text(
-                'FINAL',
-                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...finalWidgets,
-        ],
-      ],
+        );
+      },
     );
   }
 
   Widget _buildMatchCard(BuildContext context, CricketMatch match) {
-    String prefix = '';
-    if (match.id.contains('_sf1')) prefix = 'Semi-Final 1: ';
-    if (match.id.contains('_sf2')) prefix = 'Semi-Final 2: ';
-    if (match.id.contains('_final')) prefix = 'Final: ';
+    final appState = Provider.of<AppState>(context, listen: false);
+    final role = appState.currentRole;
+
+    // Format match date and time
+    final date = match.matchDate;
+    final String amPm = date.hour >= 12 ? 'PM' : 'AM';
+    final int displayHour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final String formattedDateTime = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} at ${displayHour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} $amPm';
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final matchDay = DateTime(match.matchDate.year, match.matchDate.month, match.matchDate.day);
+    final bool canStart = match.status == MatchStatus.live ||
+        (match.status == MatchStatus.upcoming && (matchDay.isBefore(today) || matchDay.isAtSameMomentAs(today)));
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.borderWood.withOpacity(0.5),
-          width: 1,
+          color: match.status == MatchStatus.live
+              ? AppColors.primaryTurf.withOpacity(0.4)
+              : AppColors.borderWood.withOpacity(0.5),
+          width: match.status == MatchStatus.live ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -575,37 +671,8 @@ class TournamentDetailScreen extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  '$prefix${match.teamA.name} vs ${match.teamB.name}',
-                  style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ),
-              const SizedBox(width: 8),
-              _buildMatchBadge(match.status),
-            ],
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 6.0),
-            child: Text(
-              match.status == MatchStatus.completed 
-                  ? match.resultString 
-                  : 'Venue: ${match.venue} • Overs: ${match.totalOvers}',
-              style: TextStyle(
-                color: match.status == MatchStatus.completed ? AppColors.woodMahogany : AppColors.textDarkMuted,
-                fontSize: 12,
-                fontWeight: FontWeight.w500
-              ),
-              softWrap: true,
-              maxLines: null,
-            ),
-          ),
-          trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.primaryTurf, size: 14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
           onTap: () {
             Navigator.push(
               context,
@@ -614,6 +681,223 @@ class TournamentDetailScreen extends StatelessWidget {
               ),
             );
           },
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      match.venue,
+                      style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                    ),
+                    if (match.status == MatchStatus.live)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'LIVE',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (match.status == MatchStatus.completed)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.dividerGreen,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'FINISHED',
+                          style: TextStyle(
+                            color: AppColors.textDarkSecondary,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.woodMahogany.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'UPCOMING',
+                          style: TextStyle(
+                            color: AppColors.woodMahogany,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Team A row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Color(match.teamA.logoColorHex).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 14)),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          match.teamA.name,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      match.teamAInnings != null ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' : '-',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                
+                // Team B row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Color(match.teamB.logoColorHex).withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 14)),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          match.teamB.name,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      match.teamBInnings != null ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' : '-',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const Divider(color: AppColors.borderGreen, height: 24),
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        match.status == MatchStatus.upcoming
+                            ? 'Scheduled: $formattedDateTime'
+                            : match.statusText,
+                        style: TextStyle(
+                          color: match.status == MatchStatus.completed
+                              ? AppColors.woodMahogany
+                              : (match.status == MatchStatus.live
+                                  ? AppColors.primaryTurf
+                                  : AppColors.textDarkSecondary),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    
+                    if ((role == UserRole.scorer || role == UserRole.organizer) && canStart)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 5),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: match.status == MatchStatus.live ? AppColors.primaryTurf : AppColors.woodMahogany,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            if (match.status == MatchStatus.live) {
+                              appState.setActiveScoringMatch(match);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => LiveScoringScreen(match: match)),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
+                              );
+                            }
+                          },
+                          child: Text(match.status == MatchStatus.live ? 'SCORE' : 'START'),
+                        ),
+                      )
+                    else
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: AppColors.woodMahogany,
+                        size: 14,
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -681,6 +965,47 @@ class TournamentDetailScreen extends StatelessWidget {
     );
   }
 
+  List<CricketMatch> _reorderMatchesToAvoidConsecutive(List<CricketMatch> matches) {
+    if (matches.length <= 2) return matches;
+    
+    final List<CricketMatch> pool = List.from(matches);
+    final List<CricketMatch> result = [];
+    
+    // Start with the first match
+    result.add(pool.removeAt(0));
+    
+    while (pool.isNotEmpty) {
+      int bestIndex = 0;
+      int bestPenalty = 999;
+      
+      final lastMatch = result.last;
+      final lastTeams = {lastMatch.teamA.id, lastMatch.teamB.id};
+      
+      final secondLastTeams = result.length >= 2
+          ? {result[result.length - 2].teamA.id, result[result.length - 2].teamB.id}
+          : <String>{};
+          
+      for (int i = 0; i < pool.length; i++) {
+        final candidate = pool[i];
+        final candTeams = {candidate.teamA.id, candidate.teamB.id};
+        
+        int penalty = 0;
+        final overlapLast = candTeams.intersection(lastTeams).length;
+        penalty += overlapLast * 10;
+        
+        final overlapSecondLast = candTeams.intersection(secondLastTeams).length;
+        penalty += overlapSecondLast * 2;
+        
+        if (penalty < bestPenalty) {
+          bestPenalty = penalty;
+          bestIndex = i;
+        }
+      }
+      result.add(pool.removeAt(bestIndex));
+    }
+    return result;
+  }
+
   void _generateFixtures(BuildContext context, Tournament tour, AppState appState) {
     final registeredTeams = tour.teams;
     if (registeredTeams.length < 2) return;
@@ -729,10 +1054,18 @@ class TournamentDetailScreen extends StatelessWidget {
       }
     }
 
-    appState.addTournamentMatches(tour.id, newMatches);
+    // Reorder matches to minimize consecutive matches for any single team
+    final reorderedMatches = _reorderMatchesToAvoidConsecutive(newMatches);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Generated ${newMatches.length} league matches sorted by round!')),
+    // Transition to the Fixture Draft Screen to pick date/time
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FixtureDraftScreen(
+          tournament: tour,
+          matches: reorderedMatches,
+        ),
+      ),
     );
   }
 
@@ -758,12 +1091,6 @@ class TournamentDetailScreen extends StatelessWidget {
         tournamentName: tour.name,
       );
       playoffMatches.add(match);
-
-      appState.addTournamentMatches(tour.id, playoffMatches);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generated Final Match: ${top1.name} vs ${top2.name}!')),
-      );
     } else if (tour.playoffType == 'Semifinals & Final') {
       if (standings.length < 4) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -801,12 +1128,18 @@ class TournamentDetailScreen extends StatelessWidget {
       );
 
       playoffMatches.addAll([sf1, sf2]);
-      appState.addTournamentMatches(tour.id, playoffMatches);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generated Semi-Finals: ${top1.name} vs ${top2.name} & ${top3.name} vs ${top4.name}!')),
-      );
     }
+
+    // Launch FixtureDraftScreen to let creator choose date/time/venue for playoffs
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FixtureDraftScreen(
+          tournament: tour,
+          matches: playoffMatches,
+        ),
+      ),
+    );
   }
 
   void _generateFinalFromSemis(BuildContext context, Tournament tour, AppState appState) {
@@ -851,12 +1184,15 @@ class TournamentDetailScreen extends StatelessWidget {
       tournamentId: tour.id,
       tournamentName: tour.name,
     );
-    appState.addTournamentMatch(tour.id, finalMatch);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Generated Final Match: ${winner1.name} vs ${winner2.name}!'),
-        duration: const Duration(seconds: 4),
+    // Launch FixtureDraftScreen to let creator choose date/time/venue for Final
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FixtureDraftScreen(
+          tournament: tour,
+          matches: [finalMatch],
+        ),
       ),
     );
   }

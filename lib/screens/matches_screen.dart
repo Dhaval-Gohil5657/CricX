@@ -13,12 +13,14 @@ class MatchesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final matches = appState.matches;
+    final individualMatches = appState.matches
+        .where((m) => m.tournamentId == null || m.tournamentId!.isEmpty)
+        .toList();
     final role = appState.currentRole;
 
-    final live = matches.where((m) => m.status == MatchStatus.live).toList();
-    final upcoming = matches.where((m) => m.status == MatchStatus.upcoming).toList();
-    final completed = matches.where((m) => m.status == MatchStatus.completed).toList();
+    final live = individualMatches.where((m) => m.status == MatchStatus.live).toList();
+    final upcoming = individualMatches.where((m) => m.status == MatchStatus.upcoming).toList();
+    final completed = individualMatches.where((m) => m.status == MatchStatus.completed).toList();
 
     return DefaultTabController(
       length: 3,
@@ -203,35 +205,6 @@ class MatchesScreen extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        match.tournamentName != null && match.tournamentName!.isNotEmpty
-                            ? Icons.emoji_events_rounded
-                            : Icons.handshake_rounded,
-                        size: 13,
-                        color: match.tournamentName != null && match.tournamentName!.isNotEmpty
-                            ? AppColors.pitchGold
-                            : AppColors.textDarkMuted,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        match.tournamentName != null && match.tournamentName!.isNotEmpty
-                            ? match.tournamentName!
-                            : 'Friendly Match',
-                        style: TextStyle(
-                          color: match.tournamentName != null && match.tournamentName!.isNotEmpty
-                              ? AppColors.textDarkSecondary
-                              : AppColors.textDarkMuted,
-                          fontSize: 11,
-                          fontWeight: match.tournamentName != null && match.tournamentName!.isNotEmpty
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 12),
                   
                   // Team A row
@@ -359,9 +332,10 @@ class MatchesScreen extends StatelessWidget {
                         )
                       else if ((role == UserRole.scorer || role == UserRole.organizer) && 
                                match.status == MatchStatus.upcoming &&
-                               match.matchDate.year == DateTime.now().year &&
-                               match.matchDate.month == DateTime.now().month &&
-                               match.matchDate.day == DateTime.now().day)
+                               (DateTime(match.matchDate.year, match.matchDate.month, match.matchDate.day)
+                                   .isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)) ||
+                               DateTime(match.matchDate.year, match.matchDate.month, match.matchDate.day)
+                                   .isAtSameMomentAs(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))))
                         Padding(
                           padding: const EdgeInsets.only(left: 5),
                           child: ElevatedButton(

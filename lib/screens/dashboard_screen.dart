@@ -283,15 +283,32 @@ class DashboardScreen extends StatelessWidget {
                       textAlign: TextAlign.left,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      '${match.totalOvers} Overs',
-                      style: const TextStyle(
-                        color: AppColors.textDarkMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                            ? AppColors.primaryTurf.withOpacity(0.12)
+                            : AppColors.woodMahogany.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                              ? AppColors.primaryTurf.withOpacity(0.3)
+                              : AppColors.woodMahogany.withOpacity(0.3),
+                          width: 0.5,
+                        ),
                       ),
-                      textAlign: TextAlign.right,
-                      overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                            ? 'Tournament'
+                            : 'Friendly',
+                        style: TextStyle(
+                          color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                              ? AppColors.primaryTurf
+                              : AppColors.woodMahogany,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -841,7 +858,7 @@ class DashboardScreen extends StatelessWidget {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(15.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -952,12 +969,15 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Text(
-                      'Full Scorecard ➜',
-                      style: TextStyle(
-                        color: AppColors.primaryTurf,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                    Padding(
+                      padding: const EdgeInsets.only(left: 5),
+                      child: const Text(
+                        'Full Scorecard ➜',
+                        style: TextStyle(
+                          color: AppColors.primaryTurf,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -996,7 +1016,7 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(15.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

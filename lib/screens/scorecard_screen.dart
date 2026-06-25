@@ -5,6 +5,7 @@ import '../state/app_state.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
 import 'main_navigation_screen.dart';
+import 'organizer/tournament_detail_screen.dart';
 
 class ScorecardScreen extends StatelessWidget {
   final CricketMatch match;
@@ -67,8 +68,63 @@ class ScorecardScreen extends StatelessWidget {
         ),
         body: Column(
           children: [
+            if (currentMatch.tournamentId != null && currentMatch.tournamentId!.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  try {
+                    final tour = appState.tournaments.firstWhere((t) => t.id == currentMatch.tournamentId);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TournamentDetailScreen(tournament: tour),
+                      ),
+                    );
+                  } catch (_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Tournament details not found.')),
+                    );
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTurf.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primaryTurf.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.emoji_events_rounded, color: AppColors.pitchGold, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          currentMatch.tournamentName ?? 'Tournament Match',
+                          style: const TextStyle(
+                            color: AppColors.primaryTurf,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.primaryTurf, size: 13),
+                    ],
+                  ),
+                ),
+              ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                currentMatch.tournamentId != null && currentMatch.tournamentId!.isNotEmpty ? 8 : 16,
+                16,
+                8,
+              ),
               child: _buildMatchOverviewCard(currentMatch, appState),
             ),
             Container(

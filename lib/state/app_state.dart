@@ -586,7 +586,12 @@ class AppState extends ChangeNotifier {
 
   void addTournamentMatch(String tournamentId, CricketMatch match) {
     final t = _tournaments.firstWhere((t) => t.id == tournamentId);
-    t.matches.add(match);
+    final index = t.matches.indexWhere((m) => m.id == match.id);
+    if (index != -1) {
+      t.matches[index] = match;
+    } else {
+      t.matches.add(match);
+    }
     t.updatePointsTable();
     
     _db.createMatch(match);
@@ -595,7 +600,14 @@ class AppState extends ChangeNotifier {
 
   void addTournamentMatches(String tournamentId, List<CricketMatch> newMatches) {
     final t = _tournaments.firstWhere((t) => t.id == tournamentId);
-    t.matches.addAll(newMatches);
+    for (var newMatch in newMatches) {
+      final index = t.matches.indexWhere((m) => m.id == newMatch.id);
+      if (index != -1) {
+        t.matches[index] = newMatch;
+      } else {
+        t.matches.add(newMatch);
+      }
+    }
     t.updatePointsTable();
     
     for (var match in newMatches) {

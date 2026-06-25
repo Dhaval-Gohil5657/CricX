@@ -95,6 +95,11 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                 decoration: _buildInputDecoration('Default Venue (e.g. CricX Turf Arena)'),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter default venue' : null,
               ),
+              const SizedBox(height: 4),
+              const Text(
+                'Note: You can customize the venue for individual matches during fixture generation.',
+                style: TextStyle(color: AppColors.textDarkMuted, fontSize: 10, fontStyle: FontStyle.italic),
+              ),
               const SizedBox(height: 16),
 
               // Overs & Start Date Row
@@ -136,7 +141,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _selectedStartDate,
-                              firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                              firstDate: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
                               lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
                               builder: (context, child) {
                                 return Theme(
@@ -213,8 +218,36 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('PARTICIPATING TEAMS', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                  Text('${_selectedTeams.length} Selected', style: const TextStyle(color: AppColors.accentCrease, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      const Text('PARTICIPATING TEAMS', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                      const SizedBox(width: 8),
+                      Text('(${_selectedTeams.length} Selected)', style: const TextStyle(color: AppColors.accentCrease, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  if (teams.isNotEmpty)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(60, 24),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: AppColors.primaryTurf,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedTeams.length == teams.length) {
+                            _selectedTeams.clear();
+                          } else {
+                            _selectedTeams.clear();
+                            _selectedTeams.addAll(teams);
+                          }
+                        });
+                      },
+                      child: Text(
+                        _selectedTeams.length == teams.length ? 'Deselect All' : 'Select All',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
