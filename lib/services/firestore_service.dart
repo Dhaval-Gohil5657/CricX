@@ -304,6 +304,8 @@ class FirestoreService implements DatabaseService {
       resultString: data['resultString'] ?? 'Match not started yet',
       venue: data['venue'] ?? 'Unknown Venue',
       matchDate: (data['matchDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      tournamentId: data['tournamentId'],
+      tournamentName: data['tournamentName'],
     );
 
     // Innings
@@ -360,6 +362,8 @@ class FirestoreService implements DatabaseService {
       'bowlerRunsConceded': match.bowlerRunsConceded,
       'bowlerWickets': match.bowlerWickets,
       'bowlerBallsBowled': match.bowlerBallsBowled,
+      'tournamentId': match.tournamentId,
+      'tournamentName': match.tournamentName,
     };
   }
 
@@ -404,6 +408,8 @@ class FirestoreService implements DatabaseService {
           totalOvers: data['defaultOvers'] ?? 10,
           venue: data['venue'] ?? 'CricX Turf Arena',
           matchDate: DateTime.now(),
+          tournamentId: id,
+          tournamentName: data['name'] ?? '',
         ),
       );
       tMatches.add(match);

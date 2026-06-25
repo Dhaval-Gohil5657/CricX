@@ -19,7 +19,13 @@ class DashboardScreen extends StatelessWidget {
     final role = appState.currentRole;
     final liveMatches = appState.matches.where((m) => m.status == MatchStatus.live).toList();
     final completedMatches = appState.matches.where((m) => m.status == MatchStatus.completed).toList();
-    final upcomingMatches = appState.matches.where((m) => m.status == MatchStatus.upcoming).toList();
+    final now = DateTime.now();
+    final upcomingMatches = appState.matches.where((m) {
+      return m.status == MatchStatus.upcoming &&
+             m.matchDate.year == now.year &&
+             m.matchDate.month == now.month &&
+             m.matchDate.day == now.day;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -131,7 +137,7 @@ class DashboardScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 12),
                           Text(
-                            'No matches scheduled yet',
+                            'No matches scheduled for today',
                             style: TextStyle(
                               color: AppColors.textDarkMuted,
                               fontSize: 13,
@@ -540,7 +546,7 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
 
-                if (role == UserRole.scorer) ...[
+                if (role == UserRole.scorer || role == UserRole.organizer) ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -609,7 +615,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          if (role == UserRole.scorer)
+          if (role == UserRole.scorer || role == UserRole.organizer)
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryTurf,
@@ -638,7 +644,7 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildQuickActions(BuildContext context, UserRole role, AppState appState) {
     final List<Widget> actions = [];
 
-    if (role == UserRole.scorer) {
+    if (role == UserRole.scorer || role == UserRole.organizer) {
       actions.addAll([
         _buildActionItem(
           context,
@@ -666,27 +672,6 @@ class DashboardScreen extends StatelessWidget {
         ),
         _buildActionItem(
           context,
-          icon: Icons.flash_on_rounded,
-          label: 'Quick Score',
-          color: AppColors.pitchGold,
-          onTap: () {
-            // Find first live match if exists, or show snackbar
-            final live = appState.matches.firstWhere(
-              (m) => m.status == MatchStatus.live,
-              orElse: () => appState.matches[0],
-            );
-            appState.setActiveScoringMatch(live);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => LiveScoringScreen(match: live)),
-            );
-          },
-        ),
-      ]);
-    } else if (role == UserRole.organizer) {
-      actions.addAll([
-        _buildActionItem(
-          context,
           icon: Icons.emoji_events_outlined,
           label: 'New League',
           color: AppColors.pitchGold,
@@ -694,28 +679,6 @@ class DashboardScreen extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CreateTournamentScreen()),
-            );
-          },
-        ),
-        _buildActionItem(
-          context,
-          icon: Icons.calendar_month_rounded,
-          label: 'Schedule Fixtures',
-          color: Colors.blue,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Fixtures scheduler available in Tournament Management")),
-            );
-          },
-        ),
-        _buildActionItem(
-          context,
-          icon: Icons.table_chart_rounded,
-          label: 'Points Table',
-          color: Colors.teal,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Points tables reside inside each tournament page")),
             );
           },
         ),

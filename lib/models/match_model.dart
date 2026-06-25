@@ -98,6 +98,9 @@ class CricketMatch {
   String venue;
   DateTime matchDate;
 
+  String? tournamentId;
+  String? tournamentName;
+
   CricketMatch({
     required this.id,
     required this.teamA,
@@ -110,6 +113,8 @@ class CricketMatch {
     this.resultString = 'Match not started yet',
     required this.venue,
     required this.matchDate,
+    this.tournamentId,
+    this.tournamentName,
   });
 
   Team get battingTeam => currentInningsNum == 1 

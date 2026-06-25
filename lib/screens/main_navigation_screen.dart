@@ -4,8 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../state/app_state.dart';
 import 'dashboard_screen.dart';
 import 'matches_screen.dart';
-import 'teams_screen.dart';
-import 'profile_screen.dart';
+import 'directory_screen.dart';
 import 'scorer/scorer_dashboard.dart';
 import 'organizer/organizer_dashboard.dart';
 import 'welcome_screen.dart';
@@ -21,8 +20,9 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
-  final List<bool> _activatedTabs = [true, false, false, false, false, false];
+  final List<bool> _activatedTabs = [true, false, false, false, false];
   UserRole? _lastRole;
+  String _matchesView = 'matches'; // 'matches' or 'tournaments'
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +34,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       for (int i = 1; i < _activatedTabs.length; i++) {
         _activatedTabs[i] = false;
       }
-    }
-
-    if (_selectedIndex < _activatedTabs.length) {
-      _activatedTabs[_selectedIndex] = true;
     }
 
     // Define items and screens based on role
@@ -52,13 +48,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
 
     // Add Matches tab
-    screens.add(const MatchesScreen());
-    navItems.add({
-      'icon': Icons.sports_cricket_rounded,
-      'label': 'Matches',
-    });
+    if (_matchesView == 'matches') {
+      screens.add(const MatchesScreen());
+      navItems.add({
+        'icon': Icons.sports_cricket_rounded,
+        'label': 'Matches',
+      });
+    } else {
+      screens.add(const OrganizerDashboard());
+      navItems.add({
+        'icon': Icons.emoji_events_rounded,
+        'label': 'Tournaments',
+      });
+    }
 
-
+    // Manage tab for unified role (Tournaments tab removed as it is mixed with Matches tab)
     if (role == UserRole.scorer || role == UserRole.organizer) {
       // Manage Tab
       screens.add(const ScorerDashboard());
@@ -68,34 +72,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       });
     }
 
-    if (role == UserRole.organizer) {
-      // Tournaments Tab
-      screens.add(const OrganizerDashboard());
-      navItems.add({
-        'icon': Icons.emoji_events_rounded,
-        'label': 'Tournaments',
-      });
-    }
-
-    if (role == UserRole.guest || role == UserRole.user || role == UserRole.scorer) {
-      // Teams Tab
-      screens.add(const TeamsScreen());
-      navItems.add({
-        'icon': Icons.people_alt_rounded,
-        'label': 'Teams',
-      });
-    }
-
-    // Add Players tab
-    screens.add(const ProfileScreen());
+    // Directory Tab (Combined Teams & Players)
+    screens.add(const DirectoryScreen());
     navItems.add({
-      'icon': Icons.person_pin,
-      'label': 'Players',
+      'icon': Icons.people_alt_rounded,
+      'label': 'Directory',
     });
 
-    // Safeguard index out of bounds when changing roles
+    // Safeguard index out of bounds and update activated tabs
     if (_selectedIndex >= screens.length) {
       _selectedIndex = screens.length - 1;
+    }
+    if (_selectedIndex < 0) {
+      _selectedIndex = 0;
+    }
+
+    if (_selectedIndex < screens.length) {
+      while (_activatedTabs.length < screens.length) {
+        _activatedTabs.add(false);
+      }
+      _activatedTabs[_selectedIndex] = true;
     }
 
     return Scaffold(
@@ -163,19 +159,141 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ],
         ),
         actions: [
-          if (_selectedIndex == screens.length - 1 && FirebaseAuth.instance.currentUser != null)
+          if (navItems[_selectedIndex]['label'] == 'Matches' || navItems[_selectedIndex]['label'] == 'Tournaments')
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: Center(
+                child: PopupMenuButton<String>(
+                  tooltip: 'Switch Feed',
+                  onSelected: (String newView) {
+                    setState(() {
+                      _matchesView = newView;
+                    });
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: AppColors.borderWood, width: 1.5),
+                  ),
+                  color: AppColors.cardBg,
+                  offset: const Offset(0, 46),
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      value: 'matches',
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentCrease.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Text('🏏', style: TextStyle(fontSize: 13)),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Individual Matches',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'tournaments',
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Text('🏆', style: TextStyle(fontSize: 13)),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Tournaments',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.borderWood,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _matchesView == 'matches' ? '🏏' : '🏆',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          _matchesView == 'matches' ? 'Matches' : 'Tournaments',
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textDarkSecondary,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (_selectedIndex == screens.length - 1)
             IconButton(
-              icon: const Icon(Icons.logout_rounded, color: Colors.white),
-              tooltip: 'Sign Out',
+              icon: Icon(
+                FirebaseAuth.instance.currentUser != null
+                    ? Icons.logout_rounded
+                    : Icons.login_rounded,
+                color: Colors.white,
+              ),
+              tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
               onPressed: () async {
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
                 try {
-                  await FirebaseAuth.instance.signOut();
+                  if (FirebaseAuth.instance.currentUser != null) {
+                    await FirebaseAuth.instance.signOut();
+                  }
                   appState.changeRole(UserRole.guest);
                   scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Logged out successfully.'),
+                    SnackBar(
+                      content: Text(FirebaseAuth.instance.currentUser != null
+                          ? 'Logged out successfully.'
+                          : 'Returning to role selection.'),
                       backgroundColor: AppColors.accentCrease,
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                   if (context.mounted) {
@@ -189,83 +307,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 } catch (e) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
-                      content: Text('Logout failed: $e'),
+                      content: Text('Action failed: $e'),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
                 }
               },
             ),
-          // Premium Dynamic Role Switcher Badge in App Bar
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: Center(
-              child: PopupMenuButton<UserRole>(
-                tooltip: 'Switch Role',
-                onSelected: (UserRole newRole) {
-                  appState.changeRole(newRole);
-                  setState(() {
-                    _selectedIndex = 0; // Reset index to home when switching roles
-                  });
-                },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.borderWood, width: 1.5),
-                ),
-                color: AppColors.cardBg,
-                offset: const Offset(0, 46),
-                itemBuilder: (context) => [
-                  _buildPopupItem(UserRole.guest, 'Guest Viewer', '👀', Colors.blue),
-                  _buildPopupItem(UserRole.user, 'Registered User', '👤', AppColors.accentCrease),
-                  _buildPopupItem(UserRole.scorer, 'Match Scorer', '✏️', Colors.orange),
-                  _buildPopupItem(UserRole.organizer, 'Organizer', '🏆', Colors.amber),
-                ],
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.borderWood,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _getRoleEmoji(role),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        role.name.toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: AppColors.textDarkSecondary,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     ),
@@ -356,45 +404,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  PopupMenuItem<UserRole> _buildPopupItem(UserRole role, String title, String emoji, Color color) {
-    return PopupMenuItem<UserRole>(
-      value: role,
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Text(emoji, style: const TextStyle(fontSize: 13)),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: AppColors.textDark,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  String _getRoleEmoji(UserRole role) {
-    switch (role) {
-      case UserRole.guest:
-        return '👀';
-      case UserRole.user:
-        return '👤';
-      case UserRole.scorer:
-        return '✏️';
-      case UserRole.organizer:
-        return '🏆';
-    }
-  }
 }
 
 class BatPainter extends CustomPainter {

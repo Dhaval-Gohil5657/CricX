@@ -722,6 +722,8 @@ class TournamentDetailScreen extends StatelessWidget {
           totalOvers: tour.defaultOvers,
           venue: '${tour.venue} #${matchIdCounter - 1}',
           matchDate: tour.startDate.add(Duration(days: round)),
+          tournamentId: tour.id,
+          tournamentName: tour.name,
         );
         newMatches.add(match);
       }
@@ -752,6 +754,8 @@ class TournamentDetailScreen extends StatelessWidget {
         totalOvers: tour.defaultOvers,
         venue: tour.venue.isNotEmpty ? '${tour.venue} (Final)' : 'Final Venue',
         matchDate: DateTime.now().add(const Duration(days: 1)),
+        tournamentId: tour.id,
+        tournamentName: tour.name,
       );
       playoffMatches.add(match);
 
@@ -780,6 +784,8 @@ class TournamentDetailScreen extends StatelessWidget {
         totalOvers: tour.defaultOvers,
         venue: tour.venue.isNotEmpty ? '${tour.venue} (Semi-Final 1)' : 'SF1 Venue',
         matchDate: DateTime.now().add(const Duration(days: 1)),
+        tournamentId: tour.id,
+        tournamentName: tour.name,
       );
 
       // SF2: Top 3 vs Top 4
@@ -790,6 +796,8 @@ class TournamentDetailScreen extends StatelessWidget {
         totalOvers: tour.defaultOvers,
         venue: tour.venue.isNotEmpty ? '${tour.venue} (Semi-Final 2)' : 'SF2 Venue',
         matchDate: DateTime.now().add(const Duration(days: 2)),
+        tournamentId: tour.id,
+        tournamentName: tour.name,
       );
 
       playoffMatches.addAll([sf1, sf2]);
@@ -840,6 +848,8 @@ class TournamentDetailScreen extends StatelessWidget {
       totalOvers: tour.defaultOvers,
       venue: tour.venue.isNotEmpty ? '${tour.venue} (Final)' : 'Final Venue',
       matchDate: DateTime.now().add(const Duration(days: 1)),
+      tournamentId: tour.id,
+      tournamentName: tour.name,
     );
     appState.addTournamentMatch(tour.id, finalMatch);
 

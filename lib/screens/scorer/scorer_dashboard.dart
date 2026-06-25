@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../state/app_state.dart';
-import '../../models/match_model.dart';
 import 'create_match_screen.dart';
 import 'create_team_screen.dart';
-import 'live_scoring_screen.dart';
-import 'toss_setup_screen.dart';
+import '../organizer/create_tournament_screen.dart';
 import '../../constants/app_colors.dart';
 
 class ScorerDashboard extends StatelessWidget {
@@ -13,10 +9,6 @@ class ScorerDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    final upcomingMatches = appState.matches.where((m) => m.status == MatchStatus.upcoming).toList();
-    final liveMatches = appState.matches.where((m) => m.status == MatchStatus.live).toList();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SingleChildScrollView(
@@ -26,7 +18,6 @@ class ScorerDashboard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Dashboard Actions
               const Text(
                 'QUICK CREATORS',
                 style: TextStyle(
@@ -54,7 +45,7 @@ class ScorerDashboard extends StatelessWidget {
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: _buildCreateCard(
                       context,
@@ -72,74 +63,20 @@ class ScorerDashboard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-
-              // Match scoring section
-              if (liveMatches.isNotEmpty) ...[
-                const Text(
-                  'RESUME LIVE SCORING',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  itemCount: liveMatches.length,
-                  itemBuilder: (context, index) {
-                    final match = liveMatches[index];
-                    return _buildScoringMatchTile(context, match, appState, isLive: true);
-                  },
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              const Text(
-                'UPCOMING MATCHES TO START',
-                style: TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               const SizedBox(height: 12),
-
-              if (upcomingMatches.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderGreen, width: 1),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.calendar_today_rounded, color: AppColors.textDarkDisabled, size: 36),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No upcoming matches found.\nCreate a match to begin scoring.',
-                        style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                )
-              else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  itemCount: upcomingMatches.length,
-                  itemBuilder: (context, index) {
-                    final match = upcomingMatches[index];
-                    return _buildScoringMatchTile(context, match, appState, isLive: false);
-                  },
-                ),
+              _buildFullWidthCreateCard(
+                context,
+                title: 'Create Tournament',
+                subtitle: 'Launch a new round-robin league and points table',
+                icon: Icons.emoji_events_rounded,
+                color: Colors.amber,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CreateTournamentScreen()),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -173,8 +110,8 @@ class ScorerDashboard extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFFAF0E3), // Soft warm golden cream
-            Color(0xFFF2DFCB), // Warm light stump/willow tan
+            Color(0xFFFAF0E3),
+            Color(0xFFF2DFCB),
           ],
         ),
       ),
@@ -218,14 +155,20 @@ class ScorerDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildScoringMatchTile(BuildContext context, CricketMatch match, AppState appState, {required bool isLive}) {
+  Widget _buildFullWidthCreateCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isLive ? AppColors.primaryTurf : AppColors.borderWood.withOpacity(0.5),
-          width: isLive ? 1.5 : 1,
+          color: AppColors.borderWood.withOpacity(0.7),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
@@ -238,78 +181,53 @@ class ScorerDashboard extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFFDFBF7),
-            Color(0xFFFAF2E6),
+            Color(0xFFFAF0E3),
+            Color(0xFFF2DFCB),
           ],
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
               children: [
-                Text(
-                  match.venue,
-                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                ),
-                if (isLive)
-                  Row(
-                    children: [
-                      Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                      const SizedBox(width: 4),
-                      const Text('LIVE SCORING', style: TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.bold)),
-                    ],
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: color.withOpacity(0.2),
+                      width: 1,
+                    ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+                  child: Icon(icon, color: color, size: 30),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(match.teamA.name, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(
+                        title,
+                        style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
-                      Text(match.teamB.name, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isLive ? AppColors.primaryTurf : AppColors.woodMahogany,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  onPressed: () {
-                    if (isLive) {
-                      appState.setActiveScoringMatch(match);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => LiveScoringScreen(match: match)),
-                      );
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
-                      );
-                    }
-                  },
-                  child: Text(
-                    isLive ? 'SCORE' : 'START',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
+                const Icon(Icons.add_circle, color: AppColors.primaryTurf, size: 24),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

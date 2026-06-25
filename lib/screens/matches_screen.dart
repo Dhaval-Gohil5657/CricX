@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/match_model.dart';
-import '../models/team_model.dart';
 import 'scorecard_screen.dart';
 import 'scorer/live_scoring_screen.dart';
 import 'scorer/toss_setup_screen.dart';
@@ -204,6 +203,35 @@ class MatchesScreen extends StatelessWidget {
                         ),
                     ],
                   ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        match.tournamentName != null && match.tournamentName!.isNotEmpty
+                            ? Icons.emoji_events_rounded
+                            : Icons.handshake_rounded,
+                        size: 13,
+                        color: match.tournamentName != null && match.tournamentName!.isNotEmpty
+                            ? AppColors.pitchGold
+                            : AppColors.textDarkMuted,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        match.tournamentName != null && match.tournamentName!.isNotEmpty
+                            ? match.tournamentName!
+                            : 'Friendly Match',
+                        style: TextStyle(
+                          color: match.tournamentName != null && match.tournamentName!.isNotEmpty
+                              ? AppColors.textDarkSecondary
+                              : AppColors.textDarkMuted,
+                          fontSize: 11,
+                          fontWeight: match.tournamentName != null && match.tournamentName!.isNotEmpty
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   
                   // Team A row
@@ -306,7 +334,7 @@ class MatchesScreen extends StatelessWidget {
                       ),
                       
                       // Role specific quick actions
-                      if (role == UserRole.scorer && match.status == MatchStatus.live)
+                      if ((role == UserRole.scorer || role == UserRole.organizer) && match.status == MatchStatus.live)
                         Padding(
                           padding: const EdgeInsets.only(left: 5),
                           child: ElevatedButton(
@@ -318,7 +346,7 @@ class MatchesScreen extends StatelessWidget {
                               textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
+                             ),
                             onPressed: () {
                               appState.setActiveScoringMatch(match);
                               Navigator.push(
@@ -329,7 +357,11 @@ class MatchesScreen extends StatelessWidget {
                             child: const Text('SCORE'),
                           ),
                         )
-                      else if (role == UserRole.scorer && match.status == MatchStatus.upcoming)
+                      else if ((role == UserRole.scorer || role == UserRole.organizer) && 
+                               match.status == MatchStatus.upcoming &&
+                               match.matchDate.year == DateTime.now().year &&
+                               match.matchDate.month == DateTime.now().month &&
+                               match.matchDate.day == DateTime.now().day)
                         Padding(
                           padding: const EdgeInsets.only(left: 5),
                           child: ElevatedButton(
