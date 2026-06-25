@@ -28,14 +28,14 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    final start = widget.tournament.startDate;
     _matchDates = List.generate(widget.matches.length, (index) {
       final match = widget.matches[index];
       if (match.id.contains('_sf') || match.id.contains('_final')) {
         final pDate = match.matchDate;
         return DateTime(pDate.year, pDate.month, pDate.day, 18, 0);
       }
-      final date = now.add(Duration(days: index));
+      final date = start.add(Duration(days: index));
       return DateTime(date.year, date.month, date.day, 18, 0);
     });
 
@@ -90,10 +90,16 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
 
   Future<void> _selectDate(BuildContext context, int index) async {
     final DateTime initialDate = _matchDates[index];
+    final DateTime tStart = widget.tournament.startDate;
+    final DateTime firstPossibleDate = DateTime(tStart.year, tStart.month, tStart.day);
+    
+    // Safety check: if initialDate is before firstPossibleDate, use firstPossibleDate
+    final DateTime pickerInitialDate = initialDate.isBefore(firstPossibleDate) ? firstPossibleDate : initialDate;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+      initialDate: pickerInitialDate,
+      firstDate: firstPossibleDate,
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       builder: (context, child) {
         return Theme(

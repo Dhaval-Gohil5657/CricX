@@ -31,6 +31,20 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     super.dispose();
   }
 
+  void _checkPlayoffFormat() {
+    if (_selectedPlayoffType == 'Semifinals & Final' && _selectedTeams.length < 8) {
+      setState(() {
+        _selectedPlayoffType = 'Direct Final';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Playoff format reverted to Direct Final. Semifinals & Final requires at least 8 teams.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
@@ -190,30 +204,6 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Playoff stage selector
-              const Text('Playoff Stage Format', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSelectionTile(
-                      label: '🏆 Direct Final\n(Top 2 Teams)',
-                      isSelected: _selectedPlayoffType == 'Direct Final',
-                      onTap: () => setState(() => _selectedPlayoffType = 'Direct Final'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSelectionTile(
-                      label: '⚡ Semi-Finals & Final\n(Top 4 Teams)',
-                      isSelected: _selectedPlayoffType == 'Semifinals & Final',
-                      onTap: () => setState(() => _selectedPlayoffType = 'Semifinals & Final'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
               // Multi-select Teams
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -241,6 +231,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                             _selectedTeams.clear();
                             _selectedTeams.addAll(teams);
                           }
+                          _checkPlayoffFormat();
                         });
                       },
                       child: Text(
@@ -295,12 +286,92 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                             } else {
                               _selectedTeams.removeWhere((t) => t.id == team.id);
                             }
+                            _checkPlayoffFormat();
                           });
                         },
                       ),
                     );
                   },
                 ),
+              const SizedBox(height: 24),
+
+              // Playoff stage selector
+              const Text('Playoff Stage Format', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSelectionTile(
+                      label: '🏆 Direct Final\n(Top 2 Teams)',
+                      isSelected: _selectedPlayoffType == 'Direct Final',
+                      onTap: () => setState(() => _selectedPlayoffType = 'Direct Final'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSelectionTile(
+                      label: '⚡ Semi-Finals & Final\n(Top 4 Teams)',
+                      isSelected: _selectedPlayoffType == 'Semifinals & Final',
+                      onTap: () {
+                        if (_selectedTeams.length < 8) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Semifinals & Final format is only available for tournaments with 8 or more teams.'),
+                            ),
+                          );
+                        } else {
+                          setState(() => _selectedPlayoffType = 'Semifinals & Final');
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Playoff stage selector note
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _selectedPlayoffType == 'Semifinals & Final'
+                      ? AppColors.primaryTurf.withOpacity(0.08)
+                      : AppColors.woodMahogany.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _selectedPlayoffType == 'Semifinals & Final'
+                        ? AppColors.primaryTurf.withOpacity(0.2)
+                        : AppColors.woodMahogany.withOpacity(0.2),
+                    width: 0.8,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _selectedPlayoffType == 'Semifinals & Final'
+                          ? Icons.info_outline_rounded
+                          : Icons.emoji_events_outlined,
+                      size: 16,
+                      color: _selectedPlayoffType == 'Semifinals & Final'
+                          ? AppColors.primaryTurf
+                          : AppColors.woodMahogany,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _selectedPlayoffType == 'Semifinals & Final'
+                            ? 'Note: This format requires a minimum of 8 participating teams. Top 4 teams will qualify for the Semi-Finals.'
+                            : 'Note: Top 2 teams will qualify directly for a Final match.',
+                        style: const TextStyle(
+                          color: AppColors.textDarkSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 36),
 
               // Save Button
@@ -392,8 +463,19 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       return;
     }
 
+    if (_selectedPlayoffType == 'Semifinals & Final' && _selectedTeams.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Semifinals & Final format requires at least 8 participating teams.')),
+      );
+      return;
+    }
+
     final id = 'tour_new_${DateTime.now().millisecondsSinceEpoch}';
     final overs = int.tryParse(_oversController.text.trim()) ?? 10;
+
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final tourStartDate = DateTime(_selectedStartDate.year, _selectedStartDate.month, _selectedStartDate.day);
+    final String initialStatus = tourStartDate.isAfter(today) ? 'Upcoming' : 'Ongoing';
 
     final newTour = Tournament(
       id: id,
@@ -401,7 +483,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       type: 'League',
       teams: List.from(_selectedTeams),
       matches: [],
-      status: 'Ongoing',
+      status: initialStatus,
       playoffType: _selectedPlayoffType,
       defaultOvers: overs,
       startDate: _selectedStartDate,

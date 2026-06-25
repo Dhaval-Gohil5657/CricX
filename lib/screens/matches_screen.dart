@@ -13,49 +13,122 @@ class MatchesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final individualMatches = appState.matches
-        .where((m) => m.tournamentId == null || m.tournamentId!.isEmpty)
-        .toList();
     final role = appState.currentRole;
+    String activeSubTab = 'friendly'; // 'friendly' or 'tournament'
 
-    final live = individualMatches.where((m) => m.status == MatchStatus.live).toList();
-    final upcoming = individualMatches.where((m) => m.status == MatchStatus.upcoming).toList();
-    final completed = individualMatches.where((m) => m.status == MatchStatus.completed).toList();
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final friendlyMatches = appState.matches
+            .where((m) => m.tournamentId == null || m.tournamentId!.isEmpty)
+            .toList();
+        final tournamentMatches = appState.matches
+            .where((m) => m.tournamentId != null && m.tournamentId!.isNotEmpty)
+            .toList();
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(38.0),
-          child: Container(
-            color: Colors.transparent,
-            height: 38,
-            child: const TabBar(
-              indicatorColor: AppColors.primaryTurf,
-              indicatorWeight: 3,
-              indicatorSize: TabBarIndicatorSize.label,
-              indicatorPadding: EdgeInsets.only(bottom: 4),
-              labelColor: AppColors.primaryTurf,
-              unselectedLabelColor: AppColors.textDarkMuted,
-              dividerColor: Colors.transparent,
-              labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              tabs: [
-                Tab(text: 'LIVE'),
-                Tab(text: 'UPCOMING'),
-                Tab(text: 'COMPLETED'),
+        final activeMatches = activeSubTab == 'friendly' ? friendlyMatches : tournamentMatches;
+
+        final live = activeMatches.where((m) => m.status == MatchStatus.live).toList();
+        final upcoming = activeMatches.where((m) => m.status == MatchStatus.upcoming).toList();
+        final completed = activeMatches.where((m) => m.status == MatchStatus.completed).toList();
+
+        Widget _buildSegmentButton(String tab, String label, IconData icon) {
+          final isSelected = activeSubTab == tab;
+          return Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  activeSubTab = tab;
+                });
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryTurf : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      icon,
+                      size: 14,
+                      color: isSelected ? Colors.white : AppColors.textDarkMuted,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.textDarkSecondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final switcher = Container(
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.borderGreen.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              _buildSegmentButton('friendly', 'Individual Matches', Icons.sports_cricket_rounded),
+              _buildSegmentButton('tournament', 'Tournament Matches', Icons.emoji_events_rounded),
+            ],
+          ),
+        );
+
+        return DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            body: Column(
+              children: [
+                switcher,
+                Container(
+                  color: Colors.transparent,
+                  height: 38,
+                  child: const TabBar(
+                    indicatorColor: AppColors.primaryTurf,
+                    indicatorWeight: 3,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    indicatorPadding: EdgeInsets.only(bottom: 4),
+                    labelColor: AppColors.primaryTurf,
+                    unselectedLabelColor: AppColors.textDarkMuted,
+                    dividerColor: Colors.transparent,
+                    labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    tabs: [
+                      Tab(text: 'LIVE'),
+                      Tab(text: 'UPCOMING'),
+                      Tab(text: 'COMPLETED'),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildMatchList(context, live, activeSubTab == 'friendly' ? 'No live friendly matches right now.' : 'No live tournament matches right now.', role, appState),
+                      _buildMatchList(context, upcoming, activeSubTab == 'friendly' ? 'No upcoming friendly matches scheduled.' : 'No upcoming tournament matches scheduled.', role, appState),
+                      _buildMatchList(context, completed, activeSubTab == 'friendly' ? 'No completed friendly matches found.' : 'No completed tournament matches found.', role, appState),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildMatchList(context, live, 'No live matches right now.', role, appState),
-            _buildMatchList(context, upcoming, 'No upcoming matches scheduled.', role, appState),
-            _buildMatchList(context, completed, 'No completed matches found.', role, appState),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -205,6 +278,27 @@ class MatchesScreen extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (match.tournamentName != null && match.tournamentName!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.emoji_events_rounded,
+                          size: 13,
+                          color: AppColors.pitchGold,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          match.tournamentName!,
+                          style: const TextStyle(
+                            color: AppColors.textDarkSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   
                   // Team A row

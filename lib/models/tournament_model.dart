@@ -46,9 +46,34 @@ class Tournament {
     DateTime? startDate,
     this.venue = 'CricX Turf Arena',
   })  : this.startDate = startDate ?? DateTime.now(),
-        this.pointsTable = teams.map((t) => PointsTableEntry(team: t)).toList();
+        this.pointsTable = teams.map((t) => PointsTableEntry(team: t)).toList() {
+    refreshStatus();
+  }
+
+  void refreshStatus() {
+    if (status == 'Completed') return;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tourStartDate = DateTime(startDate.year, startDate.month, startDate.day);
+
+    final hasStartedMatches = matches.any((m) => m.status == MatchStatus.live || m.status == MatchStatus.completed);
+    final allCompleted = matches.isNotEmpty && matches.every((m) => m.status == MatchStatus.completed);
+    final finalMatchCompleted = matches.any((m) => m.id.endsWith('_final') && m.status == MatchStatus.completed);
+
+    if (finalMatchCompleted || (matches.isNotEmpty && allCompleted)) {
+      status = 'Completed';
+    } else if (hasStartedMatches) {
+      status = 'Ongoing';
+    } else if (tourStartDate.isAfter(today)) {
+      status = 'Upcoming';
+    } else {
+      status = 'Ongoing';
+    }
+  }
 
   void updatePointsTable() {
+    refreshStatus();
     pointsTable = teams.map((t) => PointsTableEntry(team: t)).toList();
     
     // Accumulators for Net Run Rate calculation

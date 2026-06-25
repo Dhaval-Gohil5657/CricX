@@ -124,7 +124,9 @@ class TournamentDetailScreen extends StatelessWidget {
             itemCount: standings.length,
             itemBuilder: (context, index) {
               final entry = standings[index];
-              final isQualified = tour.playoffType == 'Semifinals & Final' ? index < 4 : index < 2;
+              final leagueMatches = tour.matches.where((m) => m.id.contains('_league_')).toList();
+              final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
+              final isQualified = allLeagueCompleted && (tour.playoffType == 'Semifinals & Final' ? index < 4 : index < 2);
 
               return Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),

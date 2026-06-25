@@ -22,7 +22,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   final List<bool> _activatedTabs = [true, false, false, false, false];
   UserRole? _lastRole;
-  String _matchesView = 'matches'; // 'matches' or 'tournaments'
 
   @override
   Widget build(BuildContext context) {
@@ -48,19 +47,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
 
     // Add Matches tab
-    if (_matchesView == 'matches') {
-      screens.add(const MatchesScreen());
-      navItems.add({
-        'icon': Icons.sports_cricket_rounded,
-        'label': 'Matches',
-      });
-    } else {
-      screens.add(const OrganizerDashboard());
-      navItems.add({
-        'icon': Icons.emoji_events_rounded,
-        'label': 'Tournaments',
-      });
-    }
+    screens.add(const MatchesScreen());
+    navItems.add({
+      'icon': Icons.sports_cricket_rounded,
+      'label': 'Matches',
+    });
+
+    // Add Tournaments tab
+    screens.add(const OrganizerDashboard());
+    navItems.add({
+      'icon': Icons.emoji_events_rounded,
+      'label': 'Tournaments',
+    });
 
     // Manage tab for unified role (Tournaments tab removed as it is mixed with Matches tab)
     if (role == UserRole.scorer || role == UserRole.organizer) {
@@ -159,118 +157,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ],
         ),
         actions: [
-          if (navItems[_selectedIndex]['label'] == 'Matches' || navItems[_selectedIndex]['label'] == 'Tournaments')
-            Padding(
-              padding: const EdgeInsets.only(right: 12.0),
-              child: Center(
-                child: PopupMenuButton<String>(
-                  tooltip: 'Switch Feed',
-                  onSelected: (String newView) {
-                    setState(() {
-                      _matchesView = newView;
-                    });
-                  },
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: AppColors.borderWood, width: 1.5),
-                  ),
-                  color: AppColors.cardBg,
-                  offset: const Offset(0, 46),
-                  itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      value: 'matches',
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppColors.accentCrease.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Text('🏏', style: TextStyle(fontSize: 13)),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Individual Matches',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'tournaments',
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Text('🏆', style: TextStyle(fontSize: 13)),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Tournaments',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.borderWood,
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _matchesView == 'matches' ? '🏏' : '🏆',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          _matchesView == 'matches' ? 'Matches' : 'Tournaments',
-                          style: const TextStyle(
-                            color: AppColors.textDark,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: AppColors.textDarkSecondary,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
           if (_selectedIndex == screens.length - 1)
             IconButton(
               icon: Icon(
@@ -343,20 +229,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             child: SizedBox(
               height: 58,
               child: Padding(
-                padding: const EdgeInsets.only(left: 30, right: 10),
+                padding: const EdgeInsets.only(left: 20, right: 10),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: List.generate(navItems.length, (index) {
                     final item = navItems[index];
                     final isSelected = _selectedIndex == index;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedIndex = index;
-                          });
-                        },
-                        behavior: HitTestBehavior.opaque,
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedIndex = index;
+                        });
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
