@@ -294,12 +294,6 @@ class DashboardScreen extends StatelessWidget {
                             ? AppColors.primaryTurf.withOpacity(0.12)
                             : AppColors.woodMahogany.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
-                        // border: Border.all(
-                        //   color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
-                        //       ? AppColors.primaryTurf.withOpacity(0.3)
-                        //       : AppColors.woodMahogany.withOpacity(0.3),
-                        //   width: 0.5,
-                        // ),
                       ),
                       child: Text(
                         (match.tournamentId != null && match.tournamentId!.isNotEmpty)

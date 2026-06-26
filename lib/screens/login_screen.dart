@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../constants/app_colors.dart';
 import 'main_navigation_screen.dart';
@@ -17,10 +18,12 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   
   bool _isSignUp = false;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   final _auth = FirebaseAuth.instance;
 
@@ -28,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -44,6 +48,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (password.isEmpty || password.length < 6) {
       _showError('Password must be at least 6 characters long.');
       return;
+    }
+
+    if (_isSignUp) {
+      final confirmPassword = _confirmPasswordController.text.trim();
+      if (password != confirmPassword) {
+        _showError('Passwords do not match.');
+        return;
+      }
     }
 
     setState(() {
@@ -69,6 +81,21 @@ class _LoginScreenState extends State<LoginScreen> {
       if (userCredential.user != null) {
         if (!mounted) return;
         
+        // Save user role to Firestore
+        try {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .set({
+            'role': widget.targetRole.name,
+            'email': userCredential.user!.email,
+          }, SetOptions(merge: true));
+        } catch (e) {
+          debugPrint('Failed to save user role to Firestore: $e');
+        }
+
+        if (!mounted) return;
+
         // Update AppState with the chosen role
         final appState = Provider.of<AppState>(context, listen: false);
         appState.changeRole(widget.targetRole);
@@ -319,13 +346,52 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+                  if (_isSignUp) ...[
+                    const SizedBox(height: 20),
+                    // Confirm Password Text Field
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textDark,
+                      ),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryTurf),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: AppColors.textDarkSecondary,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                        hintText: 'Confirm password',
+                        hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: AppColors.borderWood, width: 1.2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 2.0),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 32),
                   
                   // Submit Button
                   ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isSignUp ? AppColors.accentCrease : AppColors.primaryTurf,
+                      backgroundColor: AppColors.primaryTurf,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: AppColors.primaryTurf.withOpacity(0.6),
                       padding: const EdgeInsets.symmetric(vertical: 16),
