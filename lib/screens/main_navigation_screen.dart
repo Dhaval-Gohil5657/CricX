@@ -71,11 +71,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     // Directory Tab (Combined Teams & Players)
-    screens.add(const DirectoryScreen());
-    navItems.add({
-      'icon': Icons.people_alt_rounded,
-      'label': 'Directory',
-    });
+    if (role != UserRole.guest) {
+      screens.add(const DirectoryScreen());
+      navItems.add({
+        'icon': Icons.people_alt_rounded,
+        'label': 'Directory',
+      });
+    }
 
     // Safeguard index out of bounds and update activated tabs
     if (_selectedIndex >= screens.length) {

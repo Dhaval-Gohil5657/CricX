@@ -144,7 +144,7 @@ class OrganizerDashboard extends StatelessWidget {
                             const Icon(
                               Icons.calendar_month_rounded,
                               size: 13,
-                              color: AppColors.pitchGold,
+                              color: AppColors.woodMahogany,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -172,7 +172,7 @@ class OrganizerDashboard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       tour.name,
-                      style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: AppColors.primaryTurf, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -208,7 +208,7 @@ class OrganizerDashboard extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: 14,
+          size: 13,
           color: AppColors.primaryTurf,
         ),
         const SizedBox(width: 4),
@@ -216,7 +216,7 @@ class OrganizerDashboard extends StatelessWidget {
           label,
           style: const TextStyle(
             color: AppColors.textDarkSecondary,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
         ),

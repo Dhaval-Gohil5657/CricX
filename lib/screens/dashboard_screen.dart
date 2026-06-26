@@ -8,6 +8,7 @@ import 'scorer/create_match_screen.dart';
 import 'scorer/create_team_screen.dart';
 import 'scorer/toss_setup_screen.dart';
 import 'organizer/create_tournament_screen.dart';
+import 'welcome_screen.dart';
 import '../constants/app_colors.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -90,21 +91,20 @@ class DashboardScreen extends StatelessWidget {
                   )
                 else
                   _buildEmptyLiveCard(context, role),
-                
-                const SizedBox(height: 24),
-                
-                // Quick Actions based on Role
-                const Text(
-                  'QUICK ACTIONS',
-                  style: TextStyle(
-                    color: AppColors.textDarkSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
+                if (role != UserRole.guest) ...[
+                  const SizedBox(height: 24),
+                  const Text(
+                    'QUICK ACTIONS',
+                    style: TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _buildQuickActions(context, role, appState),
+                  const SizedBox(height: 12),
+                  _buildQuickActions(context, role, appState),
+                ],
                 const SizedBox(height: 24),
                 
                 // Scorer / Organizer sees Next Matches, Guest / Player sees Recent Matches
@@ -209,6 +209,10 @@ class DashboardScreen extends StatelessWidget {
                       },
                     ),
                 ],
+                if (role == UserRole.guest) ...[
+                  const SizedBox(height: 24),
+                  _buildGuestPromoCard(context),
+                ],
               ],
             ),
           ),
@@ -290,12 +294,12 @@ class DashboardScreen extends StatelessWidget {
                             ? AppColors.primaryTurf.withOpacity(0.12)
                             : AppColors.woodMahogany.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
-                              ? AppColors.primaryTurf.withOpacity(0.3)
-                              : AppColors.woodMahogany.withOpacity(0.3),
-                          width: 0.5,
-                        ),
+                        // border: Border.all(
+                        //   color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                        //       ? AppColors.primaryTurf.withOpacity(0.3)
+                        //       : AppColors.woodMahogany.withOpacity(0.3),
+                        //   width: 0.5,
+                        // ),
                       ),
                       child: Text(
                         (match.tournamentId != null && match.tournamentId!.isNotEmpty)
@@ -1130,6 +1134,109 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGuestPromoCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primaryTurf.withOpacity(0.2), width: 1),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Color(0xFFE2EFE4), // Very soft light turf green
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryTurf.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryTurf.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.sports_cricket_rounded,
+                  color: AppColors.primaryTurf,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Unlock CricX Features!',
+                  style: TextStyle(
+                    color: AppColors.primaryTurf,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Register or log in to create teams, schedule matches, manage tournament tables, and save your app preferences.',
+            style: TextStyle(
+              color: AppColors.textDarkSecondary,
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 30,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTurf,
+                foregroundColor: Colors.white,
+                padding:  EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                );
+              },
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.login_rounded, size: 14),
+                  SizedBox(width: 8),
+                  Text(
+                    'Log In / Register Now',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
