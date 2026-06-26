@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../models/team_model.dart';
 import '../../models/player_model.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 
 class CreateTeamScreen extends StatefulWidget {
@@ -344,8 +345,10 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   void _addPlayerToSquad() {
     final name = _playerNameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter player name')),
+      CustomSnackBar.show(
+        context,
+        message: 'Please enter player name',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -369,8 +372,10 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
     if (!_formKey.currentState!.validate()) return;
     
     if (_addedPlayers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least 1 player to the squad')),
+      CustomSnackBar.show(
+        context,
+        message: 'Please add at least 1 player to the squad',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -388,8 +393,10 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     appState.addTeam(newTeam);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Team "${newTeam.name}" created successfully!')),
+    CustomSnackBar.show(
+      context,
+      message: 'Team "${newTeam.name}" created successfully!',
+      type: SnackBarType.success,
     );
     Navigator.pop(context);
   }

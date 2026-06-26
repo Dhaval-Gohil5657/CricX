@@ -5,6 +5,7 @@ import '../../state/app_state.dart';
 import '../../models/match_model.dart';
 import '../../models/player_model.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 
 class LiveScoringScreen extends StatelessWidget {
@@ -712,8 +713,10 @@ class LiveScoringScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: hasPlayers ? () => _showWicketDialog(context, match, appState) : () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please select striker, non-striker, and bowler first!')),
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Please select striker, non-striker, and bowler first!',
+                      type: SnackBarType.warning,
                     );
                   },
                   child: Row(
@@ -808,8 +811,10 @@ class LiveScoringScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
       ),
       onPressed: isEnabled ? onTap : () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select striker, non-striker, and bowler first!')),
+        CustomSnackBar.show(
+          context,
+          message: 'Please select striker, non-striker, and bowler first!',
+          type: SnackBarType.warning,
         );
       },
       child: Column(
@@ -849,11 +854,11 @@ class LiveScoringScreen extends StatelessWidget {
 
   void _undoLastAction(BuildContext context, CricketMatch match, AppState appState) {
     appState.undoLastBall(match.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Last action undone successfully.'),
-        duration: Duration(seconds: 2),
-      ),
+    CustomSnackBar.show(
+      context,
+      message: 'Last action undone successfully.',
+      type: SnackBarType.info,
+      duration: const Duration(seconds: 2),
     );
   }
 

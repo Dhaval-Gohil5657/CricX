@@ -4,6 +4,7 @@ import '../models/player_model.dart';
 import '../state/app_state.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
+import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 import 'organizer/tournament_detail_screen.dart';
 
@@ -80,8 +81,10 @@ class ScorecardScreen extends StatelessWidget {
                       ),
                     );
                   } catch (_) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tournament details not found.')),
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Tournament details not found.',
+                      type: SnackBarType.error,
                     );
                   }
                 },

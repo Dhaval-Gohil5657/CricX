@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../models/tournament_model.dart';
 import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 
 class CreateTournamentScreen extends StatefulWidget {
@@ -36,11 +37,11 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       setState(() {
         _selectedPlayoffType = 'Direct Final';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Playoff format reverted to Direct Final. Semifinals & Final requires at least 8 teams.'),
-          duration: Duration(seconds: 3),
-        ),
+      CustomSnackBar.show(
+        context,
+        message: 'Playoff format reverted to Direct Final. Semifinals & Final requires at least 8 teams.',
+        type: SnackBarType.warning,
+        duration: const Duration(seconds: 3),
       );
     }
   }
@@ -314,10 +315,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                       isSelected: _selectedPlayoffType == 'Semifinals & Final',
                       onTap: () {
                         if (_selectedTeams.length < 8) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Semifinals & Final format is only available for tournaments with 8 or more teams.'),
-                            ),
+                          CustomSnackBar.show(
+                            context,
+                            message: 'Semifinals & Final format is only available for tournaments with 8 or more teams.',
+                            type: SnackBarType.warning,
                           );
                         } else {
                           setState(() => _selectedPlayoffType = 'Semifinals & Final');
@@ -457,15 +458,19 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
 
     final playoffReqTeams = _selectedPlayoffType == 'Semifinals & Final' ? 4 : 2;
     if (_selectedTeams.length < playoffReqTeams) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select at least $playoffReqTeams teams for this format')),
+      CustomSnackBar.show(
+        context,
+        message: 'Please select at least $playoffReqTeams teams for this format',
+        type: SnackBarType.error,
       );
       return;
     }
 
     if (_selectedPlayoffType == 'Semifinals & Final' && _selectedTeams.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semifinals & Final format requires at least 8 participating teams.')),
+      CustomSnackBar.show(
+        context,
+        message: 'Semifinals & Final format requires at least 8 participating teams.',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -495,8 +500,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     appState.createTournament(newTour);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Tournament "${newTour.name}" launched successfully!')),
+    CustomSnackBar.show(
+      context,
+      message: 'Tournament "${newTour.name}" launched successfully!',
+      type: SnackBarType.success,
     );
     Navigator.pop(context);
   }

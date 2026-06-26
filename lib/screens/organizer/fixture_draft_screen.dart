@@ -5,6 +5,7 @@ import '../../models/tournament_model.dart';
 import '../../models/match_model.dart';
 import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 
 class FixtureDraftScreen extends StatefulWidget {
@@ -207,11 +208,10 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
     // 4. Save to DB
     appState.addTournamentMatches(widget.tournament.id, finalizedMatches);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Successfully confirmed ${finalizedMatches.length} fixtures!'),
-        backgroundColor: AppColors.accentCrease,
-      ),
+    CustomSnackBar.show(
+      context,
+      message: 'Successfully confirmed ${finalizedMatches.length} fixtures!',
+      type: SnackBarType.success,
     );
 
     // Pop draft screen and return

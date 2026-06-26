@@ -6,6 +6,7 @@ import '../../models/match_model.dart';
 import '../../models/team_model.dart';
 import '../scorecard_screen.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 import 'fixture_draft_screen.dart';
 import '../scorer/toss_setup_screen.dart';
@@ -1095,8 +1096,10 @@ class TournamentDetailScreen extends StatelessWidget {
       playoffMatches.add(match);
     } else if (tour.playoffType == 'Semifinals & Final') {
       if (standings.length < 4) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('At least 4 teams are required to generate semi-finals')),
+        CustomSnackBar.show(
+          context,
+          message: 'At least 4 teams are required to generate semi-finals',
+          type: SnackBarType.error,
         );
         return;
       }
@@ -1170,8 +1173,10 @@ class TournamentDetailScreen extends StatelessWidget {
     }
 
     if (winner1 == null || winner2 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not determine winners from semi-finals. Make sure matches have a clear winner.')),
+      CustomSnackBar.show(
+        context,
+        message: 'Could not determine winners from semi-finals. Make sure matches have a clear winner.',
+        type: SnackBarType.error,
       );
       return;
     }

@@ -6,6 +6,7 @@ import '../../models/team_model.dart';
 import '../../models/player_model.dart';
 import 'live_scoring_screen.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 
 class TossSetupScreen extends StatefulWidget {
@@ -414,8 +415,10 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
 
   void _startMatchScoring() {
     if (_striker == null || _nonStriker == null || _bowler == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select striker, non-striker, and bowler')),
+      CustomSnackBar.show(
+        context,
+        message: 'Please select striker, non-striker, and bowler',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -432,8 +435,10 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
       bowler: _bowler!,
     );
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Match started successfully!')),
+    CustomSnackBar.show(
+      context,
+      message: 'Match started successfully!',
+      type: SnackBarType.success,
     );
 
     // Navigate directly to Live Scoring Screen

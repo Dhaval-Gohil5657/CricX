@@ -4,6 +4,7 @@ import '../../state/app_state.dart';
 import '../../models/match_model.dart';
 import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 
 class CreateMatchScreen extends StatefulWidget {
@@ -478,8 +479,10 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     if (!_formKey.currentState!.validate()) return;
     
     if (_teamA == null || _teamB == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select both teams')),
+      CustomSnackBar.show(
+        context,
+        message: 'Please select both teams',
+        type: SnackBarType.error,
       );
       return;
     }
@@ -508,8 +511,10 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
 
     Provider.of<AppState>(context, listen: false).createMatch(newMatch);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Match scheduled between ${_teamA!.name} and ${_teamB!.name}!')),
+    CustomSnackBar.show(
+      context,
+      message: 'Match scheduled between ${_teamA!.name} and ${_teamB!.name}!',
+      type: SnackBarType.success,
     );
     Navigator.pop(context);
   }

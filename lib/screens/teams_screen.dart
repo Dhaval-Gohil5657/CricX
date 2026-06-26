@@ -4,6 +4,7 @@ import '../state/app_state.dart';
 import '../models/team_model.dart';
 import '../models/player_model.dart';
 import '../constants/app_colors.dart';
+import '../constants/custom_snackbar.dart';
 import 'scorer/create_team_screen.dart';
 
 class TeamsScreen extends StatefulWidget {
@@ -73,11 +74,10 @@ class _TeamsScreenState extends State<TeamsScreen> {
                             ),
                           );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please switch your role to Scorer or Organizer to create teams.'),
-                              backgroundColor: Colors.orange,
-                            ),
+                          CustomSnackBar.show(
+                            context,
+                            message: 'Please switch your role to Scorer or Organizer to create teams.',
+                            type: SnackBarType.warning,
                           );
                         }
                       },
@@ -480,11 +480,10 @@ class _TeamsScreenState extends State<TeamsScreen> {
                   onPressed: () {
                     final name = nameController.text.trim();
                     if (name.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please enter a player name.'),
-                          backgroundColor: Colors.redAccent,
-                        ),
+                      CustomSnackBar.show(
+                        context,
+                        message: 'Please enter a player name.',
+                        type: SnackBarType.error,
                       );
                       return;
                     }
@@ -500,11 +499,10 @@ class _TeamsScreenState extends State<TeamsScreen> {
                     appState.addPlayerToTeam(team.id, player);
                     Navigator.pop(context);
                     
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('$name added to ${team.name}!'),
-                        backgroundColor: AppColors.accentCrease,
-                      ),
+                    CustomSnackBar.show(
+                      context,
+                      message: '$name added to ${team.name}!',
+                      type: SnackBarType.success,
                     );
                   },
                   style: ElevatedButton.styleFrom(
