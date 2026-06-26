@@ -33,7 +33,7 @@ class LiveScoringScreen extends StatelessWidget {
     // Retrieve all events in the current over (including Wides and No Balls)
     final List<BallEvent> currentOverEvents = [];
     int legalBallsCount = 0;
-    final targetLegalCount = currentOverBalls > 0 ? currentOverBalls : 6;
+    final targetLegalCount = currentOverBalls;
     
     for (int i = innings.events.length - 1; i >= 0; i--) {
       final ev = innings.events[i];
@@ -923,7 +923,7 @@ class LiveScoringScreen extends StatelessWidget {
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
-                      children: ['Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped'].map((t) {
+                      children: ['Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped', 'Hit Wicket'].map((t) {
                         final isSelected = wicketType == t;
                         return ChoiceChip(
                           label: Text(t),
@@ -1013,9 +1013,6 @@ class LiveScoringScreen extends StatelessWidget {
                         ? 'WICKET! Run Out! ${outBatsman.name} is run out after completing $runs run(s).'
                         : 'WICKET! ${outBatsman.name} is out ($wicketType) bowled by ${match.currentBowler!.name}.';
                     
-                    // Determine if striker is out BEFORE recordBall resets the innings/strikers
-                    final isStrikerOut = match.striker != null && outBatsman.id == match.striker!.id;
-
                     // Record Wicket event
                     appState.recordBall(match.id, BallEvent(
                       runs: runs,
@@ -1026,13 +1023,18 @@ class LiveScoringScreen extends StatelessWidget {
                       description: desc,
                     ));
                     
+                    // Fetch the latest state of the match after recordBall
+                    final latestMatch = appState.matches.firstWhere((m) => m.id == match.id, orElse: () => match);
+                    
+                    // Determine if the out batsman is currently at the striker end in the updated state
+                    final isStrikerOutCurrently = latestMatch.striker != null && outBatsman.id == latestMatch.striker!.id;
+
                     // Replace out batsman in UI
-                    appState.changeStrikerPlayer(null, isStrikerOut);
+                    appState.changeStrikerPlayer(null, isStrikerOutCurrently);
 
                     Navigator.pop(context);
 
                     // Automatically prompt to choose the next batsman of the batting team (if same innings and match still live)
-                    final latestMatch = appState.matches.firstWhere((m) => m.id == match.id, orElse: () => match);
                     if (latestMatch.status == MatchStatus.live && latestMatch.currentInningsNum == match.currentInningsNum) {
                       final battingTeam = latestMatch.battingTeam;
                       final availablePlayers = battingTeam.players.where((p) {
@@ -1041,7 +1043,7 @@ class LiveScoringScreen extends StatelessWidget {
 
                       if (availablePlayers.isNotEmpty) {
                         _showPlayerSelector(context, availablePlayers, (newPlayer) {
-                          appState.changeStrikerPlayer(newPlayer, isStrikerOut);
+                          appState.changeStrikerPlayer(newPlayer, isStrikerOutCurrently);
                         });
                       }
                     }

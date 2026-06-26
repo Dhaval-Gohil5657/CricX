@@ -92,6 +92,9 @@ class OrganizerDashboard extends StatelessWidget {
       itemCount: list.length,
       itemBuilder: (context, index) {
         final tour = list[index];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        final dateStr = '${tour.startDate.day} ${months[tour.startDate.month - 1]} ${tour.startDate.year}';
+        
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -136,25 +139,30 @@ class OrganizerDashboard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.woodMahogany.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: AppColors.woodMahogany.withOpacity(0.2),
-                              width: 1,
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_month_rounded,
+                              size: 13,
+                              color: AppColors.pitchGold,
                             ),
-                          ),
-                          child: Text(
-                            tour.type.toUpperCase(),
-                            style: const TextStyle(color: AppColors.woodMahogany, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Starts: $dateStr',
+                              style: const TextStyle(
+                                color: AppColors.textDarkSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         Text(
                           tour.status.toUpperCase(),
                           style: TextStyle(
-                            color: tour.status == 'Ongoing' ? AppColors.primaryTurf : AppColors.textDarkMuted,
+                            color: tour.status == 'Ongoing' 
+                                ? AppColors.primaryTurf 
+                                : (tour.status == 'Completed' ? AppColors.woodMahogany : AppColors.textDarkMuted),
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -166,10 +174,15 @@ class OrganizerDashboard extends StatelessWidget {
                       tour.name,
                       style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Teams: ${tour.teams.length} participating • Matches Scheduled: ${tour.matches.length}',
-                      style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        _buildStatChip(Icons.people_alt_rounded, '${tour.teams.length} Teams'),
+                        const SizedBox(width: 16),
+                        _buildStatChip(Icons.sports_cricket_rounded, '${tour.matches.length} Matches'),
+                        const SizedBox(width: 16),
+                        _buildStatChip(Icons.adjust_rounded, '${tour.defaultOvers} Overs'),
+                      ],
                     ),
                     const Divider(color: AppColors.dividerGreen, height: 24),
                     const Row(
@@ -186,6 +199,28 @@ class OrganizerDashboard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStatChip(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: AppColors.primaryTurf,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textDarkSecondary,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }
