@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../constants/app_colors.dart';
+import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -100,15 +101,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final appState = Provider.of<AppState>(context, listen: false);
         appState.changeRole(widget.targetRole);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isSignUp 
-                  ? 'Account created successfully! Welcome to CricX.' 
-                  : 'Welcome back to CricX!',
-            ),
-            backgroundColor: AppColors.accentCrease,
-          ),
+        CustomSnackBar.show(
+          context,
+          message: _isSignUp 
+              ? 'Account created successfully! Welcome to CricX.' 
+              : 'Welcome back to CricX!',
+          type: SnackBarType.success,
         );
 
         // Redirect to main navigation dashboard
@@ -135,11 +133,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-      ),
+    CustomSnackBar.show(
+      context,
+      message: message,
+      type: SnackBarType.error,
     );
   }
 

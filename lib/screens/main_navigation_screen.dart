@@ -9,6 +9,7 @@ import 'scorer/scorer_dashboard.dart';
 import 'organizer/organizer_dashboard.dart';
 import 'welcome_screen.dart';
 import '../constants/app_colors.dart';
+import '../constants/custom_snackbar.dart';
 
 
 class MainNavigationScreen extends StatefulWidget {
@@ -169,22 +170,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
               tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
               onPressed: () async {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
                 try {
-                  if (FirebaseAuth.instance.currentUser != null) {
+                  final isLoggingOut = FirebaseAuth.instance.currentUser != null;
+                  if (isLoggingOut) {
                     await FirebaseAuth.instance.signOut();
                   }
                   appState.changeRole(UserRole.guest);
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(FirebaseAuth.instance.currentUser != null
-                          ? 'Logged out successfully.'
-                          : 'Returning to role selection.'),
-                      backgroundColor: AppColors.accentCrease,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
                   if (context.mounted) {
+                    CustomSnackBar.show(
+                      context,
+                      message: isLoggingOut
+                          ? 'Logged out successfully.'
+                          : 'Returning to role selection.',
+                      type: SnackBarType.success,
+                      duration: const Duration(seconds: 2),
+                    );
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -193,12 +193,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     );
                   }
                 } catch (e) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Action failed: $e'),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
+                  if (context.mounted) {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Action failed: $e',
+                      type: SnackBarType.error,
+                    );
+                  }
                 }
               },
             ),

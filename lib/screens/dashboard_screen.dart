@@ -10,6 +10,7 @@ import 'scorer/toss_setup_screen.dart';
 import 'organizer/create_tournament_screen.dart';
 import 'welcome_screen.dart';
 import '../constants/app_colors.dart';
+import '../constants/custom_snackbar.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -707,8 +708,10 @@ class DashboardScreen extends StatelessWidget {
           label: 'Follow Teams',
           color: AppColors.accentCrease,
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Follow team functionality demo: Marked all teams followed")),
+            CustomSnackBar.show(
+              context,
+              message: "Follow team functionality demo: Marked all teams followed",
+              type: SnackBarType.success,
             );
           },
         ),
@@ -718,8 +721,10 @@ class DashboardScreen extends StatelessWidget {
           label: 'Leaderboard',
           color: Colors.purpleAccent,
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Leaderboards loading... (Mock UI)")),
+            CustomSnackBar.show(
+              context,
+              message: "Leaderboards loading... (Mock UI)",
+              type: SnackBarType.info,
             );
           },
         ),
@@ -729,8 +734,10 @@ class DashboardScreen extends StatelessWidget {
           label: 'Alerts',
           color: Colors.redAccent,
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Alert preferences: Scoring alerts enabled")),
+            CustomSnackBar.show(
+              context,
+              message: "Alert preferences: Scoring alerts enabled",
+              type: SnackBarType.info,
             );
           },
         ),
