@@ -100,6 +100,7 @@ class CricketMatch {
 
   String? tournamentId;
   String? tournamentName;
+  final String? creatorId;
 
   CricketMatch({
     required this.id,
@@ -115,6 +116,7 @@ class CricketMatch {
     required this.matchDate,
     this.tournamentId,
     this.tournamentName,
+    this.creatorId,
   });
 
   Team get battingTeam => currentInningsNum == 1 

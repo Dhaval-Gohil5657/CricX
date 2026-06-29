@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../state/app_state.dart';
 import '../../models/match_model.dart';
 import '../../models/team_model.dart';
@@ -499,6 +500,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
         ? (int.tryParse(_customOversController.text.trim()) ?? 10)
         : _selectedOvers;
 
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final id = 'm_new_${DateTime.now().millisecondsSinceEpoch}';
     final newMatch = CricketMatch(
       id: id,
@@ -507,6 +509,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       totalOvers: finalOvers,
       venue: _venueController.text.trim(),
       matchDate: combinedDateTime,
+      creatorId: currentUserId,
     );
 
     Provider.of<AppState>(context, listen: false).createMatch(newMatch);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../state/app_state.dart';
 import '../../models/tournament_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'tournament_detail_screen.dart';
 import '../../constants/app_colors.dart';
 
@@ -11,7 +12,11 @@ class OrganizerDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final tournaments = appState.tournaments;
+    final role = appState.currentRole;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final tournaments = (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.tournaments.where((t) => t.creatorId == null || t.creatorId == currentUserId).toList()
+        : appState.tournaments;
 
     return DefaultTabController(
       length: 3,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/match_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'scorecard_screen.dart';
 import 'scorer/live_scoring_screen.dart';
 import 'scorer/create_match_screen.dart';
@@ -19,10 +20,16 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
-    final liveMatches = appState.matches.where((m) => m.status == MatchStatus.live).toList();
-    final completedMatches = appState.matches.where((m) => m.status == MatchStatus.completed).toList();
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    final allVisibleMatches = (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.matches.where((m) => m.creatorId == null || m.creatorId == currentUserId).toList()
+        : appState.matches;
+
+    final liveMatches = allVisibleMatches.where((m) => m.status == MatchStatus.live).toList();
+    final completedMatches = allVisibleMatches.where((m) => m.status == MatchStatus.completed).toList();
     final now = DateTime.now();
-    final upcomingMatches = appState.matches.where((m) {
+    final upcomingMatches = allVisibleMatches.where((m) {
       return m.status == MatchStatus.upcoming &&
              m.matchDate.year == now.year &&
              m.matchDate.month == now.month &&

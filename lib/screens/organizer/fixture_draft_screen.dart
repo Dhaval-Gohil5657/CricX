@@ -201,6 +201,7 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
           matchDate: match.matchDate,
           tournamentId: match.tournamentId,
           tournamentName: match.tournamentName,
+          creatorId: match.creatorId ?? widget.tournament.creatorId,
         ),
       );
     }

@@ -32,6 +32,7 @@ class Tournament {
   final int defaultOvers;
   final DateTime startDate;
   final String venue;
+  final String? creatorId;
 
   Tournament({
     required this.id,
@@ -45,6 +46,7 @@ class Tournament {
     this.defaultOvers = 10,
     DateTime? startDate,
     this.venue = 'CricX Turf Arena',
+    this.creatorId,
   })  : this.startDate = startDate ?? DateTime.now(),
         this.pointsTable = teams.map((t) => PointsTableEntry(team: t)).toList() {
     refreshStatus();

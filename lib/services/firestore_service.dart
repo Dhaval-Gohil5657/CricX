@@ -306,6 +306,7 @@ class FirestoreService implements DatabaseService {
       matchDate: (data['matchDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       tournamentId: data['tournamentId'],
       tournamentName: data['tournamentName'],
+      creatorId: data['creatorId'],
     );
 
     // Innings
@@ -364,6 +365,7 @@ class FirestoreService implements DatabaseService {
       'bowlerBallsBowled': match.bowlerBallsBowled,
       'tournamentId': match.tournamentId,
       'tournamentName': match.tournamentName,
+      'creatorId': match.creatorId,
     };
   }
 
@@ -427,6 +429,7 @@ class FirestoreService implements DatabaseService {
       defaultOvers: data['defaultOvers'] ?? 10,
       startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       venue: data['venue'] ?? 'CricX Turf Arena',
+      creatorId: data['creatorId'],
     );
 
     // Reconstruct Points Table
@@ -467,6 +470,7 @@ class FirestoreService implements DatabaseService {
         'lost': e.lost,
         'netRunRate': e.netRunRate,
       }).toList(),
+      'creatorId': tournament.creatorId,
     };
   }
 

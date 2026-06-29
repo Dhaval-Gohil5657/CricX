@@ -636,6 +636,7 @@ class AppState extends ChangeNotifier {
         matchDate: DateTime.now().add(const Duration(days: 1)),
         tournamentId: tour.id,
         tournamentName: tour.name,
+        creatorId: tour.creatorId,
       );
       playoffMatches.add(match);
       
@@ -658,6 +659,7 @@ class AppState extends ChangeNotifier {
         matchDate: DateTime.now().add(const Duration(days: 1)),
         tournamentId: tour.id,
         tournamentName: tour.name,
+        creatorId: tour.creatorId,
       );
 
       // SF2: Top 3 vs Top 4
@@ -670,6 +672,7 @@ class AppState extends ChangeNotifier {
         matchDate: DateTime.now().add(const Duration(days: 2)),
         tournamentId: tour.id,
         tournamentName: tour.name,
+        creatorId: tour.creatorId,
       );
 
       playoffMatches.addAll([sf1, sf2]);
@@ -720,6 +723,7 @@ class AppState extends ChangeNotifier {
       matchDate: DateTime.now().add(const Duration(days: 1)),
       tournamentId: tour.id,
       tournamentName: tour.name,
+      creatorId: tour.creatorId,
     );
     
     tour.matches.add(finalMatch);

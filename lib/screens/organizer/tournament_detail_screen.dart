@@ -1052,6 +1052,7 @@ class TournamentDetailScreen extends StatelessWidget {
           matchDate: tour.startDate.add(Duration(days: round)),
           tournamentId: tour.id,
           tournamentName: tour.name,
+          creatorId: tour.creatorId,
         );
         newMatches.add(match);
       }
@@ -1092,6 +1093,7 @@ class TournamentDetailScreen extends StatelessWidget {
         matchDate: DateTime.now().add(const Duration(days: 1)),
         tournamentId: tour.id,
         tournamentName: tour.name,
+        creatorId: tour.creatorId,
       );
       playoffMatches.add(match);
     } else if (tour.playoffType == 'Semifinals & Final') {
@@ -1118,6 +1120,7 @@ class TournamentDetailScreen extends StatelessWidget {
         matchDate: DateTime.now().add(const Duration(days: 1)),
         tournamentId: tour.id,
         tournamentName: tour.name,
+        creatorId: tour.creatorId,
       );
 
       // SF2: Top 3 vs Top 4
@@ -1130,6 +1133,7 @@ class TournamentDetailScreen extends StatelessWidget {
         matchDate: DateTime.now().add(const Duration(days: 2)),
         tournamentId: tour.id,
         tournamentName: tour.name,
+        creatorId: tour.creatorId,
       );
 
       playoffMatches.addAll([sf1, sf2]);
@@ -1190,6 +1194,7 @@ class TournamentDetailScreen extends StatelessWidget {
       matchDate: DateTime.now().add(const Duration(days: 1)),
       tournamentId: tour.id,
       tournamentName: tour.name,
+      creatorId: tour.creatorId,
     );
 
     // Launch FixtureDraftScreen to let creator choose date/time/venue for Final

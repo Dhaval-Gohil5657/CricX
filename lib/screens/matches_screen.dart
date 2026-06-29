@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/match_model.dart';
 import '../models/tournament_model.dart';
 import 'scorecard_screen.dart';
@@ -23,18 +24,27 @@ class _MatchesScreenState extends State<MatchesScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    final allVisibleMatches = (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.matches.where((m) => m.creatorId == null || m.creatorId == currentUserId).toList()
+        : appState.matches;
+
+    final allVisibleTournaments = (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.tournaments.where((t) => t.creatorId == null || t.creatorId == currentUserId).toList()
+        : appState.tournaments;
 
     // Reset selected tournament if it's not present in the current appState tournaments list anymore
     if (_selectedTournamentId != 'all' &&
         _selectedTournamentId != null &&
-        !appState.tournaments.any((t) => t.id == _selectedTournamentId)) {
+        !allVisibleTournaments.any((t) => t.id == _selectedTournamentId)) {
       _selectedTournamentId = 'all';
     }
 
-    final friendlyMatches = appState.matches
+    final friendlyMatches = allVisibleMatches
         .where((m) => m.tournamentId == null || m.tournamentId!.isEmpty)
         .toList();
-    final tournamentMatches = appState.matches
+    final tournamentMatches = allVisibleMatches
         .where((m) => m.tournamentId != null && m.tournamentId!.isNotEmpty)
         .toList();
 
@@ -114,7 +124,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
           children: [
             switcher,
             if (_activeSubTab == 'tournament')
-              _buildTournamentDropdown(appState.tournaments),
+              _buildTournamentDropdown(allVisibleTournaments),
             Container(
               color: Colors.transparent,
               height: 38,
