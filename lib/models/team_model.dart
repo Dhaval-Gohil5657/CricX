@@ -11,6 +11,8 @@ class Team {
   int matchesWon;
   int matchesLost;
   double netRunRate;
+  final String? creatorId;
+  String? captainId;
 
   Team({
     required this.id,
@@ -23,6 +25,8 @@ class Team {
     this.matchesWon = 0,
     this.matchesLost = 0,
     this.netRunRate = 0.0,
+    this.creatorId,
+    this.captainId,
   });
 
   int get points => matchesWon * 2;

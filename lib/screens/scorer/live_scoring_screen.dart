@@ -354,7 +354,7 @@ class LiveScoringScreen extends StatelessWidget {
                   const Icon(Icons.sports_cricket, color: Colors.transparent, size: 18),
                   const SizedBox(width: 8),
                   const Expanded(
-                    flex: 3,
+                    flex: 4,
                     child: Text('Batsman', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                   _buildBatsmanHeaderItem('R'),
@@ -442,7 +442,7 @@ class LiveScoringScreen extends StatelessWidget {
         Expanded(
           flex: 3,
           child: Text(
-            '${player.name}${isStriker ? ' *' : ''}',
+            '${player.name}${player.id == battingTeam.captainId && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : player.id == battingTeam.captainId ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}${isStriker ? ' *' : ''}',
             style: TextStyle(
               color: AppColors.textDark,
               fontWeight: isStriker ? FontWeight.bold : FontWeight.normal,
@@ -538,7 +538,7 @@ class LiveScoringScreen extends StatelessWidget {
                         const Text('', style: TextStyle(fontSize: 10)),
                         const SizedBox(height: 2),
                         Text(
-                          bowler.name,
+                          '${bowler.name}${bowler.id == bowlingTeam.captainId && bowler.role == 'Wicketkeeper' ? ' (C)(Wk)' : bowler.id == bowlingTeam.captainId ? ' (C)' : bowler.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
                           style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
                           overflow: TextOverflow.ellipsis,
                         ),

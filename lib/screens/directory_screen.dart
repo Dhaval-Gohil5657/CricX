@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'teams_screen.dart';
-import 'profile_screen.dart';
+import 'players_screen.dart';
 import '../constants/app_colors.dart';
 
 class DirectoryScreen extends StatelessWidget {
@@ -34,7 +34,7 @@ class DirectoryScreen extends StatelessWidget {
             child: TabBarView(
               children: [
                 TeamsScreen(),
-                ProfileScreen(),
+                PlayersScreen(),
               ],
             ),
           ),

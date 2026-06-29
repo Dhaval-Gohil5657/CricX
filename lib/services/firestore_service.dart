@@ -88,6 +88,11 @@ class FirestoreService implements DatabaseService {
   }
 
   @override
+  Future<void> updateTeamInfo(Team team) async {
+    await _teamsCollection.doc(team.id).set(_teamToMap(team));
+  }
+
+  @override
   Future<void> addPlayerToTeam(String teamId, Player player) async {
     final batch = _firestore.batch();
     
@@ -186,6 +191,8 @@ class FirestoreService implements DatabaseService {
       matchesWon: data['matchesWon'] ?? 0,
       matchesLost: data['matchesLost'] ?? 0,
       netRunRate: (data['netRunRate'] as num?)?.toDouble() ?? 0.0,
+      creatorId: data['creatorId'],
+      captainId: data['captainId'],
     );
   }
 
@@ -200,6 +207,8 @@ class FirestoreService implements DatabaseService {
       'matchesWon': team.matchesWon,
       'matchesLost': team.matchesLost,
       'netRunRate': team.netRunRate,
+      'creatorId': team.creatorId,
+      'captainId': team.captainId,
     };
   }
 

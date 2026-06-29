@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../state/app_state.dart';
 import '../../models/team_model.dart';
 import '../../models/player_model.dart';
@@ -23,6 +24,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   int _selectedColorHex = 0xFF4CAF50; // default green
   
   final List<Player> _addedPlayers = [];
+  String? _selectedCaptainId;
   final _playerNameController = TextEditingController();
   String _selectedPlayerRole = 'Batsman';
   String _selectedBattingStyle = 'Right-hand bat';
@@ -242,7 +244,13 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                         subtitle: Text('${p.role} • ${p.battingStyle}', style: const TextStyle(color: AppColors.textDarkSecondary)),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.redAccent, size: 18),
-                          onPressed: () => setState(() => _addedPlayers.removeAt(index)),
+                          onPressed: () => setState(() {
+                            final p = _addedPlayers[index];
+                            if (_selectedCaptainId == p.id) {
+                              _selectedCaptainId = null;
+                            }
+                            _addedPlayers.removeAt(index);
+                          }),
                         ),
                       ),
                     );
@@ -321,6 +329,43 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
               ),
               const SizedBox(height: 30),
 
+              // Select Captain Dropdown (only visible if there are players added)
+              if (_addedPlayers.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text('SELECT TEAM CAPTAIN', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderGreen),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedCaptainId,
+                      hint: const Text('Select Captain (Optional)', style: TextStyle(color: AppColors.textDarkMuted, fontSize: 13)),
+                      isExpanded: true,
+                      dropdownColor: AppColors.appBarBg,
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.accentCrease),
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                      onChanged: (String? val) {
+                        setState(() {
+                          _selectedCaptainId = val;
+                        });
+                      },
+                      items: _addedPlayers.map((player) {
+                        return DropdownMenuItem<String>(
+                          value: player.id,
+                          child: Text(player.name),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 30),
+
               // Save Team Button
               SizedBox(
                 width: double.infinity,
@@ -380,6 +425,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
       return;
     }
 
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final teamId = 't_new_${DateTime.now().millisecondsSinceEpoch}';
     final newTeam = Team(
       id: teamId,
@@ -388,6 +434,8 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
       logoEmoji: _selectedEmoji,
       logoColorHex: _selectedColorHex,
       players: _addedPlayers,
+      creatorId: currentUserId,
+      captainId: _selectedCaptainId,
     );
 
     final appState = Provider.of<AppState>(context, listen: false);

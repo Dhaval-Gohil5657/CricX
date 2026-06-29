@@ -555,7 +555,7 @@ class ScorecardScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          player.name,
+                          '${player.name}${player.id == team.captainId && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : player.id == team.captainId ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
                           style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                         Text(
@@ -713,7 +713,7 @@ class ScorecardScreen extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: Text(
-                      player.name,
+                      '${player.name}${player.id == oppTeam.captainId && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : player.id == oppTeam.captainId ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
                       style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),

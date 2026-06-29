@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../state/app_state.dart';
 import '../models/team_model.dart';
 import '../models/player_model.dart';
@@ -21,6 +22,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final teams = appState.teams;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -103,6 +105,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
         itemBuilder: (context, index) {
           final team = teams[index];
           final isExpanded = _expandedTeamId == team.id;
+          final isCreator = team.creatorId == null || team.creatorId == currentUserId;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -183,36 +186,57 @@ class _TeamsScreenState extends State<TeamsScreen> {
                         const SizedBox(height: 20),
                         
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'SQUAD PLAYERS',
-                              style: TextStyle(
-                                color: AppColors.textDarkSecondary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                            if (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer)
-                              TextButton.icon(
-                                onPressed: () => _showAddPlayerDialog(context, team, appState),
-                                icon: const Icon(Icons.add_rounded, size: 16, color: AppColors.primaryTurf),
-                                label: const Text(
-                                  'Add Player',
-                                  style: TextStyle(
-                                    color: AppColors.primaryTurf,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ),
-                          ],
-                        ),
+                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                           children: [
+                             const Text(
+                               'SQUAD PLAYERS',
+                               style: TextStyle(
+                                 color: AppColors.textDarkSecondary,
+                                 fontSize: 11,
+                                 fontWeight: FontWeight.bold,
+                                 letterSpacing: 1.0,
+                               ),
+                             ),
+                             if ((appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isCreator)
+                               Row(
+                                 children: [
+                                   TextButton.icon(
+                                     onPressed: () => _showEditTeamDialog(context, team, appState),
+                                     icon: const Icon(Icons.edit_rounded, size: 14, color: AppColors.primaryTurf),
+                                     label: const Text(
+                                       'Edit Team',
+                                       style: TextStyle(
+                                         color: AppColors.primaryTurf,
+                                         fontSize: 12,
+                                         fontWeight: FontWeight.bold,
+                                       ),
+                                     ),
+                                     style: TextButton.styleFrom(
+                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                     ),
+                                   ),
+                                   const SizedBox(width: 3),
+                                   TextButton.icon(
+                                     onPressed: () => _showAddPlayerDialog(context, team, appState),
+                                     icon: const Icon(Icons.add_rounded, size: 14, color: AppColors.primaryTurf),
+                                     label: const Text(
+                                       'Add Player',
+                                       style: TextStyle(
+                                         color: AppColors.primaryTurf,
+                                         fontSize: 12,
+                                         fontWeight: FontWeight.bold,
+                                       ),
+                                     ),
+                                     style: TextButton.styleFrom(
+                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                           ],
+                         ),
                         const SizedBox(height: 8),
                         
                         // Players List
@@ -243,43 +267,73 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                   ),
                                 ),
                                 child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        player.name,
-                                        style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                   '${player.name}${team.captainId == player.id && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : team.captainId == player.id ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
+                                                   style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                                                   overflow: TextOverflow.ellipsis,
+                                                   maxLines: 1,
+                                                 ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  '${player.role} • ${player.battingStyle}',
+                                                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                player.role.contains('Bowler')
+                                                    ? '${player.wicketsTaken} Wkts'
+                                                    : '${player.runsScored} Runs',
+                                                style: const TextStyle(color: AppColors.accentCrease, fontSize: 13, fontWeight: FontWeight.bold),
+                                              ),
+                                              Text(
+                                                player.role.contains('Bowler')
+                                                    ? 'Econ: ${player.economyRate.toStringAsFixed(2)}'
+                                                    : 'S/R: ${player.strikeRate.toStringAsFixed(1)}',
+                                                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        player.role,
-                                        style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                                    ),
+                                    if ((appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isCreator) ...[
+                                      const SizedBox(width: 12),
+                                      GestureDetector(
+                                        onTap: () => _showEditPlayerDialog(context, player, appState),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                          child: Icon(Icons.edit_outlined, size: 16, color: AppColors.textDarkSecondary),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        onTap: () => _showRemovePlayerConfirm(context, team, player, appState),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                          child: Icon(Icons.remove_circle_outline_rounded, size: 16, color: Colors.redAccent),
+                                        ),
                                       ),
                                     ],
-                                  ),
-                                  // Key Player Metric
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        player.role.contains('Bowler')
-                                            ? '${player.wicketsTaken} Wkts'
-                                            : '${player.runsScored} Runs',
-                                        style: const TextStyle(color: AppColors.accentCrease, fontSize: 13, fontWeight: FontWeight.bold),
-                                      ),
-                                      Text(
-                                        player.role.contains('Bowler')
-                                            ? 'Econ: ${player.economyRate.toStringAsFixed(2)}'
-                                            : 'S/R: ${player.strikeRate.toStringAsFixed(1)}',
-                                        style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
+                                  ],
+                                ),
+                              );
                           },
                         ),
                       ],
@@ -517,6 +571,421 @@ class _TeamsScreenState extends State<TeamsScreen> {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showEditTeamDialog(BuildContext context, Team team, AppState appState) {
+    final nameController = TextEditingController(text: team.name);
+    final abbController = TextEditingController(text: team.abbreviation);
+    String selectedEmoji = team.logoEmoji;
+    int selectedColorHex = team.logoColorHex;
+    String? selectedCaptainId = team.captainId;
+
+    final List<String> emojis = ['🔥', '⚡', '🌪️', '🦁', '🦅', '🦈', '⚔️', '🛡️', '👑', '⭐️'];
+    final List<int> colors = [0xFF4CAF50, 0xFF2196F3, 0xFFFF9800, 0xFFE91E63, 0xFF9C27B0, 0xFF00BCD4, 0xFFF44336, 0xFFFFEB3B];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: AppColors.borderWood, width: 1),
+              ),
+              title: const Text(
+                'Edit Team Details',
+                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Team Name',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      style: const TextStyle(color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: abbController,
+                      decoration: InputDecoration(
+                        labelText: 'Abbreviation',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      style: const TextStyle(color: AppColors.textDark),
+                      maxLength: 5,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedCaptainId,
+                      decoration: InputDecoration(
+                        labelText: 'Team Captain',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('No Captain Selected', style: TextStyle(color: AppColors.textDarkMuted)),
+                        ),
+                        ...team.players.map((p) => DropdownMenuItem<String>(
+                          value: p.id,
+                          child: Text(p.name, style: const TextStyle(color: AppColors.textDark)),
+                        )),
+                      ],
+                      onChanged: (val) {
+                        setDialogState(() {
+                          selectedCaptainId = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Select Logo Emoji', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: emojis.map((emoji) {
+                        final isSelected = selectedEmoji == emoji;
+                        return GestureDetector(
+                          onTap: () => setDialogState(() => selectedEmoji = emoji),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primaryTurf.withOpacity(0.15) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primaryTurf : AppColors.borderGreen,
+                                width: 1.5,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(emoji, style: const TextStyle(fontSize: 18)),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Select Theme Color', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: colors.map((colorHex) {
+                        final isSelected = selectedColorHex == colorHex;
+                        return GestureDetector(
+                          onTap: () => setDialogState(() => selectedColorHex = colorHex),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? Color(colorHex) : Colors.transparent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Color(colorHex),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: isSelected
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      color: colorHex == 0xFFFFEB3B ? Colors.black87 : Colors.white,
+                                      size: 14,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    final abb = abbController.text.trim().toUpperCase();
+                    if (name.isEmpty || abb.isEmpty) {
+                      CustomSnackBar.show(
+                        context,
+                        message: 'Name and abbreviation are required.',
+                        type: SnackBarType.error,
+                      );
+                      return;
+                    }
+
+                    final updatedTeam = Team(
+                      id: team.id,
+                      name: name,
+                      abbreviation: abb,
+                      logoEmoji: selectedEmoji,
+                      logoColorHex: selectedColorHex,
+                      players: team.players,
+                      matchesPlayed: team.matchesPlayed,
+                      matchesWon: team.matchesWon,
+                      matchesLost: team.matchesLost,
+                      netRunRate: team.netRunRate,
+                      creatorId: team.creatorId,
+                      captainId: selectedCaptainId,
+                    );
+
+                    appState.updateTeam(updatedTeam);
+                    Navigator.pop(context);
+
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Team details updated successfully!',
+                      type: SnackBarType.success,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showEditPlayerDialog(BuildContext context, Player player, AppState appState) {
+    final nameController = TextEditingController(text: player.name);
+    String selectedRole = player.role;
+    String selectedBatting = player.battingStyle == '-' ? 'None' : player.battingStyle;
+    String selectedBowling = player.bowlingStyle == '-' ? 'None' : player.bowlingStyle;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: AppColors.borderWood, width: 1),
+              ),
+              title: Text(
+                'Edit Player: ${player.name}',
+                style: const TextStyle(
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Player Name',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      style: const TextStyle(color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
+                      decoration: InputDecoration(
+                        labelText: 'Role',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper']
+                          .map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(color: AppColors.textDark))))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedRole = val;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedBatting,
+                      decoration: InputDecoration(
+                        labelText: 'Batting Style',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: ['Right-hand bat', 'Left-hand bat', 'None']
+                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(color: AppColors.textDark))))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedBatting = val;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedBowling,
+                      decoration: InputDecoration(
+                        labelText: 'Bowling Style',
+                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      dropdownColor: AppColors.cardBg,
+                      items: [
+                        'Right-arm fast',
+                        'Right-arm medium',
+                        'Right-arm spin',
+                        'Left-arm fast',
+                        'Left-arm medium',
+                        'Left-arm spin',
+                        'None',
+                      ]
+                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(color: AppColors.textDark))))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedBowling = val;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    if (name.isEmpty) {
+                      CustomSnackBar.show(
+                        context,
+                        message: 'Player name cannot be empty.',
+                        type: SnackBarType.error,
+                      );
+                      return;
+                    }
+
+                    final updatedPlayer = Player(
+                      id: player.id,
+                      name: name,
+                      role: selectedRole,
+                      battingStyle: selectedBatting == 'None' ? '-' : selectedBatting,
+                      bowlingStyle: selectedBowling == 'None' ? '-' : selectedBowling,
+                      matchesPlayed: player.matchesPlayed,
+                      runsScored: player.runsScored,
+                      wicketsTaken: player.wicketsTaken,
+                      ballsFaced: player.ballsFaced,
+                      ballsBowled: player.ballsBowled,
+                      runsConceded: player.runsConceded,
+                      highestScore: player.highestScore,
+                      bestBowling: player.bestBowling,
+                    );
+
+                    appState.updatePlayer(updatedPlayer);
+                    Navigator.pop(context);
+
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Player info updated successfully!',
+                      type: SnackBarType.success,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showRemovePlayerConfirm(BuildContext context, Team team, Player player, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.borderWood, width: 1),
+          ),
+          title: const Text(
+            'Confirm Removal',
+            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: Text(
+            'Are you sure you want to remove ${player.name} from ${team.name}?',
+            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                appState.removePlayerFromTeam(team.id, player.id);
+                Navigator.pop(context);
+
+                CustomSnackBar.show(
+                  context,
+                  message: '${player.name} removed from ${team.name}.',
+                  type: SnackBarType.success,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
         );
       },
     );

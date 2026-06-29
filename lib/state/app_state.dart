@@ -108,8 +108,28 @@ class AppState extends ChangeNotifier {
     _db.addTeam(team);
   }
 
+  void updateTeam(Team team) {
+    _db.updateTeamInfo(team);
+  }
+
   void addPlayerToTeam(String teamId, Player player) {
     _db.addPlayerToTeam(teamId, player);
+  }
+
+  void removePlayerFromTeam(String teamId, String playerId) {
+    final teamIndex = _teams.indexWhere((t) => t.id == teamId);
+    if (teamIndex != -1) {
+      final team = _teams[teamIndex];
+      team.players.removeWhere((p) => p.id == playerId);
+      if (team.captainId == playerId) {
+        team.captainId = null;
+      }
+      _db.updateTeamInfo(team);
+    }
+  }
+
+  void updatePlayer(Player player) {
+    _db.updatePlayerStats(player);
   }
 
   void createMatch(CricketMatch match) {
