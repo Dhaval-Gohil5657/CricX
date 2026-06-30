@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CricX – Live Cricket. Simplified.',
+      title: 'CricX: Live Cricket. Simplified.',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,

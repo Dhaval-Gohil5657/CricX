@@ -1,6 +1,6 @@
 # cricx
 
-CricX – Live Cricket. Simplified
+CricX: Live Cricket. Simplified
 
 ## Getting Started
 
