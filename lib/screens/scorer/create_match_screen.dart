@@ -141,7 +141,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
               const SizedBox(height: 16),
               
               // Team A Dropdown
-              const Text('Team A (Home)', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+              const Text('Team A', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -182,7 +182,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
               const SizedBox(height: 16),
 
               // Team B Dropdown
-              const Text('Team B (Away)', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+              const Text('Team B', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

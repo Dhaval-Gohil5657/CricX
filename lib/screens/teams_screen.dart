@@ -7,6 +7,7 @@ import '../models/player_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'scorer/create_team_screen.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({super.key});
@@ -584,6 +585,13 @@ class _TeamsScreenState extends State<TeamsScreen> {
     String? selectedCaptainId = team.captainId;
 
     final List<String> emojis = ['🔥', '⚡', '🌪️', '🦁', '🦅', '🦈', '⚔️', '🛡️', '👑', '⭐️'];
+    final List<String> flags = [
+      '🇮🇳', '🇦🇺', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', '🇳🇿', '🇿🇦',
+      '🇵🇰', '🇱🇰', '🇧🇩', '🇦🇫', '🇿🇼',
+      '🇮🇪', '🇳🇵', '🇳🇱', '🇺🇸', '🇨🇦',
+      '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '🇦🇪', '🇴🇲', '🇳🇦'
+    ];
+    bool showFlags = flags.contains(selectedEmoji);
     final List<int> colors = [0xFF4CAF50, 0xFF2196F3, 0xFFFF9800, 0xFFE91E63, 0xFF9C27B0, 0xFF00BCD4, 0xFFF44336, 0xFFFFEB3B];
 
     showDialog(
@@ -652,12 +660,66 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    const Text('Select Logo Emoji', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Select Logo Emoji', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => setDialogState(() => showFlags = false),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: !showFlags ? Color(selectedColorHex).withOpacity(0.12) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: !showFlags ? Color(selectedColorHex) : AppColors.borderGreen.withOpacity(0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Symbols',
+                                  style: TextStyle(
+                                    color: !showFlags ? Color(selectedColorHex) : AppColors.textDarkSecondary,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => setDialogState(() => showFlags = true),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: showFlags ? Color(selectedColorHex).withOpacity(0.12) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: showFlags ? Color(selectedColorHex) : AppColors.borderGreen.withOpacity(0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  'ICC Flags',
+                                  style: TextStyle(
+                                    color: showFlags ? Color(selectedColorHex) : AppColors.textDarkSecondary,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: emojis.map((emoji) {
+                      children: (showFlags ? flags : emojis).map((emoji) {
                         final isSelected = selectedEmoji == emoji;
                         return GestureDetector(
                           onTap: () => setDialogState(() => selectedEmoji = emoji),
@@ -665,10 +727,10 @@ class _TeamsScreenState extends State<TeamsScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primaryTurf.withOpacity(0.15) : Colors.transparent,
+                              color: isSelected ? Color(selectedColorHex).withOpacity(0.15) : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: isSelected ? AppColors.primaryTurf : AppColors.borderGreen,
+                                  color: isSelected ? Color(selectedColorHex) : AppColors.borderGreen,
                                 width: 1.5,
                               ),
                             ),
@@ -684,38 +746,84 @@ class _TeamsScreenState extends State<TeamsScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: colors.map((colorHex) {
-                        final isSelected = selectedColorHex == colorHex;
-                        return GestureDetector(
-                          onTap: () => setDialogState(() => selectedColorHex = colorHex),
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isSelected ? Color(colorHex) : Colors.transparent,
-                                width: 1.5,
-                              ),
-                            ),
+                      children: [
+                        ...colors.map((colorHex) {
+                          final isSelected = selectedColorHex == colorHex;
+                          return GestureDetector(
+                            onTap: () => setDialogState(() => selectedColorHex = colorHex),
                             child: Container(
+                              width: 32,
+                              height: 32,
+                              padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
-                                color: Color(colorHex),
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected ? Color(colorHex) : Colors.transparent,
+                                  width: 1.5,
+                                ),
                               ),
-                              alignment: Alignment.center,
-                              child: isSelected
-                                  ? Icon(
-                                      Icons.check_rounded,
-                                      color: colorHex == 0xFFFFEB3B ? Colors.black87 : Colors.white,
-                                      size: 14,
-                                    )
-                                  : null,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Color(colorHex),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: isSelected
+                                    ? Icon(
+                                        Icons.check_rounded,
+                                        color: colorHex == 0xFFFFEB3B ? Colors.black87 : Colors.white,
+                                        size: 14,
+                                      )
+                                    : null,
+                              ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }),
+                        Builder(
+                          builder: (context) {
+                            final isCustomSelected = !colors.contains(selectedColorHex);
+                            return GestureDetector(
+                              onTap: () {
+                                _showCustomColorPicker(context, selectedColorHex, (selectedHex) {
+                                  setDialogState(() {
+                                    selectedColorHex = selectedHex;
+                                  });
+                                });
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isCustomSelected ? Color(selectedColorHex) : Colors.transparent,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isCustomSelected ? Color(selectedColorHex) : Colors.transparent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isCustomSelected ? Colors.transparent : AppColors.borderGreen,
+                                      width: isCustomSelected ? 0 : 1,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    isCustomSelected ? Icons.check_rounded : Icons.colorize_rounded,
+                                    color: isCustomSelected
+                                        ? (((selectedColorHex >> 16) & 0xFF) * 0.299 + ((selectedColorHex >> 8) & 0xFF) * 0.587 + (selectedColorHex & 0xFF) * 0.114 > 186 ? Colors.black87 : Colors.white)
+                                        : AppColors.textDarkSecondary,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -984,6 +1092,58 @@ class _TeamsScreenState extends State<TeamsScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCustomColorPicker(BuildContext context, int initialColor, Function(int) onColorSelected) {
+    Color selectedColor = Color(initialColor);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.borderWood, width: 1),
+          ),
+          title: const Text(
+            'Select Custom Color',
+            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: selectedColor,
+              onColorChanged: (color) {
+                selectedColor = color;
+              },
+              colorPickerWidth: 280.0,
+              pickerAreaHeightPercent: 0.6,
+              enableAlpha: false,
+              displayThumbColor: true,
+              paletteType: PaletteType.hsv,
+              pickerAreaBorderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                onColorSelected(selectedColor.value);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTurf,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Select', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

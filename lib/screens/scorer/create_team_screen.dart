@@ -7,6 +7,7 @@ import '../../models/player_model.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class CreateTeamScreen extends StatefulWidget {
   const CreateTeamScreen({super.key});
@@ -22,6 +23,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   
   String _selectedEmoji = '🔥';
   int _selectedColorHex = 0xFF4CAF50; // default green
+  bool _showFlags = false;
   
   final List<Player> _addedPlayers = [];
   String? _selectedCaptainId;
@@ -31,6 +33,12 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   String _selectedBowlingStyle = 'Right-arm medium';
 
   final List<String> _emojis = ['🔥', '⚡', '🌪️', '🦁', '🦅', '🦈', '⚔️', '🛡️', '👑', '⭐️'];
+  final List<String> _flags = [
+    '🇮🇳', '🇦🇺', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', '🇳🇿', '🇿🇦',
+    '🇵🇰', '🇱🇰', '🇧🇩', '🇦🇫', '🇿🇼',
+    '🇮🇪', '🇳🇵', '🇳🇱', '🇺🇸', '🇨🇦',
+    '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '🇦🇪', '🇴🇲', '🇳🇦'
+  ];
   final List<int> _colors = [0xFF4CAF50, 0xFF2196F3, 0xFFFF9800, 0xFFE91E63, 0xFF9C27B0, 0xFF00BCD4, 0xFFF44336, 0xFFFFEB3B];
 
   @override
@@ -98,15 +106,81 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
               const SizedBox(height: 16),
               
               // Emoji Selector
-              const Text('SELECT LOGO EMOJI', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('SELECT LOGO EMOJI', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() => _showFlags = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: !_showFlags
+                                ? Color(_selectedColorHex).withOpacity(0.12)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: !_showFlags
+                                  ? Color(_selectedColorHex)
+                                  : AppColors.borderGreen.withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            'Symbols',
+                            style: TextStyle(
+                              color: !_showFlags
+                                  ? Color(_selectedColorHex)
+                                  : AppColors.textDarkSecondary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => setState(() => _showFlags = true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _showFlags
+                                ? Color(_selectedColorHex).withOpacity(0.12)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _showFlags
+                                  ? Color(_selectedColorHex)
+                                  : AppColors.borderGreen.withOpacity(0.5),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            'ICC Flags',
+                            style: TextStyle(
+                              color: _showFlags
+                                  ? Color(_selectedColorHex)
+                                  : AppColors.textDarkSecondary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
               SizedBox(
                 height: 48,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _emojis.length,
+                  itemCount: _showFlags ? _flags.length : _emojis.length,
                   itemBuilder: (context, index) {
-                    final emoji = _emojis[index];
+                    final emoji = _showFlags ? _flags[index] : _emojis[index];
                     final isSelected = _selectedEmoji == emoji;
                     return GestureDetector(
                       onTap: () => setState(() => _selectedEmoji = emoji),
@@ -139,8 +213,52 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                 height: 40,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _colors.length,
+                  itemCount: _colors.length + 1,
                   itemBuilder: (context, index) {
+                    if (index == _colors.length) {
+                      final isCustomSelected = !_colors.contains(_selectedColorHex);
+                      return GestureDetector(
+                        onTap: () {
+                          _showCustomColorPicker(context, _selectedColorHex, (selectedHex) {
+                            setState(() {
+                              _selectedColorHex = selectedHex;
+                            });
+                          });
+                        },
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          margin: const EdgeInsets.only(right: 12),
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isCustomSelected ? Color(_selectedColorHex) : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isCustomSelected ? Color(_selectedColorHex) : Colors.transparent,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isCustomSelected ? Colors.transparent : AppColors.borderGreen,
+                                width: isCustomSelected ? 0 : 1,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Icon(
+                              isCustomSelected ? Icons.check_rounded : Icons.colorize_rounded,
+                              color: isCustomSelected
+                                  ? (((_selectedColorHex >> 16) & 0xFF) * 0.299 + ((_selectedColorHex >> 8) & 0xFF) * 0.587 + (_selectedColorHex & 0xFF) * 0.114 > 186 ? Colors.black87 : Colors.white)
+                                  : AppColors.textDarkSecondary,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
                     final colorHex = _colors[index];
                     final isSelected = _selectedColorHex == colorHex;
                     return GestureDetector(
@@ -497,6 +615,58 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
           }).toList(),
         ),
       ),
+    );
+  }
+
+  void _showCustomColorPicker(BuildContext context, int initialColor, Function(int) onColorSelected) {
+    Color selectedColor = Color(initialColor);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.borderWood, width: 1),
+          ),
+          title: const Text(
+            'Select Custom Color',
+            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: selectedColor,
+              onColorChanged: (color) {
+                selectedColor = color;
+              },
+              colorPickerWidth: 280.0,
+              pickerAreaHeightPercent: 0.6,
+              enableAlpha: false,
+              displayThumbColor: true,
+              paletteType: PaletteType.hsv,
+              pickerAreaBorderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                onColorSelected(selectedColor.value);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTurf,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Select', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -440,7 +440,7 @@ class LiveScoringScreen extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          flex: 3,
+          flex: 4,
           child: Text(
             '${player.name}${player.id == battingTeam.captainId && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : player.id == battingTeam.captainId ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}${isStriker ? ' *' : ''}',
             style: TextStyle(
