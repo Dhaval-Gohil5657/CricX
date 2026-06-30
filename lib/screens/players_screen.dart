@@ -161,7 +161,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 90),
                     itemCount: filteredPlayers.length,
                     physics: const BouncingScrollPhysics(),
                     itemBuilder: (context, index) {

@@ -277,7 +277,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
+      padding: const EdgeInsets.only(left: 15, right: 15, top: 2, bottom: 90),
       itemCount: matchList.length,
       physics: const BouncingScrollPhysics(),
       itemBuilder: (context, index) {

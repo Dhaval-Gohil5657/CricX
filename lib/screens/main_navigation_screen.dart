@@ -206,18 +206,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
     ),
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 70),
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: List.generate(screens.length, (index) {
-            if (index < _activatedTabs.length && _activatedTabs[index]) {
-              return screens[index];
-            } else {
-              return const SizedBox.shrink();
-            }
-          }),
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: List.generate(screens.length, (index) {
+          if (index < _activatedTabs.length && _activatedTabs[index]) {
+            return screens[index];
+          } else {
+            return const SizedBox.shrink();
+          }
+        }),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(

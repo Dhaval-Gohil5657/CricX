@@ -45,7 +45,7 @@ class DashboardScreen extends StatelessWidget {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 90.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -99,7 +99,8 @@ class DashboardScreen extends StatelessWidget {
                   )
                 else
                   _buildEmptyLiveCard(context, role),
-                if (role != UserRole.guest) ...[
+                // if (role != UserRole.guest) ...[
+                if (role == UserRole.scorer || role == UserRole.organizer) ...[
                   const SizedBox(height: 24),
                   const Text(
                     'QUICK ACTIONS',
@@ -671,9 +672,14 @@ class DashboardScreen extends StatelessWidget {
       actions.addAll([
         _buildActionItem(
           context,
-          icon: Icons.sports_cricket_rounded,
+          emoji: '🏏',
           label: 'Schedule Match',
-          color: AppColors.accentCrease,
+          baseColor: AppColors.accentCrease,
+          gradientColors: const [
+            Color(0xFFF4FBF5),
+            Color(0xFFEAF5EB),
+          ],
+          borderColor: AppColors.accentCrease.withOpacity(0.25),
           onTap: () {
             Navigator.push(
               context,
@@ -683,9 +689,14 @@ class DashboardScreen extends StatelessWidget {
         ),
         _buildActionItem(
           context,
-          icon: Icons.group_add_rounded,
+          emoji: '👕',
           label: 'Create Team',
-          color: Colors.orange,
+          baseColor: AppColors.pitchGold,
+          gradientColors: const [
+            Color(0xFFFFF9F3),
+            Color(0xFFFBEADB),
+          ],
+          borderColor: Colors.orange.withOpacity(0.25),
           onTap: () {
             Navigator.push(
               context,
@@ -695,9 +706,14 @@ class DashboardScreen extends StatelessWidget {
         ),
         _buildActionItem(
           context,
-          icon: Icons.emoji_events_outlined,
+          emoji: '🏆',
           label: 'New League',
-          color: AppColors.pitchGold,
+          baseColor: Colors.amber,
+          gradientColors: const [
+            Color(0xFFFFFDF5),
+            Color(0xFFFAF2DC),
+          ],
+          borderColor: Colors.amber.withOpacity(0.3),
           onTap: () {
             Navigator.push(
               context,
@@ -706,50 +722,66 @@ class DashboardScreen extends StatelessWidget {
           },
         ),
       ]);
-    } else {
-      // Guest / User
-      actions.addAll([
-        _buildActionItem(
-          context,
-          icon: Icons.star_border_rounded,
-          label: 'Follow Teams',
-          color: AppColors.accentCrease,
-          onTap: () {
-            CustomSnackBar.show(
-              context,
-              message: "Follow team functionality demo: Marked all teams followed",
-              type: SnackBarType.success,
-            );
-          },
-        ),
-        _buildActionItem(
-          context,
-          icon: Icons.analytics_outlined,
-          label: 'Leaderboard',
-          color: Colors.purpleAccent,
-          onTap: () {
-            CustomSnackBar.show(
-              context,
-              message: "Leaderboards loading... (Mock UI)",
-              type: SnackBarType.info,
-            );
-          },
-        ),
-        _buildActionItem(
-          context,
-          icon: Icons.notifications_none_rounded,
-          label: 'Alerts',
-          color: Colors.redAccent,
-          onTap: () {
-            CustomSnackBar.show(
-              context,
-              message: "Alert preferences: Scoring alerts enabled",
-              type: SnackBarType.info,
-            );
-          },
-        ),
-      ]);
     }
+    // else {
+    //   // Guest / User
+    //   actions.addAll([
+    //     _buildActionItem(
+    //       context,
+    //       emoji: '⭐',
+    //       label: 'Follow Teams',
+    //       baseColor: AppColors.accentCrease,
+    //       gradientColors: const [
+    //         Color(0xFFF4FBF5),
+    //         Color(0xFFEAF5EB),
+    //       ],
+    //       borderColor: AppColors.accentCrease.withOpacity(0.25),
+    //       onTap: () {
+    //         CustomSnackBar.show(
+    //           context,
+    //           message: "Follow team functionality demo: Marked all teams followed",
+    //           type: SnackBarType.success,
+    //         );
+    //       },
+    //     ),
+    //     _buildActionItem(
+    //       context,
+    //       emoji: '📊',
+    //       label: 'Leaderboard',
+    //       baseColor: Colors.purpleAccent,
+    //       gradientColors: const [
+    //         Color(0xFFFAF5FF),
+    //         Color(0xFFF3E8FF),
+    //       ],
+    //       borderColor: Colors.purple.withOpacity(0.2),
+    //       onTap: () {
+    //         CustomSnackBar.show(
+    //           context,
+    //           message: "Leaderboards loading... (Mock UI)",
+    //           type: SnackBarType.info,
+    //         );
+    //       },
+    //     ),
+    //     _buildActionItem(
+    //       context,
+    //       emoji: '🔔',
+    //       label: 'Alerts',
+    //       baseColor: Colors.redAccent,
+    //       gradientColors: const [
+    //         Color(0xFFFFF5F5),
+    //         Color(0xFFFFE3E3),
+    //       ],
+    //       borderColor: Colors.red.withOpacity(0.2),
+    //       onTap: () {
+    //         CustomSnackBar.show(
+    //           context,
+    //           message: "Alert preferences: Scoring alerts enabled",
+    //           type: SnackBarType.info,
+    //         );
+    //       },
+    //     ),
+    //   ]);
+    // }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -759,57 +791,61 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildActionItem(
     BuildContext context, {
-    required IconData icon,
+    required String emoji,
     required String label,
-    required Color color,
+    required Color baseColor,
+    required List<Color> gradientColors,
+    required Color borderColor,
     required VoidCallback onTap,
   }) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.borderWood.withOpacity(0.7),
+            color: borderColor,
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 6,
+              color: baseColor.withOpacity(0.04),
+              blurRadius: 8,
               offset: const Offset(0, 3),
             ),
           ],
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFAF0E3), // Soft warm golden cream (Cricket bat willow)
-              Color(0xFFF2DFCB), // Warm light stump/willow tan
-            ],
+            colors: gradientColors,
           ),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             onTap: onTap,
+            splashColor: baseColor.withOpacity(0.08),
+            highlightColor: baseColor.withOpacity(0.04),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
+              padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 4.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: baseColor.withOpacity(0.08),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: color.withOpacity(0.2),
+                        color: baseColor.withOpacity(0.18),
                         width: 1,
                       ),
                     ),
-                    child: Icon(icon, color: color, size: 22),
+                    child: Text(
+                      emoji,
+                      style: const TextStyle(fontSize: 20),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(

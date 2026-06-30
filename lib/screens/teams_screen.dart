@@ -99,8 +99,8 @@ class _TeamsScreenState extends State<TeamsScreen> {
               ),
             )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
-        itemCount: teams.length,
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 90),
+              itemCount: teams.length,
         physics: const BouncingScrollPhysics(),
         itemBuilder: (context, index) {
           final team = teams[index];
