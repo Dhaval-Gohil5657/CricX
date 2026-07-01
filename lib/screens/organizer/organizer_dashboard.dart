@@ -14,9 +14,17 @@ class OrganizerDashboard extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final searchQuery = appState.searchQuery;
     final tournaments = (role == UserRole.scorer || role == UserRole.organizer)
         ? appState.tournaments.where((t) => t.creatorId == null || t.creatorId == currentUserId).toList()
         : appState.tournaments;
+
+    final filteredTournaments = tournaments.where((t) {
+      if (searchQuery.isEmpty) return true;
+      final q = searchQuery.trim().toLowerCase();
+      return t.name.toLowerCase().contains(q) ||
+             t.venue.toLowerCase().contains(q);
+    }).toList();
 
     return DefaultTabController(
       length: 3,
@@ -48,17 +56,17 @@ class OrganizerDashboard extends StatelessWidget {
                 children: [
                   _buildTournamentsList(
                     context, 
-                    tournaments.where((t) => t.status == 'Ongoing').toList(), 
+                    filteredTournaments.where((t) => t.status == 'Ongoing').toList(), 
                     'No active tournaments found.'
                   ),
                   _buildTournamentsList(
                     context, 
-                    tournaments.where((t) => t.status == 'Upcoming').toList(), 
+                    filteredTournaments.where((t) => t.status == 'Upcoming').toList(), 
                     'No upcoming tournaments found.'
                   ),
                   _buildTournamentsList(
                     context, 
-                    tournaments.where((t) => t.status == 'Completed').toList(), 
+                    filteredTournaments.where((t) => t.status == 'Completed').toList(), 
                     'No completed tournaments found.'
                   ),
                 ],
@@ -71,17 +79,24 @@ class OrganizerDashboard extends StatelessWidget {
   }
 
   Widget _buildTournamentsList(BuildContext context, List<Tournament> list, String emptyMessage) {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final searchQuery = appState.searchQuery;
     if (list.isEmpty) {
+      final isSearching = searchQuery.isNotEmpty;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.emoji_events_outlined, color: AppColors.textDarkDisabled, size: 48),
+              Icon(
+                isSearching ? Icons.search_off_rounded : Icons.emoji_events_outlined,
+                color: AppColors.textDarkDisabled,
+                size: 48,
+              ),
               const SizedBox(height: 12),
               Text(
-                emptyMessage,
+                isSearching ? 'No tournaments found matching "$searchQuery"' : emptyMessage,
                 style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
                 textAlign: TextAlign.center,
               ),

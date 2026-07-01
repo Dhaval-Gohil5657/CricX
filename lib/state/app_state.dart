@@ -99,6 +99,19 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  String _searchQuery = '';
+  String get searchQuery => _searchQuery;
+
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
+  void clearSearchQuery() {
+    _searchQuery = '';
+    notifyListeners();
+  }
+
   void setActiveScoringMatch(CricketMatch? match) {
     _activeScoringMatch = match;
     notifyListeners();

@@ -24,6 +24,14 @@ class _TeamsScreenState extends State<TeamsScreen> {
     final appState = Provider.of<AppState>(context);
     final teams = appState.teams;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final searchQuery = appState.searchQuery;
+
+    final filteredTeams = teams.where((team) {
+      if (searchQuery.isEmpty) return true;
+      final q = searchQuery.trim().toLowerCase();
+      return team.name.toLowerCase().contains(q) ||
+             team.abbreviation.toLowerCase().contains(q);
+    }).toList();
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -99,253 +107,258 @@ class _TeamsScreenState extends State<TeamsScreen> {
                 ),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 90),
-              itemCount: teams.length,
-        physics: const BouncingScrollPhysics(),
-        itemBuilder: (context, index) {
-          final team = teams[index];
-          final isExpanded = _expandedTeamId == team.id;
-          final isCreator = team.creatorId == null || team.creatorId == currentUserId;
+          : (filteredTeams.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.search_off_rounded, color: AppColors.textDarkMuted, size: 48),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No teams found matching "$searchQuery"',
+                        style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 90),
+                  itemCount: filteredTeams.length,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final team = filteredTeams[index];
+                    final isExpanded = _expandedTeamId == team.id;
+                    final isCreator = team.creatorId == null || team.creatorId == currentUserId;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isExpanded ? AppColors.primaryTurf : AppColors.borderWood.withOpacity(0.5),
-                width: isExpanded ? 1.5 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFDFBF7),
-                  Color(0xFFFAF2E6),
-                ],
-              ),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Color(team.logoColorHex).withOpacity(0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Color(team.logoColorHex).withOpacity(0.4), width: 1),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      team.logoEmoji,
-                      style: const TextStyle(fontSize: 22),
-                    ),
-                  ),
-                  title: Text(
-                    team.name,
-                    style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Text(
-                    'Squad Size: ${team.players.length} players • Abb: ${team.abbreviation}',
-                    style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
-                  ),
-                  trailing: Icon(
-                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: AppColors.primaryTurf,
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _expandedTeamId = isExpanded ? null : team.id;
-                    });
-                  },
-                ),
-                if (isExpanded) ...[
-                  const Divider(color: AppColors.dividerGreen, height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Standings Stats
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildStatBox('Played', '${team.matchesPlayed}', AppColors.textDarkSecondary),
-                            _buildStatBox('Won', '${team.matchesWon}', AppColors.accentCrease),
-                            _buildStatBox('Lost', '${team.matchesLost}', Colors.redAccent),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isExpanded ? AppColors.primaryTurf : AppColors.borderWood.withOpacity(0.5),
+                          width: isExpanded ? 1.5 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFFFDFBF7),
+                            Color(0xFFFAF2E6),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        
-                        Row(
-                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                           children: [
-                             const Text(
-                               'SQUAD PLAYERS',
-                               style: TextStyle(
-                                 color: AppColors.textDarkSecondary,
-                                 fontSize: 11,
-                                 fontWeight: FontWeight.bold,
-                                 letterSpacing: 1.0,
-                               ),
-                             ),
-                             if ((appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isCreator)
-                               Row(
-                                 children: [
-                                   TextButton.icon(
-                                     onPressed: () => _showEditTeamDialog(context, team, appState),
-                                     icon: const Icon(Icons.edit_rounded, size: 14, color: AppColors.primaryTurf),
-                                     label: const Text(
-                                       'Edit Team',
-                                       style: TextStyle(
-                                         color: AppColors.primaryTurf,
-                                         fontSize: 12,
-                                         fontWeight: FontWeight.bold,
-                                       ),
-                                     ),
-                                     style: TextButton.styleFrom(
-                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                     ),
-                                   ),
-                                   const SizedBox(width: 3),
-                                   TextButton.icon(
-                                     onPressed: () => _showAddPlayerDialog(context, team, appState),
-                                     icon: const Icon(Icons.add_rounded, size: 14, color: AppColors.primaryTurf),
-                                     label: const Text(
-                                       'Add Player',
-                                       style: TextStyle(
-                                         color: AppColors.primaryTurf,
-                                         fontSize: 12,
-                                         fontWeight: FontWeight.bold,
-                                       ),
-                                     ),
-                                     style: TextButton.styleFrom(
-                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                     ),
-                                   ),
-                                 ],
-                               ),
-                           ],
-                         ),
-                        const SizedBox(height: 8),
-                        
-                        // Players List
-                        if (team.players.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text(
-                              'No players added to squad yet.',
-                              style: TextStyle(color: AppColors.textDarkMuted, fontSize: 12),
+                      ),
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          dividerColor: Colors.transparent,
+                          hoverColor: Colors.transparent,
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                        ),
+                        child: ExpansionTile(
+                          initiallyExpanded: isExpanded,
+                          key: PageStorageKey<String>(team.id),
+                          onExpansionChanged: (expanded) {
+                            setState(() {
+                              _expandedTeamId = expanded ? team.id : null;
+                            });
+                          },
+                          leading: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Color(team.logoColorHex).withOpacity(0.12),
+                              shape: BoxShape.circle,
                             ),
-                          )
-                        else
-                          ListView.builder(
-                            padding: EdgeInsets.zero,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: team.players.length,
-                            itemBuilder: (context, pIndex) {
-                              final player = team.players[pIndex];
-                              final isLast = pIndex == team.players.length - 1;
-                              return Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: isLast
-                                        ? BorderSide.none
-                                        : const BorderSide(color: AppColors.dividerGreen, width: 0.5),
-                                  ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              team.logoEmoji,
+                              style: const TextStyle(fontSize: 22),
+                            ),
+                          ),
+                          title: Text(
+                            team.name,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${team.abbreviation} • ${team.players.length} Players',
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isCreator)
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textDarkSecondary),
+                                  onPressed: () => _showEditTeamDialog(context, team, appState),
+                                  constraints: const BoxConstraints(),
+                                  padding: EdgeInsets.zero,
                                 ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                   '${player.name}${team.captainId == player.id && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : team.captainId == player.id ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
-                                                   style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
-                                                   overflow: TextOverflow.ellipsis,
-                                                   maxLines: 1,
-                                                 ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  '${player.role} • ${player.battingStyle}',
-                                                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                                                  overflow: TextOverflow.ellipsis,
+                              Icon(
+                                isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                color: AppColors.primaryTurf,
+                              ),
+                            ],
+                          ),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Divider(color: AppColors.dividerGreen, height: 1),
+                                  const SizedBox(height: 12),
+                                  
+                                  // Team Stats Row
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      _buildStatBox('Played', team.matchesPlayed.toString(), AppColors.textDark),
+                                      _buildStatBox('Won', team.matchesWon.toString(), AppColors.accentCrease),
+                                      _buildStatBox('Lost', team.matchesLost.toString(), Colors.redAccent),
+                                      _buildStatBox('NRR', team.netRunRate.toStringAsFixed(3), AppColors.primaryTurf),
+                                      _buildStatBox('Points', team.points.toString(), AppColors.pitchGold),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  
+                                  // Squad Header
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'SQUAD ROSTER (${team.players.length})',
+                                        style: const TextStyle(
+                                          color: AppColors.textDarkSecondary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      if (isCreator)
+                                        TextButton.icon(
+                                          onPressed: () => _showAddPlayerDialog(context, team, appState),
+                                          icon: const Icon(Icons.add_circle_outline_rounded, size: 14, color: AppColors.primaryTurf),
+                                          label: const Text('Add Player', style: TextStyle(fontSize: 11, color: AppColors.primaryTurf, fontWeight: FontWeight.bold)),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  
+                                  // Roster List
+                                  if (team.players.isEmpty)
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 12.0),
+                                      child: Center(
+                                        child: Text(
+                                          'No players in this team yet.',
+                                          style: TextStyle(color: AppColors.textDarkMuted, fontSize: 12, fontStyle: FontStyle.italic),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: team.players.length,
+                                      itemBuilder: (context, playerIndex) {
+                                        final player = team.players[playerIndex];
+                                        final isCaptain = team.captainId == player.id;
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 12,
+                                                backgroundColor: AppColors.primaryTurf.withOpacity(0.08),
+                                                child: Text(
+                                                  player.name[0],
+                                                  style: const TextStyle(color: AppColors.primaryTurf, fontSize: 10, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Row(
+                                                  children: [
+                                                    Text(
+                                                      player.name,
+                                                      style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                                                    ),
+                                                    if (isCaptain) ...[
+                                                      const SizedBox(width: 6),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.pitchGold.withOpacity(0.15),
+                                                          borderRadius: BorderRadius.circular(4),
+                                                          border: Border.all(color: AppColors.pitchGold.withOpacity(0.5), width: 0.5),
+                                                        ),
+                                                        child: const Text(
+                                                          'C',
+                                                          style: TextStyle(color: AppColors.textDark, fontSize: 8, fontWeight: FontWeight.bold),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ),
+                                              Text(
+                                                player.role,
+                                                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11),
+                                              ),
+                                              if (isCreator) ...[
+                                                const SizedBox(width: 8),
+                                                GestureDetector(
+                                                  onTap: () => _showEditPlayerDialog(context, player, appState),
+                                                  behavior: HitTestBehavior.opaque,
+                                                  child: const Padding(
+                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                                    child: Icon(Icons.edit_note_rounded, size: 18, color: AppColors.textDarkSecondary),
+                                                  ),
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () => _showRemovePlayerConfirm(context, team, player, appState),
+                                                  behavior: HitTestBehavior.opaque,
+                                                  child: const Padding(
+                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                                    child: Icon(Icons.remove_circle_outline_rounded, size: 16, color: Colors.redAccent),
+                                                  ),
                                                 ),
                                               ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: [
-                                              Text(
-                                                player.role.contains('Bowler')
-                                                    ? '${player.wicketsTaken} Wkts'
-                                                    : '${player.runsScored} Runs',
-                                                style: const TextStyle(color: AppColors.accentCrease, fontSize: 13, fontWeight: FontWeight.bold),
-                                              ),
-                                              Text(
-                                                player.role.contains('Bowler')
-                                                    ? 'Econ: ${player.economyRate.toStringAsFixed(2)}'
-                                                    : 'S/R: ${player.strikeRate.toStringAsFixed(1)}',
-                                                style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
-                                              ),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        );
+                                      },
                                     ),
-                                    if ((appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isCreator) ...[
-                                      const SizedBox(width: 12),
-                                      GestureDetector(
-                                        onTap: () => _showEditPlayerDialog(context, player, appState),
-                                        behavior: HitTestBehavior.opaque,
-                                        child: const Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                          child: Icon(Icons.edit_outlined, size: 16, color: AppColors.textDarkSecondary),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      GestureDetector(
-                                        onTap: () => _showRemovePlayerConfirm(context, team, player, appState),
-                                        behavior: HitTestBehavior.opaque,
-                                        child: const Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                          child: Icon(Icons.remove_circle_outline_rounded, size: 16, color: Colors.redAccent),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              );
-                          },
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
+                      ),
+                    );
+                  },
+                )),
     );
   }
 

@@ -23,6 +23,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   final List<bool> _activatedTabs = [true, false, false, false, false];
   UserRole? _lastRole;
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +103,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _activatedTabs[_selectedIndex] = true;
     }
 
+    final String label = navItems[_selectedIndex]['label'] as String;
+    String hintPlaceholder = 'matches...';
+    if (label == 'Home') {
+      hintPlaceholder = 'live matches...';
+    } else if (label == 'Matches') {
+      hintPlaceholder = 'matches...';
+    } else if (label == 'Tournaments') {
+      hintPlaceholder = 'tournaments...';
+    } else if (label == 'Directory') {
+      hintPlaceholder = 'teams or players...';
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -130,45 +150,125 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
             ),
           ),
-          title: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.logoBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.borderWood,
-                    width: 0.5,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/CricX_logo.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.sports_cricket_rounded,
-                      color: AppColors.accentCrease,
-                      size: 18,
+          title: _isSearching
+              ? Container(
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.25),
+                      width: 1,
                     ),
                   ),
+                  child: TextField(
+                    key: const ValueKey('search_field'),
+                    controller: _searchController,
+                    autofocus: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      decoration: TextDecoration.none,
+                    ),
+                    onChanged: (val) {
+                      appState.setSearchQuery(val);
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search $hintPlaceholder',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 13.5),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.only(left: 12, right: 8, bottom: 13),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70, size: 18),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 30,
+                        minHeight: 20,
+                      ),
+                      suffixIcon: appState.searchQuery.isNotEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.only(right: 6.0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  appState.clearSearchQuery();
+                                },
+                                child: const Icon(
+                                  Icons.clear_rounded,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                              ),
+                            )
+                          : null,
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 20,
+                        minHeight: 20,
+                      ),
+                    ),
+                  ),
+                )
+              : Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.logoBg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.borderWood,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/CricX_logo.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.sports_cricket_rounded,
+                            color: AppColors.accentCrease,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 15),
-              Text(
-                navItems[_selectedIndex]['label'] as String,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
           actions: [
-            if (_selectedIndex == screens.length - 1)
+            if (label != 'Manage')
+              _isSearching
+                  ? GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isSearching = false;
+                    });
+                    appState.clearSearchQuery();
+                    _searchController.clear();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Icon(Icons.close_rounded, color: Colors.white),
+                  ))
+                  : IconButton(
+                      icon: const Icon(Icons.search_rounded, color: Colors.white),
+                      onPressed: () {
+                        setState(() {
+                          _isSearching = true;
+                        });
+                      },
+                    ),
+            if (_selectedIndex == screens.length - 1 && !_isSearching)
               IconButton(
                 icon: Icon(
                   FirebaseAuth.instance.currentUser != null
@@ -247,7 +347,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         onTap: () {
                           setState(() {
                             _selectedIndex = index;
+                            _isSearching = false;
                           });
+                          appState.clearSearchQuery();
+                          _searchController.clear();
                         },
                         behavior: HitTestBehavior.opaque,
                         child: Padding(

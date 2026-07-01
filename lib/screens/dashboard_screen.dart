@@ -21,12 +21,23 @@ class DashboardScreen extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final searchQuery = appState.searchQuery;
 
     final allVisibleMatches = (role == UserRole.scorer || role == UserRole.organizer)
         ? appState.matches.where((m) => m.creatorId == null || m.creatorId == currentUserId).toList()
         : appState.matches;
 
-    final liveMatches = allVisibleMatches.where((m) => m.status == MatchStatus.live).toList();
+    final liveMatches = allVisibleMatches.where((m) {
+      final isLive = m.status == MatchStatus.live;
+      if (!isLive) return false;
+      if (searchQuery.isEmpty) return true;
+      final q = searchQuery.trim().toLowerCase();
+      return m.teamA.name.toLowerCase().contains(q) ||
+             m.teamB.name.toLowerCase().contains(q) ||
+             m.venue.toLowerCase().contains(q) ||
+             (m.tournamentName != null && m.tournamentName!.toLowerCase().contains(q));
+    }).toList();
+    
     final completedMatches = allVisibleMatches.where((m) => m.status == MatchStatus.completed).toList();
     final now = DateTime.now();
     final upcomingMatches = allVisibleMatches.where((m) {
@@ -96,6 +107,36 @@ class DashboardScreen extends StatelessWidget {
                         child: _buildLiveMatchCard(context, liveMatches[index], role, appState, isFullWidth: true),
                       );
                     },
+                  )
+                else if (searchQuery.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderGreen.withOpacity(0.3), width: 1),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.search_off_rounded,
+                          color: AppColors.textDarkMuted,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No live matches found matching "$searchQuery"',
+                          style: const TextStyle(
+                            color: AppColors.textDarkMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   )
                 else
                   _buildEmptyLiveCard(context, role),

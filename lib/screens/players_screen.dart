@@ -20,11 +20,18 @@ class _PlayersScreenState extends State<PlayersScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final players = appState.players;
+    final searchQuery = appState.searchQuery;
 
-    // 1. Filter players by selected role
+    // 1. Filter players by selected role and search query
     final List<Player> filteredPlayers = players.where((p) {
-      if (_selectedRoleFilter == 'All') return true;
-      return p.role.toLowerCase() == _selectedRoleFilter.toLowerCase();
+      final matchesRole = _selectedRoleFilter == 'All' || p.role.toLowerCase() == _selectedRoleFilter.toLowerCase();
+      if (!matchesRole) return false;
+      if (searchQuery.isEmpty) return true;
+      final q = searchQuery.trim().toLowerCase();
+      return p.name.toLowerCase().contains(q) ||
+             p.role.toLowerCase().contains(q) ||
+             (p.battingStyle != null && p.battingStyle.toLowerCase().contains(q)) ||
+             (p.bowlingStyle != null && p.bowlingStyle.toLowerCase().contains(q));
     }).toList();
 
     // 2. Sort players based on selection
@@ -154,10 +161,24 @@ class _PlayersScreenState extends State<PlayersScreen> {
           
           Expanded(
             child: filteredPlayers.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No players matching current filters.',
-                      style: TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.people_outline_rounded,
+                          color: AppColors.textDarkMuted,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          searchQuery.isNotEmpty
+                              ? 'No players found matching "$searchQuery"'
+                              : 'No players matching current filters.',
+                          style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   )
                 : ListView.builder(

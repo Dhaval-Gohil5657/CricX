@@ -25,6 +25,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final searchQuery = appState.searchQuery;
 
     final allVisibleMatches = (role == UserRole.scorer || role == UserRole.organizer)
         ? appState.matches.where((m) => m.creatorId == null || m.creatorId == currentUserId).toList()
@@ -54,9 +55,19 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
     final activeMatches = _activeSubTab == 'friendly' ? friendlyMatches : filteredTournamentMatches;
 
-    final live = activeMatches.where((m) => m.status == MatchStatus.live).toList();
-    final upcoming = activeMatches.where((m) => m.status == MatchStatus.upcoming).toList();
-    final completed = activeMatches.where((m) => m.status == MatchStatus.completed).toList();
+    final searchedMatches = searchQuery.isEmpty
+        ? activeMatches
+        : activeMatches.where((m) {
+            final q = searchQuery.trim().toLowerCase();
+            return m.teamA.name.toLowerCase().contains(q) ||
+                   m.teamB.name.toLowerCase().contains(q) ||
+                   m.venue.toLowerCase().contains(q) ||
+                   (m.tournamentName != null && m.tournamentName!.toLowerCase().contains(q));
+          }).toList();
+
+    final live = searchedMatches.where((m) => m.status == MatchStatus.live).toList();
+    final upcoming = searchedMatches.where((m) => m.status == MatchStatus.upcoming).toList();
+    final completed = searchedMatches.where((m) => m.status == MatchStatus.completed).toList();
 
     Widget buildSegmentButton(String tab, String label, IconData icon) {
       final isSelected = _activeSubTab == tab;
@@ -256,20 +267,23 @@ class _MatchesScreenState extends State<MatchesScreen> {
     UserRole role,
     AppState appState,
   ) {
+    final searchQuery = appState.searchQuery;
     if (matchList.isEmpty) {
+      final isSearching = searchQuery.isNotEmpty;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.sports_cricket,
+            Icon(
+              isSearching ? Icons.search_off_rounded : Icons.sports_cricket,
               size: 64,
               color: AppColors.dividerGreen,
             ),
             const SizedBox(height: 16),
             Text(
-              emptyMessage,
+              isSearching ? 'No matches found matching "$searchQuery"' : emptyMessage,
               style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
