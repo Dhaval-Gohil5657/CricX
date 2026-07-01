@@ -37,7 +37,7 @@ class DashboardScreen extends StatelessWidget {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: () async => Future.delayed(const Duration(seconds: 1)),
         color: AppColors.accentCrease,

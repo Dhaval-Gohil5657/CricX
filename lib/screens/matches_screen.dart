@@ -119,7 +119,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         body: Column(
           children: [
             switcher,

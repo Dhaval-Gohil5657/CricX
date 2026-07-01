@@ -26,7 +26,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: teams.isEmpty
           ? Center(
               child: Padding(

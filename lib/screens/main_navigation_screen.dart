@@ -95,193 +95,202 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _activatedTabs[_selectedIndex] = true;
     }
 
-    return Scaffold(
-      extendBody: true,
-      backgroundColor: AppColors.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(50.0),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        image: role != UserRole.guest? const DecorationImage(
+          image: AssetImage('assets/cricx_back.png'),
+          fit: BoxFit.cover,
+        ) : null,
+      ),
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            automaticallyImplyLeading: false,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
           ),
-        ),
-        flexibleSpace: ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
-          child: SizedBox.expand(
-            child: CustomPaint(
-              painter: PitchCreasePainter(
-                groundColorLight: const Color(0xFF2E6B3E),
-                groundColorDark: const Color(0xFF1F4D28),
+          flexibleSpace: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+            child: SizedBox.expand(
+              child: CustomPaint(
+                painter: PitchCreasePainter(
+                  groundColorLight: const Color(0xFF2E6B3E),
+                  groundColorDark: const Color(0xFF1F4D28),
+                ),
               ),
             ),
           ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.logoBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.borderWood,
-                  width: 0.5,
+          title: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.logoBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.borderWood,
+                    width: 0.5,
+                  ),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'assets/CricX_logo.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.sports_cricket_rounded,
-                    color: AppColors.accentCrease,
-                    size: 18,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/CricX_logo.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.sports_cricket_rounded,
+                      color: AppColors.accentCrease,
+                      size: 18,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 15),
-            Text(
-              navItems[_selectedIndex]['label'] as String,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+              const SizedBox(width: 15),
+              Text(
+                navItems[_selectedIndex]['label'] as String,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
               ),
-            ),
+            ],
+          ),
+          actions: [
+            if (_selectedIndex == screens.length - 1)
+              IconButton(
+                icon: Icon(
+                  FirebaseAuth.instance.currentUser != null
+                      ? Icons.logout_rounded
+                      : Icons.login_rounded,
+                  color: Colors.white,
+                ),
+                tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
+                onPressed: () async {
+                  try {
+                    final isLoggingOut = FirebaseAuth.instance.currentUser != null;
+                    if (isLoggingOut) {
+                      await FirebaseAuth.instance.signOut();
+                    }
+                    appState.changeRole(UserRole.guest);
+                    if (context.mounted) {
+                      CustomSnackBar.show(
+                        context,
+                        message: isLoggingOut
+                            ? 'Logged out successfully.'
+                            : 'Returning to role selection.',
+                        type: SnackBarType.success,
+                        duration: const Duration(seconds: 2),
+                      );
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WelcomeScreen(),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      CustomSnackBar.show(
+                        context,
+                        message: 'Action failed: $e',
+                        type: SnackBarType.error,
+                      );
+                    }
+                  }
+                },
+              ),
           ],
         ),
-        actions: [
-          if (_selectedIndex == screens.length - 1)
-            IconButton(
-              icon: Icon(
-                FirebaseAuth.instance.currentUser != null
-                    ? Icons.logout_rounded
-                    : Icons.login_rounded,
-                color: Colors.white,
+      ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: List.generate(screens.length, (index) {
+            if (index < _activatedTabs.length && _activatedTabs[index]) {
+              return screens[index];
+            } else {
+              return const SizedBox.shrink();
+            }
+          }),
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 0.0, right: 16.0, bottom: 12.0),
+            child: CustomPaint(
+              painter: BatPainter(
+                woodColorDark: const Color(0xFFE6C397),
+                woodColorLight: const Color(0xFFFAF2E6),
+                gripColor: AppColors.primaryTurf,
+                borderColor: AppColors.borderWood,
               ),
-              tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
-              onPressed: () async {
-                try {
-                  final isLoggingOut = FirebaseAuth.instance.currentUser != null;
-                  if (isLoggingOut) {
-                    await FirebaseAuth.instance.signOut();
-                  }
-                  appState.changeRole(UserRole.guest);
-                  if (context.mounted) {
-                    CustomSnackBar.show(
-                      context,
-                      message: isLoggingOut
-                          ? 'Logged out successfully.'
-                          : 'Returning to role selection.',
-                      type: SnackBarType.success,
-                      duration: const Duration(seconds: 2),
-                    );
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const WelcomeScreen(),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Action failed: $e',
-                      type: SnackBarType.error,
-                    );
-                  }
-                }
-              },
-            ),
-        ],
-      ),
-    ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: List.generate(screens.length, (index) {
-          if (index < _activatedTabs.length && _activatedTabs[index]) {
-            return screens[index];
-          } else {
-            return const SizedBox.shrink();
-          }
-        }),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(left: 0.0, right: 16.0, bottom: 12.0),
-          child: CustomPaint(
-            painter: BatPainter(
-              woodColorDark: const Color(0xFFE6C397),
-              woodColorLight: const Color(0xFFFAF2E6),
-              gripColor: AppColors.primaryTurf,
-              borderColor: AppColors.borderWood,
-            ),
-            child: SizedBox(
-              height: 58,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(navItems.length, (index) {
-                    final item = navItems[index];
-                    final isSelected = _selectedIndex == index;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = index;
-                        });
-                      },
-                      behavior: HitTestBehavior.opaque,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSelected 
-                                  ? AppColors.primaryTurf.withOpacity(0.12)
-                                  : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                height: 58,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 20, right: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(navItems.length, (index) {
+                      final item = navItems[index];
+                      final isSelected = _selectedIndex == index;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedIndex = index;
+                          });
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isSelected 
+                                    ? AppColors.primaryTurf.withOpacity(0.12)
+                                    : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  item['icon'] as IconData,
+                                  color: isSelected
+                                      ? AppColors.primaryTurf
+                                      : AppColors.textDarkSecondary.withOpacity(0.7),
+                                  size: 22,
+                                ),
                               ),
-                              child: Icon(
-                                item['icon'] as IconData,
-                                color: isSelected
-                                    ? AppColors.primaryTurf
-                                    : AppColors.textDarkSecondary.withOpacity(0.7),
-                                size: 22,
+                              const SizedBox(height: 1),
+                              Text(
+                                item['label'] as String,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? AppColors.primaryTurf
+                                      : AppColors.textDarkSecondary.withOpacity(0.7),
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 10,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              item['label'] as String,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? AppColors.primaryTurf
-                                    : AppColors.textDarkSecondary.withOpacity(0.7),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
               ),
             ),
