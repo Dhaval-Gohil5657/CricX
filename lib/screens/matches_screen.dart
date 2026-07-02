@@ -27,9 +27,13 @@ class _MatchesScreenState extends State<MatchesScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
 
-    final allVisibleMatches = appState.matches;
+    final allVisibleMatches = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.matches.where((m) => m.creatorId == currentUserId).toList()
+        : appState.matches;
 
-    final allVisibleTournaments = appState.tournaments;
+    final allVisibleTournaments = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.tournaments.where((t) => t.creatorId == currentUserId).toList()
+        : appState.tournaments;
 
     // Reset selected tournament if it's not present in the current appState tournaments list anymore
     if (_selectedTournamentId != 'all' &&

@@ -245,73 +245,120 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                   ],
                 ),
-          actions: [
-            if (label != 'Manage')
-              _isSearching
-                  ? GestureDetector(
+            actions: [
+              if (label != 'Manage')
+                _isSearching
+                    ? GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isSearching = false;
+                      });
+                      appState.clearSearchQuery();
+                      _searchController.clear();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: Icon(Icons.close_rounded, color: Colors.white),
+                    ))
+                    : GestureDetector(
                   onTap: () {
                     setState(() {
-                      _isSearching = false;
+                      _isSearching = true;
                     });
-                    appState.clearSearchQuery();
-                    _searchController.clear();
                   },
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Icon(Icons.close_rounded, color: Colors.white),
-                  ))
-                  : IconButton(
-                      icon: const Icon(Icons.search_rounded, color: Colors.white),
-                      onPressed: () {
-                        setState(() {
-                          _isSearching = true;
-                        });
-                      },
-                    ),
-            if (_selectedIndex == screens.length - 1 && !_isSearching)
-              IconButton(
-                icon: Icon(
-                  FirebaseAuth.instance.currentUser != null
-                      ? Icons.logout_rounded
-                      : Icons.login_rounded,
-                  color: Colors.white,
+                    padding: const EdgeInsets.only(right: 5),
+                    child: const Icon(Icons.search_rounded, color: Colors.white,size: 22,),
+                  ),
+
                 ),
-                tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
-                onPressed: () async {
-                  try {
-                    final isLoggingOut = FirebaseAuth.instance.currentUser != null;
-                    if (isLoggingOut) {
-                      await FirebaseAuth.instance.signOut();
+              if ((label == 'Home' || label == 'Matches' || label == 'Tournaments' || label == 'Directory') &&
+                  (role == UserRole.scorer || role == UserRole.organizer) && !_isSearching)
+                IconButton(
+                  icon: Icon(
+                    appState.filterByCreator ? Icons.how_to_reg_rounded : Icons.group_outlined,
+                    color: appState.filterByCreator ? AppColors.borderGreen : Colors.white,
+                  ),
+                  tooltip: appState.filterByCreator ? 'Showing My Created' : 'Showing All',
+                  onPressed: () {
+                    appState.toggleFilterByCreator();
+                    
+                    String activeMsg = '';
+                    if (label == 'Home') {
+                      activeMsg = appState.filterByCreator
+                          ? 'Showing only your scheduled matches'
+                          : 'Showing all matches';
+                    } else if (label == 'Matches') {
+                      activeMsg = appState.filterByCreator
+                          ? 'Showing only your scheduled matches'
+                          : 'Showing all matches';
+                    } else if (label == 'Tournaments') {
+                      activeMsg = appState.filterByCreator
+                          ? 'Showing only your scheduled tournaments'
+                          : 'Showing all tournaments';
+                    } else if (label == 'Directory') {
+                      activeMsg = appState.filterByCreator
+                          ? 'Showing only your created teams & roster players'
+                          : 'Showing all teams & players';
+                    } else {
+                      activeMsg = appState.filterByCreator
+                          ? 'Filter active: showing your scheduled items'
+                          : 'Filter cleared: showing all items';
                     }
-                    appState.changeRole(UserRole.guest);
-                    if (context.mounted) {
-                      CustomSnackBar.show(
-                        context,
-                        message: isLoggingOut
-                            ? 'Logged out successfully.'
-                            : 'Returning to role selection.',
-                        type: SnackBarType.success,
-                        duration: const Duration(seconds: 2),
-                      );
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const WelcomeScreen(),
-                        ),
-                      );
+
+                    CustomSnackBar.show(
+                      context,
+                      message: activeMsg,
+                      type: SnackBarType.info,
+                    );
+                  },
+                ),
+              if (_selectedIndex == screens.length - 1 && !_isSearching)
+                IconButton(
+                  icon: Icon(
+                    FirebaseAuth.instance.currentUser != null
+                        ? Icons.logout_rounded
+                        : Icons.login_rounded,
+                    color: AppColors.borderGreen,
+                    size: 22,
+                  ),
+                  tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
+                  onPressed: () async {
+                    try {
+                      final isLoggingOut = FirebaseAuth.instance.currentUser != null;
+                      if (isLoggingOut) {
+                        await FirebaseAuth.instance.signOut();
+                      }
+                      appState.changeRole(UserRole.guest);
+                      if (context.mounted) {
+                        CustomSnackBar.show(
+                          context,
+                          message: isLoggingOut
+                              ? 'Logged out successfully.'
+                              : 'Returning to role selection.',
+                          type: SnackBarType.success,
+                          duration: const Duration(seconds: 2),
+                        );
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const WelcomeScreen(),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Action failed: $e',
+                          type: SnackBarType.error,
+                        );
+                      }
                     }
-                  } catch (e) {
-                    if (context.mounted) {
-                      CustomSnackBar.show(
-                        context,
-                        message: 'Action failed: $e',
-                        type: SnackBarType.error,
-                      );
-                    }
-                  }
-                },
-              ),
-          ],
+                  },
+                ),
+              SizedBox(width: 5,)
+            ],
         ),
       ),
         body: IndexedStack(

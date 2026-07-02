@@ -23,7 +23,9 @@ class DashboardScreen extends StatelessWidget {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
 
-    final allVisibleMatches = appState.matches;
+    final allVisibleMatches = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.matches.where((m) => m.creatorId == currentUserId).toList()
+        : appState.matches;
 
     final liveMatches = allVisibleMatches.where((m) {
       final isLive = m.status == MatchStatus.live;

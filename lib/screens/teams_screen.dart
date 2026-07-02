@@ -22,8 +22,11 @@ class _TeamsScreenState extends State<TeamsScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final teams = appState.teams;
+    final role = appState.currentRole;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final teams = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
+        ? appState.teams.where((t) => t.creatorId == currentUserId).toList()
+        : appState.teams;
     final searchQuery = appState.searchQuery;
 
     final filteredTeams = teams.where((team) {

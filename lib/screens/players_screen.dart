@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../state/app_state.dart';
 import '../models/player_model.dart';
 import '../constants/app_colors.dart';
@@ -19,7 +20,17 @@ class _PlayersScreenState extends State<PlayersScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final players = appState.players;
+    final role = appState.currentRole;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final players = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
+        ? (() {
+            final myTeamPlayerIds = appState.teams
+                .where((t) => t.creatorId == currentUserId)
+                .expand((t) => t.players.map((p) => p.id))
+                .toSet();
+            return appState.players.where((p) => myTeamPlayerIds.contains(p.id)).toList();
+          })()
+        : appState.players;
     final searchQuery = appState.searchQuery;
 
     // 1. Filter players by selected role and search query

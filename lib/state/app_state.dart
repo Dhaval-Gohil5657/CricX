@@ -112,6 +112,19 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _filterByCreator = false;
+  bool get filterByCreator => _filterByCreator;
+
+  void toggleFilterByCreator() {
+    _filterByCreator = !_filterByCreator;
+    notifyListeners();
+  }
+
+  void setFilterByCreator(bool value) {
+    _filterByCreator = value;
+    notifyListeners();
+  }
+
   void setActiveScoringMatch(CricketMatch? match) {
     _activeScoringMatch = match;
     notifyListeners();

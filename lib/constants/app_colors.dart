@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Brand Colors (Crease Green, Wicket Wood, and Ball White)
   static const Color primaryTurf = Color(0xFF1F4D28);      // Deep Turf Green
+  static const Color lightGreen = Color(0xFFCBE0CE);      // Deep Turf Green
   static const Color accentCrease = Color(0xFF4CAF50);     // Turf Green Accent (Pitch Lawn Green)
   static const Color pitchGold = Color(0xFFE5A65D);        // Stump Golden Wood / Pitch Tan
   static const Color woodMahogany = Color(0xFF8B5A2B);     // Cricket Bat Wood (Warm Brown)
