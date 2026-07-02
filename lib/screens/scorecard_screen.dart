@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/match_model.dart';
 import '../models/player_model.dart';
+import '../models/team_model.dart';
 import '../state/app_state.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
@@ -65,6 +67,13 @@ class ScorecardScreen extends StatelessWidget {
               'Match Scorecard',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share_rounded, color: Colors.white),
+                tooltip: 'Share Scorecard',
+                onPressed: () => _shareScorecardText(context, currentMatch, appState),
+              ),
+            ],
           ),
         ),
         body: Column(
@@ -175,6 +184,108 @@ class ScorecardScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _shareScorecardText(BuildContext context, CricketMatch match, AppState appState) {
+    StringBuffer buffer = StringBuffer();
+    buffer.writeln('🏏 *CricX Match Update* 🏏');
+    if (match.tournamentName != null && match.tournamentName!.isNotEmpty) {
+      buffer.writeln('🏆 Tournament: ${match.tournamentName}');
+    }
+    buffer.writeln('📍 Venue: ${match.venue}');
+    buffer.writeln('📅 Date: ${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year}');
+    buffer.writeln('----------------------------------');
+    buffer.writeln('*${match.teamA.name}* vs *${match.teamB.name}*');
+    buffer.writeln('📢 Status: ${match.statusText}');
+    buffer.writeln('----------------------------------');
+
+    void formatInnings(MatchTeamInnings? innings, String teamName, Team team, Team oppTeam) {
+      if (innings == null || (innings.events.isEmpty && match.status == MatchStatus.upcoming)) {
+        buffer.writeln('🏏 *$teamName*: Yet to bat\n');
+        return;
+      }
+      final overs = innings.oversCompleted;
+      buffer.writeln('🏏 *$teamName*: ${innings.runs}/${innings.wickets} ($overs/${match.totalOvers} ov)');
+
+      final battedPlayers = team.players.where((player) {
+        final isCurrentBatsman = player.id == match.striker?.id || player.id == match.nonStriker?.id;
+        return match.playerBallsFaced[player.id] != null || isCurrentBatsman;
+      }).toList();
+
+      final battingOrder = innings.battingOrder;
+      battedPlayers.sort((a, b) {
+        final indexA = battingOrder.indexOf(a.id);
+        final indexB = battingOrder.indexOf(b.id);
+        if (indexA == -1 && indexB == -1) return 0;
+        if (indexA == -1) return 1;
+        if (indexB == -1) return -1;
+        return indexA.compareTo(indexB);
+      });
+
+      if (battedPlayers.isNotEmpty) {
+        buffer.writeln('  *Batting:*');
+        for (var i = 0; i < battedPlayers.length && i < 3; i++) {
+          final player = battedPlayers[i];
+          final runs = match.playerRuns[player.id] ?? 0;
+          final balls = match.playerBallsFaced[player.id] ?? 0;
+          final isOut = innings.events.any((e) => e.isWicket && e.batsmanName == player.name);
+          final isCurrentBatsman = player.id == match.striker?.id || player.id == match.nonStriker?.id;
+          final star = (!isOut && isCurrentBatsman) ? '*' : '';
+          buffer.writeln('  • ${player.name}: $runs$star ($balls)');
+        }
+      }
+
+      final activeBowlers = oppTeam.players.where((p) => (match.bowlerBallsBowled[p.id] ?? 0) > 0 || (match.bowlerRunsConceded[p.id] ?? 0) > 0).toList();
+      activeBowlers.sort((a, b) {
+        final wicketsA = match.bowlerWickets[a.id] ?? 0;
+        final wicketsB = match.bowlerWickets[b.id] ?? 0;
+        final runsA = match.bowlerRunsConceded[a.id] ?? 999;
+        final runsB = match.bowlerRunsConceded[b.id] ?? 999;
+        
+        if (wicketsA != wicketsB) {
+          return wicketsB.compareTo(wicketsA);
+        }
+        return runsA.compareTo(runsB);
+      });
+
+      if (activeBowlers.isNotEmpty) {
+        buffer.writeln('  *Bowling:*');
+        for (var i = 0; i < activeBowlers.length && i < 2; i++) {
+          final bowler = activeBowlers[i];
+          final wickets = match.bowlerWickets[bowler.id] ?? 0;
+          final runs = match.bowlerRunsConceded[bowler.id] ?? 0;
+          final balls = match.bowlerBallsBowled[bowler.id] ?? 0;
+          final ov = (balls ~/ 6) + (balls % 6) / 10;
+          buffer.writeln('  • ${bowler.name}: $wickets/$runs ($ov ov)');
+        }
+      }
+      buffer.writeln('');
+    }
+
+    final team1 = match.innings1 != null 
+        ? appState.teams.firstWhere((t) => t.id == match.innings1!.teamId) 
+        : match.teamA;
+    final team2 = match.innings2 != null 
+        ? appState.teams.firstWhere((t) => t.id == match.innings2!.teamId) 
+        : (match.innings1 != null 
+            ? (match.innings1!.teamId == match.teamA.id ? match.teamB : match.teamA) 
+            : match.teamB);
+
+    final opp1 = team1.id == match.teamA.id ? match.teamB : match.teamA;
+    final opp2 = team2.id == match.teamA.id ? match.teamB : match.teamA;
+
+    formatInnings(match.innings1, team1.name, team1, opp1);
+    formatInnings(match.innings2, team2.name, team2, opp2);
+
+    buffer.writeln('----------------------------------');
+    buffer.writeln('Scored live on *CricX* app! 🏏');
+
+    SharePlus.instance.share(
+      ShareParams(
+        text: buffer.toString(),
+        subject: '${match.teamA.abbreviation} vs ${match.teamB.abbreviation} Scorecard',
       ),
     );
   }

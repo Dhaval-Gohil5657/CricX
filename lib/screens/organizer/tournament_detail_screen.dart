@@ -354,7 +354,7 @@ class TournamentDetailScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primaryTurf : Colors.transparent,
@@ -385,8 +385,8 @@ class TournamentDetailScreen extends StatelessWidget {
         }
 
         final switcher = Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(4),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: AppColors.borderGreen.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
