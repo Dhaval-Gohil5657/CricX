@@ -40,6 +40,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
             ? (currentMatch.innings1!.teamId == currentMatch.teamA.id ? currentMatch.teamB : currentMatch.teamA) 
             : currentMatch.teamB);
 
+    final role = appState.currentRole;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isMatchCreator = currentMatch.creatorId == null || currentMatch.creatorId == currentUserId;
+    final canEditMatch = (role == UserRole.scorer || role == UserRole.organizer) && 
+        isMatchCreator && 
+        currentMatch.status == MatchStatus.upcoming;
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -49,6 +56,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
           child: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
+            centerTitle: false,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
               onPressed: () => Navigator.pop(context),
@@ -76,8 +84,15 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
             actions: [
+              if (canEditMatch)
+                GestureDetector(
+                    onTap: () => _showEditMatchSheet(context, currentMatch, appState),
+                      child: Tooltip(
+                          message: 'Edit Match Details',
+                          child: const Icon(Icons.edit_calendar_rounded, color: Colors.white, size: 20))),
+
               IconButton(
-                icon: const Icon(Icons.share_rounded, color: Colors.white),
+                icon: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
                 tooltip: 'Share Scorecard',
                 onPressed: () => _shareScorecardText(context, currentMatch, appState),
               ),
@@ -703,6 +718,16 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
               ),
             ],
           ),
+          if (match.status == MatchStatus.upcoming) ...[
+            Text(
+              '${match.totalOvers} Overs',
+              style: const TextStyle(
+                color: AppColors.primaryTurf,
+                fontWeight: FontWeight.w800,
+                fontSize: 9.5,
+              ),
+            ),
+          ],
           if (match.status == MatchStatus.completed) ...[
             const SizedBox(height: 10),
             Text(
@@ -1838,5 +1863,339 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
       'runs': runsConceded,
       'overs': '${ballsBowled ~/ 6}.${ballsBowled % 6}',
     };
+  }
+
+  void _showEditMatchSheet(BuildContext context, CricketMatch match, AppState appState) {
+    final venueController = TextEditingController(text: match.venue);
+    final oversController = TextEditingController(text: match.totalOvers.toString());
+    DateTime selectedDateTime = match.matchDate;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> pickDate() async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: selectedDateTime,
+                firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.primaryTurf,
+                        onPrimary: Colors.white,
+                        onSurface: AppColors.textDark,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (date != null) {
+                setSheetState(() {
+                  selectedDateTime = DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    selectedDateTime.hour,
+                    selectedDateTime.minute,
+                  );
+                });
+              }
+            }
+
+            Future<void> pickTime() async {
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.primaryTurf,
+                        onPrimary: Colors.white,
+                        onSurface: AppColors.textDark,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (time != null) {
+                setSheetState(() {
+                  selectedDateTime = DateTime(
+                    selectedDateTime.year,
+                    selectedDateTime.month,
+                    selectedDateTime.day,
+                    time.hour,
+                    time.minute,
+                  );
+                });
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Edit Match Details ✏️',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppColors.textDarkMuted),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: AppColors.dividerGreen),
+                    const SizedBox(height: 12),
+
+                    // Venue TextField
+                    const Text(
+                      'MATCH VENUE',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: venueController,
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Enter venue name',
+                        filled: true,
+                        fillColor: AppColors.cardBg,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: AppColors.borderGreen.withOpacity(0.3)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Date & Time Picker side-by-side in Row
+                    Row(
+                      children: [
+                        // Date picker
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'DATE',
+                                style: TextStyle(
+                                  color: AppColors.textDarkSecondary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              InkWell(
+                                onTap: pickDate,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cardBg,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${selectedDateTime.day}/${selectedDateTime.month}/${selectedDateTime.year}',
+                                        style: const TextStyle(
+                                          color: AppColors.textDark,
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const Icon(Icons.calendar_month_rounded, color: AppColors.primaryTurf, size: 18),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Time picker
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'TIME',
+                                style: TextStyle(
+                                  color: AppColors.textDarkSecondary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              InkWell(
+                                onTap: pickTime,
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cardBg,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${selectedDateTime.hour.toString().padLeft(2, '0')}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
+                                        style: const TextStyle(
+                                          color: AppColors.textDark,
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const Icon(Icons.access_time_rounded, color: AppColors.primaryTurf, size: 18),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Manual Overs text input field
+                    const Text(
+                      'TOTAL OVERS',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: oversController,
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Enter total overs (e.g. 5, 20)',
+                        filled: true,
+                        fillColor: AppColors.cardBg,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: AppColors.borderGreen.withOpacity(0.3)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryTurf,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          if (venueController.text.trim().isEmpty) {
+                            CustomSnackBar.show(
+                              context,
+                              message: 'Please enter a venue name.',
+                              type: SnackBarType.error,
+                            );
+                            return;
+                          }
+                          final oversStr = oversController.text.trim();
+                          final parsedOvers = int.tryParse(oversStr);
+                          if (parsedOvers == null || parsedOvers <= 0) {
+                            CustomSnackBar.show(
+                              context,
+                              message: 'Please enter a valid number of overs (minimum 1).',
+                              type: SnackBarType.error,
+                            );
+                            return;
+                          }
+                          appState.updateMatchDetails(
+                            match.id,
+                            venueController.text.trim(),
+                            selectedDateTime,
+                            parsedOvers,
+                          );
+                          Navigator.pop(context);
+                          CustomSnackBar.show(
+                            context,
+                            message: 'Match details updated successfully!',
+                            type: SnackBarType.success,
+                          );
+                        },
+                        child: const Text(
+                          'SAVE CHANGES',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }

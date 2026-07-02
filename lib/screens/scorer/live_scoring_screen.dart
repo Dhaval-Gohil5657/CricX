@@ -130,7 +130,7 @@ class LiveScoringScreen extends StatelessWidget {
                           children: [
                             Text(
                               '${innings.runs}/${innings.wickets}',
-                              style: const TextStyle(color: AppColors.accentCrease, fontSize: 32, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Colors.green, fontSize: 32, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -417,7 +417,7 @@ class LiveScoringScreen extends StatelessWidget {
 
               _showPlayerSelector(context, availablePlayers, (newPlayer) {
                 appState.changeStrikerPlayer(newPlayer, isStriker);
-              });
+              }, isBowler: false);
             },
             child: const Text('Select', style: TextStyle(color: AppColors.textDark, fontSize: 11)),
           ),
@@ -488,13 +488,13 @@ class LiveScoringScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('BOWLING', style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold)),
+                const Text('BOWLING', style: TextStyle(color: AppColors.pitchGold, fontSize: 12, fontWeight: FontWeight.bold)),
                 TextButton(
                   onPressed: () => _showPlayerSelector(context, bowlingTeam.players, (newBowler) {
                     appState.changeBowler(newBowler);
-                  }),
+                  }, isBowler: true, match: match),
                   style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                  child: const Text('Change Bowler', style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: const Text('Change Bowler', style: TextStyle(color: AppColors.pitchGold, fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -512,7 +512,7 @@ class LiveScoringScreen extends StatelessWidget {
                     ),
                     onPressed: () => _showPlayerSelector(context, bowlingTeam.players, (newBowler) {
                       appState.changeBowler(newBowler);
-                    }),
+                    }, isBowler: true, match: match),
                     child: const Text('Select', style: TextStyle(color: AppColors.textDark, fontSize: 11)),
                   ),
                 ],
@@ -696,6 +696,7 @@ class LiveScoringScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
+            // Out Button
             Expanded(
               flex: 3,
               child: SizedBox(
@@ -722,12 +723,12 @@ class LiveScoringScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.sports_baseball, color: hasPlayers ? Colors.white : Colors.black38, size: 18),
-                      const SizedBox(width: 8),
+                      Icon(Icons.sports_baseball, color: hasPlayers ? Colors.white : Colors.black38, size: 16),
+                      const SizedBox(width: 6),
                       Text(
-                        'OUT (WICKET)',
+                        'OUT',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.bold,
                           color: hasPlayers ? Colors.white : Colors.black38,
                         ),
@@ -738,8 +739,52 @@ class LiveScoringScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+            // Retire Button
             Expanded(
-              flex: 1,
+              flex: 2,
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasPlayers ? Colors.orange.shade900 : Colors.grey.shade200,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: hasPlayers ? Colors.transparent : AppColors.borderGreen,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  onPressed: hasPlayers ? () => _showRetireDialog(context, match, appState) : () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Please select striker, non-striker, and bowler first!',
+                      type: SnackBarType.warning,
+                    );
+                  },
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.airline_seat_flat_angled_rounded, color: hasPlayers ? Colors.white : Colors.black38, size: 18),
+                      const SizedBox(height: 2),
+                      Text(
+                        'RETIRE',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: hasPlayers ? Colors.white : Colors.black38,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Undo Button
+            Expanded(
+              flex: 2,
               child: SizedBox(
                 height: 50,
                 child: ElevatedButton(
@@ -764,11 +809,11 @@ class LiveScoringScreen extends StatelessWidget {
                         color: canUndo ? Colors.white : Colors.black38,
                         size: 18,
                       ),
-                      const SizedBox(height: 1),
+                      const SizedBox(height: 2),
                       Text(
-                        'Undo',
+                        'UNDO',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: FontWeight.bold,
                           color: canUndo ? Colors.white : Colors.black38,
                         ),
@@ -862,40 +907,179 @@ class LiveScoringScreen extends StatelessWidget {
     );
   }
 
-  void _showPlayerSelector(BuildContext context, List<Player> players, Function(Player) onSelected) {
+  void _showPlayerSelector(
+    BuildContext context, 
+    List<Player> players, 
+    Function(Player) onSelected, {
+    bool isBowler = false,
+    CricketMatch? match,
+  }) {
+    // Sort players based on requirements
+    final List<Player> sortedPlayers = List.from(players);
+    if (isBowler) {
+      // bowler list: bowler, all rounder then other player (Wicketkeeper, Batsman)
+      sortedPlayers.sort((a, b) {
+        int getPriority(String r) {
+          if (r == 'Bowler') return 0;
+          if (r == 'All-Rounder') return 1;
+          if (r == 'Wicketkeeper') return 2;
+          if (r == 'Batsman') return 3;
+          return 4;
+        }
+        return getPriority(a.role).compareTo(getPriority(b.role));
+      });
+    } else {
+      // batter list: batters, wicketkeeper, all rounder and then bowler name
+      sortedPlayers.sort((a, b) {
+        int getPriority(String r) {
+          if (r == 'Batsman') return 0;
+          if (r == 'Wicketkeeper') return 1;
+          if (r == 'All-Rounder') return 2;
+          if (r == 'Bowler') return 3;
+          return 4;
+        }
+        return getPriority(a.role).compareTo(getPriority(b.role));
+      });
+    }
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.appBarBg,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Select Player', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: players.length,
-                  itemBuilder: (context, index) {
-                    final p = players[index];
-                    return ListTile(
-                      title: Text(p.name, style: const TextStyle(color: AppColors.textDark)),
-                      subtitle: Text(p.role, style: const TextStyle(color: AppColors.textDarkSecondary)),
-                      trailing: const Icon(Icons.add, color: AppColors.accentCrease),
-                      onTap: () {
-                        onSelected(p);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Center drag bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isBowler ? 'Select Bowler 🥎' : 'Select Batter 🏏',
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.textDarkMuted),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: AppColors.dividerGreen, height: 1),
+                  const SizedBox(height: 12),
+                  
+                  // Player List
+                  Expanded(
+                    child: sortedPlayers.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No players available',
+                              style: TextStyle(color: AppColors.textDarkSecondary),
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: scrollController,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: sortedPlayers.length,
+                            itemBuilder: (context, index) {
+                              final p = sortedPlayers[index];
+                              final isLast = index == sortedPlayers.length - 1;
+                              final typeText = isBowler ? p.bowlingStyle : p.battingStyle;
+
+                              // Calculate trailing widget: show completed overs for bowler/all-rounder selection
+                              Widget trailingWidget;
+                              if (isBowler && match != null && (p.role == 'Bowler' || p.role == 'All-Rounder')) {
+                                final balls = match.bowlerBallsBowled[p.id] ?? 0;
+                                final oversStr = '${balls ~/ 6}.${balls % 6}';
+                                trailingWidget = Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryTurf.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '$oversStr Ov',
+                                    style: const TextStyle(
+                                      color: AppColors.primaryTurf,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                trailingWidget = const Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: AppColors.textDarkDisabled,
+                                  size: 12,
+                                );
+                              }
+
+                              return Container(
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: isLast ? Colors.transparent : AppColors.dividerGreen.withOpacity(0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                child: ListTile(
+                                  dense: true,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  title: Text(
+                                    p.name,
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${p.role} • $typeText',
+                                    style: const TextStyle(
+                                      color: AppColors.textDarkSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  trailing: trailingWidget,
+                                  onTap: () {
+                                    onSelected(p);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1049,11 +1233,118 @@ class LiveScoringScreen extends StatelessWidget {
                       if (availablePlayers.isNotEmpty) {
                         _showPlayerSelector(context, availablePlayers, (newPlayer) {
                           appState.changeStrikerPlayer(newPlayer, isStrikerOutCurrently);
-                        });
+                        }, isBowler: false);
                       }
                     }
                   },
                   child: const Text('RECORD WICKET', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showRetireDialog(BuildContext context, CricketMatch match, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String retirementType = 'Retired Hurt';
+        Player selectedPlayer = match.striker!;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.background,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                'Retire Batsman',
+                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Select Batsman:', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [match.striker!, match.nonStriker!].map((p) {
+                      final isSelected = selectedPlayer.id == p.id;
+                      final isStriker = p.id == match.striker!.id;
+                      return ChoiceChip(
+                        label: Text('${p.name} ${isStriker ? "(Striker)" : "(Non-Striker)"}'),
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryTurf,
+                        backgroundColor: AppColors.appBarBg,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.textDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        onSelected: (selected) {
+                          if (selected) setState(() => selectedPlayer = p);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Retirement Type:', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: ['Retired Hurt', 'Retired Out'].map((t) {
+                      final isSelected = retirementType == t;
+                      return ChoiceChip(
+                        label: Text(t),
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryTurf,
+                        backgroundColor: AppColors.appBarBg,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.textDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        onSelected: (selected) {
+                          if (selected) setState(() => retirementType = t);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('CANCEL', style: TextStyle(color: AppColors.textDarkMuted, fontWeight: FontWeight.bold)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    final isRetiredOut = retirementType == 'Retired Out';
+                    final isStriker = selectedPlayer.id == match.striker!.id;
+                    
+                    appState.retireBatsman(match.id, selectedPlayer.id, isRetiredOut);
+                    Navigator.pop(context);
+
+                    // Prompt to choose the next batsman immediately
+                    final battingTeam = match.battingTeam;
+                    final availablePlayers = battingTeam.players.where((p) {
+                      return !match.currentInnings.battingOrder.contains(p.id);
+                    }).toList();
+
+                    if (availablePlayers.isNotEmpty) {
+                      _showPlayerSelector(context, availablePlayers, (newPlayer) {
+                        appState.changeStrikerPlayer(newPlayer, isStriker);
+                      }, isBowler: false, match: match);
+                    }
+                  },
+                  child: const Text('RETIRE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             );

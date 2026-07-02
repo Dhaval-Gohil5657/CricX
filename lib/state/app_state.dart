@@ -208,6 +208,18 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  void updateMatchDetails(String matchId, String venue, DateTime date, int totalOvers) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index != -1) {
+      final match = _matches[index];
+      match.venue = venue;
+      match.matchDate = date;
+      match.totalOvers = totalOvers;
+      _db.updateMatch(match);
+      notifyListeners();
+    }
+  }
+
   void updateMatchToss(String matchId, String winnerId, String decision) {
     final index = _matches.indexWhere((m) => m.id == matchId);
     if (index != -1) {
@@ -239,6 +251,47 @@ class AppState extends ChangeNotifier {
       match.bowlerBallsBowled[bowler.id] ??= 0;
       
       _db.updateMatch(match);
+    }
+  }
+
+  void retireBatsman(String matchId, String playerId, bool isRetiredOut) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index != -1) {
+      final match = _matches[index];
+      final innings = match.currentInnings;
+      
+      // Find batsman name
+      final player = [...match.teamA.players, ...match.teamB.players].firstWhere((p) => p.id == playerId);
+      final isStriker = match.striker?.id == playerId;
+      
+      // 1. Create and add BallEvent (non-ball event)
+      final event = BallEvent(
+        runs: 0,
+        isWicket: isRetiredOut,
+        wicketType: isRetiredOut ? 'Retired Out' : 'Retired Hurt',
+        bowlerName: match.currentBowler?.name ?? 'N/A',
+        batsmanName: player.name,
+        description: isRetiredOut ? '${player.name} retired out' : '${player.name} retired hurt',
+        isRunsOffBat: false,
+      );
+      
+      innings.events.add(event);
+      
+      // If retired out, it counts as a wicket for the team
+      if (isRetiredOut) {
+        innings.wickets++;
+      }
+      
+      // 2. Remove from active crease
+      if (isStriker) {
+        match.striker = null;
+      } else {
+        match.nonStriker = null;
+      }
+      
+      _activeScoringMatch = match;
+      _db.updateMatch(match);
+      notifyListeners();
     }
   }
 
@@ -274,7 +327,7 @@ class AppState extends ChangeNotifier {
       if (event.countsAsBall) {
         match.bowlerBallsBowled[bowlerId] = (match.bowlerBallsBowled[bowlerId] ?? 0) + 1;
       }
-      if (event.isWicket && event.wicketType != 'Run Out') {
+      if (event.isWicket && event.wicketType != 'Run Out' && event.wicketType != 'Retired Out') {
         match.bowlerWickets[bowlerId] = (match.bowlerWickets[bowlerId] ?? 0) + 1;
       }
     }
@@ -423,13 +476,13 @@ class AppState extends ChangeNotifier {
       if (event.countsAsBall) {
         match.bowlerBallsBowled[bowlerId] = (match.bowlerBallsBowled[bowlerId] ?? 0) - 1;
       }
-      if (event.isWicket && event.wicketType != 'Run Out') {
+      if (event.isWicket && event.wicketType != 'Run Out' && event.wicketType != 'Retired Out') {
         match.bowlerWickets[bowlerId] = (match.bowlerWickets[bowlerId] ?? 0) - 1;
       }
     }
 
     // 5. Revert wicket replacement/dismissal
-    if (event.isWicket) {
+    if (event.isWicket || event.wicketType == 'Retired Hurt') {
       final battingTeam = match.battingTeam;
       Player? outBatsman;
       try {

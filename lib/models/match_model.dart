@@ -34,7 +34,7 @@ class BallEvent {
 
   int get runsAddedToTeam => runs + (isWide || isNoBall ? 1 : 0);
   int get runsAddedToBatsman => (isWide || isLegBye || isPenalty || isBye) ? 0 : (isNoBall ? (isRunsOffBat ? runs : 0) : runs);
-  bool get countsAsBall => !isWide && !isNoBall && !isPenalty;
+  bool get countsAsBall => !isWide && !isNoBall && !isPenalty && wicketType != 'Retired Hurt' && wicketType != 'Retired Out';
 }
 
 class MatchTeamInnings {
@@ -70,7 +70,7 @@ class CricketMatch {
   final String id;
   final Team teamA;
   final Team teamB;
-  final int totalOvers;
+  int totalOvers;
   
   MatchStatus status;
   String? tossWinnerId;
