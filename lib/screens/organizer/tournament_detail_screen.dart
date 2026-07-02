@@ -277,6 +277,9 @@ class TournamentDetailScreen extends StatelessWidget {
 
   Widget _buildFixturesTab(BuildContext context, Tournament tour, AppState appState) {
     final matches = tour.matches;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isTourCreator = tour.creatorId == null || tour.creatorId == currentUserId;
+    final canDeclarePOT = (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isTourCreator;
 
     if (matches.isEmpty) {
       return Center(
@@ -563,7 +566,7 @@ class TournamentDetailScreen extends StatelessWidget {
                                   fontSize: 13,
                                 ),
                               ),
-                              if (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) ...[
+                              if (canDeclarePOT) ...[
                                 const SizedBox(width: 8),
                                 GestureDetector(
                                   onTap: () => _showPlayerOfTheTournamentSelector(context, tour, appState),
@@ -573,7 +576,7 @@ class TournamentDetailScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                      ] else if (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) ...[
+                      ] else if (canDeclarePOT) ...[
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryTurf,

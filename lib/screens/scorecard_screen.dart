@@ -9,6 +9,7 @@ import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 import 'organizer/tournament_detail_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ScorecardScreen extends StatefulWidget {
   final CricketMatch match;
@@ -1302,8 +1303,11 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
   Widget _buildPlayerOfTheMatchCard(BuildContext context, CricketMatch match, AppState appState) {
     final role = appState.currentRole;
     final isPOMDeclared = match.playerOfTheMatchId != null;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isCreator = match.creatorId == null || match.creatorId == currentUserId;
+    final canDeclare = (role == UserRole.scorer || role == UserRole.organizer) && isCreator;
 
-    if (!isPOMDeclared && role != UserRole.scorer && role != UserRole.organizer) {
+    if (!isPOMDeclared && !canDeclare) {
       return const SizedBox.shrink();
     }
 
@@ -1407,7 +1411,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                               ),
                             ],
                           ),
-                          if (role == UserRole.scorer || role == UserRole.organizer)
+                          if (canDeclare)
                             IconButton(
                               onPressed: () => _showPlayerOfTheMatchSelector(context, match, appState),
                               icon: const Icon(Icons.edit_rounded, color: AppColors.primaryTurf, size: 20),
