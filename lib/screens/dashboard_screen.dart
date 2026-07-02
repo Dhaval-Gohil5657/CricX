@@ -752,7 +752,7 @@ class DashboardScreen extends StatelessWidget {
           baseColor: Colors.amber,
           gradientColors: const [
             Color(0xFFFFFDF5),
-            Color(0xFFFAF2DC),
+            Color(0xFFFAE2A1),
           ],
           borderColor: Colors.amber.withOpacity(0.3),
           onTap: () {

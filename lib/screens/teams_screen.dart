@@ -137,7 +137,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: isExpanded ? AppColors.primaryTurf : AppColors.borderWood.withOpacity(0.5),
-                          width: isExpanded ? 1.5 : 1,
+                          width: isExpanded ? 1.5 : 1.0,
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -230,8 +230,6 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                       _buildStatBox('Played', team.matchesPlayed.toString(), AppColors.textDark),
                                       _buildStatBox('Won', team.matchesWon.toString(), AppColors.accentCrease),
                                       _buildStatBox('Lost', team.matchesLost.toString(), Colors.redAccent),
-                                      _buildStatBox('NRR', team.netRunRate.toStringAsFixed(3), AppColors.primaryTurf),
-                                      _buildStatBox('Points', team.points.toString(), AppColors.pitchGold),
                                     ],
                                   ),
                                   const SizedBox(height: 16),
@@ -252,10 +250,10 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                       if (isCreator)
                                         TextButton.icon(
                                           onPressed: () => _showAddPlayerDialog(context, team, appState),
-                                          icon: const Icon(Icons.add_circle_outline_rounded, size: 14, color: AppColors.primaryTurf),
-                                          label: const Text('Add Player', style: TextStyle(fontSize: 11, color: AppColors.primaryTurf, fontWeight: FontWeight.bold)),
+                                          icon: const Icon(Icons.add_circle_outline_rounded, size: 14.0, color: AppColors.primaryTurf),
+                                          label: const Text('Add Player', style: TextStyle(fontSize: 11.0, color: AppColors.primaryTurf, fontWeight: FontWeight.bold)),
                                           style: TextButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                             minimumSize: Size.zero,
                                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                           ),
@@ -276,46 +274,41 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                       ),
                                     )
                                   else
-                                    ListView.builder(
-                                      padding: EdgeInsets.zero,
-                                      shrinkWrap: true,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      itemCount: team.players.length,
-                                      itemBuilder: (context, playerIndex) {
-                                        final player = team.players[playerIndex];
+                                    Column(
+                                      children: team.players.map((player) {
                                         final isCaptain = team.captainId == player.id;
                                         return Padding(
                                           padding: const EdgeInsets.symmetric(vertical: 6.0),
                                           child: Row(
                                             children: [
                                               CircleAvatar(
-                                                radius: 12,
+                                                radius: 12.0,
                                                 backgroundColor: AppColors.primaryTurf.withOpacity(0.08),
                                                 child: Text(
                                                   player.name[0],
-                                                  style: const TextStyle(color: AppColors.primaryTurf, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  style: const TextStyle(color: AppColors.primaryTurf, fontSize: 10.0, fontWeight: FontWeight.bold),
                                                 ),
                                               ),
-                                              const SizedBox(width: 10),
+                                              const SizedBox(width: 10.0),
                                               Expanded(
                                                 child: Row(
                                                   children: [
                                                     Text(
                                                       player.name,
-                                                      style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w500),
+                                                      style: const TextStyle(color: AppColors.textDark, fontSize: 13.0, fontWeight: FontWeight.w500),
                                                     ),
                                                     if (isCaptain) ...[
-                                                      const SizedBox(width: 6),
+                                                      const SizedBox(width: 6.0),
                                                       Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 1.0),
                                                         decoration: BoxDecoration(
                                                           color: AppColors.pitchGold.withOpacity(0.15),
-                                                          borderRadius: BorderRadius.circular(4),
+                                                          borderRadius: BorderRadius.circular(4.0),
                                                           border: Border.all(color: AppColors.pitchGold.withOpacity(0.5), width: 0.5),
                                                         ),
                                                         child: const Text(
                                                           'C',
-                                                          style: TextStyle(color: AppColors.textDark, fontSize: 8, fontWeight: FontWeight.bold),
+                                                          style: TextStyle(color: AppColors.textDark, fontSize: 8.0, fontWeight: FontWeight.bold),
                                                         ),
                                                       ),
                                                     ],
@@ -324,31 +317,31 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                               ),
                                               Text(
                                                 player.role,
-                                                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11),
+                                                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11.0),
                                               ),
                                               if (isCreator) ...[
-                                                const SizedBox(width: 8),
+                                                const SizedBox(width: 8.0),
                                                 GestureDetector(
                                                   onTap: () => _showEditPlayerDialog(context, player, appState),
                                                   behavior: HitTestBehavior.opaque,
                                                   child: const Padding(
-                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                                    child: Icon(Icons.edit_note_rounded, size: 18, color: AppColors.textDarkSecondary),
+                                                    padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+                                                    child: Icon(Icons.edit_note_rounded, size: 18.0, color: AppColors.textDarkSecondary),
                                                   ),
                                                 ),
                                                 GestureDetector(
                                                   onTap: () => _showRemovePlayerConfirm(context, team, player, appState),
                                                   behavior: HitTestBehavior.opaque,
                                                   child: const Padding(
-                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                                    child: Icon(Icons.remove_circle_outline_rounded, size: 16, color: Colors.redAccent),
+                                                    padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+                                                    child: Icon(Icons.remove_circle_outline_rounded, size: 16.0, color: Colors.redAccent),
                                                   ),
                                                 ),
                                               ],
                                             ],
                                           ),
                                         );
-                                      },
+                                      }).toList(),
                                     ),
                                 ],
                               ),

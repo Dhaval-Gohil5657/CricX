@@ -14,14 +14,14 @@ class ScorerDashboard extends StatelessWidget {
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 90.0),
+          padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0, bottom: 90.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Banner Header
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(15, 12, 15, 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: const LinearGradient(
@@ -88,10 +88,36 @@ class ScorerDashboard extends StatelessWidget {
                         height: 1.4,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Divider(
+                      color: AppColors.primaryTurf.withOpacity(0.12),
+                      height: 1,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.primaryTurf,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Note: You can view all matches and tournaments, but administrative controls are restricted to the person who scheduled them.',
+                            style: TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 10.5,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               const Row(
                 children: [
                   Text(
@@ -159,12 +185,12 @@ class ScorerDashboard extends StatelessWidget {
                 title: 'Create Tournament',
                 subtitle: 'Launch a new round-robin league and points table',
                 emoji: '🏆',
-                baseColor: AppColors.pitchGold,
+                baseColor: Colors.amber,
                 gradientColors: const [
                   Color(0xFFFFF9F3),
-                  Color(0xFFFBEADB),
+                  Color(0xFFFFE393),
                 ],
-                borderColor: AppColors.pitchGold.withOpacity(0.3),
+                borderColor: Colors.amber.withOpacity(0.3),
                 onTap: () {
                   Navigator.push(
                     context,
