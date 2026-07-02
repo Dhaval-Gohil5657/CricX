@@ -316,6 +316,8 @@ class FirestoreService implements DatabaseService {
       tournamentId: data['tournamentId'],
       tournamentName: data['tournamentName'],
       creatorId: data['creatorId'],
+      playerOfTheMatchId: data['playerOfTheMatchId'],
+      playerOfTheMatchName: data['playerOfTheMatchName'],
     );
 
     // Innings
@@ -375,6 +377,8 @@ class FirestoreService implements DatabaseService {
       'tournamentId': match.tournamentId,
       'tournamentName': match.tournamentName,
       'creatorId': match.creatorId,
+      'playerOfTheMatchId': match.playerOfTheMatchId,
+      'playerOfTheMatchName': match.playerOfTheMatchName,
     };
   }
 
@@ -434,6 +438,8 @@ class FirestoreService implements DatabaseService {
       matches: tMatches,
       status: data['status'] ?? 'Upcoming',
       winnerTeamId: data['winnerTeamId'],
+      playerOfTheTournamentId: data['playerOfTheTournamentId'],
+      playerOfTheTournamentName: data['playerOfTheTournamentName'],
       playoffType: data['playoffType'] ?? 'Direct Final',
       defaultOvers: data['defaultOvers'] ?? 10,
       startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -468,6 +474,8 @@ class FirestoreService implements DatabaseService {
       'matchIds': tournament.matches.map((m) => m.id).toList(),
       'status': tournament.status,
       'winnerTeamId': tournament.winnerTeamId,
+      'playerOfTheTournamentId': tournament.playerOfTheTournamentId,
+      'playerOfTheTournamentName': tournament.playerOfTheTournamentName,
       'playoffType': tournament.playoffType,
       'defaultOvers': tournament.defaultOvers,
       'startDate': Timestamp.fromDate(tournament.startDate),

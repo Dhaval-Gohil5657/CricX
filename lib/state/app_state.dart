@@ -777,5 +777,27 @@ class AppState extends ChangeNotifier {
     tour.updatePointsTable();
     _db.updateTournament(tour);
   }
+
+  void declarePlayerOfTheMatch(String matchId, String playerId, String playerName) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index != -1) {
+      final match = _matches[index];
+      match.playerOfTheMatchId = playerId;
+      match.playerOfTheMatchName = playerName;
+      _db.updateMatch(match);
+      notifyListeners();
+    }
+  }
+
+  void declarePlayerOfTheTournament(String tournamentId, String playerId, String playerName) {
+    final index = _tournaments.indexWhere((t) => t.id == tournamentId);
+    if (index != -1) {
+      final tournament = _tournaments[index];
+      tournament.playerOfTheTournamentId = playerId;
+      tournament.playerOfTheTournamentName = playerName;
+      _db.updateTournament(tournament);
+      notifyListeners();
+    }
+  }
 }
 

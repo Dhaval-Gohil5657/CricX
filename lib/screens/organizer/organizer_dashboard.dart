@@ -316,6 +316,23 @@ class OrganizerDashboard extends StatelessWidget {
                         _buildStatChip(Icons.adjust_rounded, '${tour.defaultOvers} Overs'),
                       ],
                     ),
+                    if (tour.status == 'Completed' && tour.playerOfTheTournamentName != null) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(Icons.stars_rounded, color: Colors.amber, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Player of the Tournament: ${tour.playerOfTheTournamentName}',
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const Divider(color: AppColors.dividerGreen, height: 24),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

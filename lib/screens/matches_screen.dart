@@ -595,19 +595,41 @@ class _MatchesScreenState extends State<MatchesScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            match.status == MatchStatus.upcoming
-                                ? 'Scheduled: ${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}'
-                                : match.statusText,
-                            style: TextStyle(
-                              color: match.status == MatchStatus.completed
-                                  ? AppColors.woodMahogany
-                                  : (match.status == MatchStatus.live
-                                      ? AppColors.primaryTurf
-                                      : AppColors.textDarkSecondary),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                match.status == MatchStatus.upcoming
+                                    ? 'Scheduled: ${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}'
+                                    : match.statusText,
+                                style: TextStyle(
+                                  color: match.status == MatchStatus.completed
+                                      ? AppColors.woodMahogany
+                                      : (match.status == MatchStatus.live
+                                          ? AppColors.primaryTurf
+                                          : AppColors.textDarkSecondary),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (match.status == MatchStatus.completed && match.playerOfTheMatchName != null) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.stars_rounded, color: AppColors.pitchGold, size: 12),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Player of the Match: ${match.playerOfTheMatchName}',
+                                      style: const TextStyle(
+                                        color: AppColors.textDarkSecondary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
                           ),
                         ),
 

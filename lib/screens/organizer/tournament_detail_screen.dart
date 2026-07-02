@@ -104,120 +104,167 @@ class TournamentDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-            color: AppColors.appBarBg,
-            child: const Row(
-              children: [
-                Expanded(flex: 1, child: Text('Pos', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
-                Expanded(flex: 6, child: Text('Team', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold))),
-                Expanded(child: Text('P', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                Expanded(child: Text('W', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                Expanded(child: Text('L', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                Expanded(child: Text('Pts', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text('NRR', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
-              ],
+          // Points Table Card Wrapper
+          Card(
+            elevation: 0,
+            color: AppColors.cardBg,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
             ),
-          ),
-          
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: standings.length,
-            itemBuilder: (context, index) {
-              final entry = standings[index];
-              final leagueMatches = tour.matches.where((m) => m.id.contains('_league_')).toList();
-              final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
-              final isQualified = allLeagueCompleted && (tour.playoffType == 'Semifinals & Final' ? index < 4 : index < 2);
-
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.dividerGreen, width: 1)),
+            child: Column(
+              children: [
+                // Header Row
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF1F6F2), // Soft green tint
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                  child: const Row(
+                    children: [
+                      Expanded(flex: 1, child: Text('Pos', style: TextStyle(color: AppColors.textDark, fontSize: 11, fontWeight: FontWeight.w800))),
+                      Expanded(flex: 6, child: Text('Team', style: TextStyle(color: AppColors.textDark, fontSize: 11, fontWeight: FontWeight.w800))),
+                      Expanded(child: Text('P', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                      Expanded(child: Text('W', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                      Expanded(child: Text('L', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                      Expanded(child: Text('Pts', style: TextStyle(color: AppColors.textDark, fontSize: 11, fontWeight: FontWeight.w800), textAlign: TextAlign.center)),
+                      Expanded(flex: 2, child: Text('NRR', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.right)),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    // Position Indicator
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          color: isQualified ? AppColors.accentCrease : AppColors.textDarkMuted,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                
+                // Standings List
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: standings.length,
+                  itemBuilder: (context, index) {
+                    final entry = standings[index];
+                    final leagueMatches = tour.matches.where((m) => m.id.contains('_league_')).toList();
+                    final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
+                    final isQualified = allLeagueCompleted && (tour.playoffType == 'Semifinals & Final' ? index < 4 : index < 2);
+
+                    final nrrSign = entry.netRunRate > 0 ? '+' : '';
+                    final isLastRow = index == standings.length - 1;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isQualified ? AppColors.primaryTurf.withOpacity(0.04) : Colors.transparent,
+                        border: Border(
+                          bottom: BorderSide(
+                            color: AppColors.dividerGreen.withOpacity(0.5),
+                            width: isLastRow ? 0 : 1,
+                          ),
                         ),
                       ),
-                    ),
-                    // Team Name
-                    Expanded(
-                      flex: 6,
                       child: Row(
                         children: [
-                          Text(entry.team.logoEmoji, style: const TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
+                          // Position Indicator
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              isQualified ? 'Q' : '${index + 1}',
+                              style: TextStyle(
+                                color: isQualified ? AppColors.primaryTurf : AppColors.textDarkMuted,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          // Team Name
+                          Expanded(
+                            flex: 6,
+                            child: Row(
+                              children: [
+                                Text(entry.team.logoEmoji, style: const TextStyle(fontSize: 14)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    entry.team.name,
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Played
+                          Expanded(
+                            child: Text('${entry.played}', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12.5), textAlign: TextAlign.center),
+                          ),
+                          // Won
+                          Expanded(
+                            child: Text('${entry.won}', style: const TextStyle(color: AppColors.accentCrease, fontSize: 12.5, fontWeight: FontWeight.w500), textAlign: TextAlign.center),
+                          ),
+                          // Lost
+                          Expanded(
+                            child: Text('${entry.lost}', style: const TextStyle(color: Colors.redAccent, fontSize: 12.5), textAlign: TextAlign.center),
+                          ),
+                          // Points
                           Expanded(
                             child: Text(
-                              entry.team.name,
-                              style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
+                              '${entry.points}',
+                              style: const TextStyle(
+                                color: AppColors.woodMahogany,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          // Net Run Rate
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              '$nrrSign${entry.netRunRate.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: entry.netRunRate >= 0 ? AppColors.primaryTurf : Colors.redAccent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.right,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    // Matches Played
-                    Expanded(
-                      child: Text('${entry.played}', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.center),
-                    ),
-                    // Won
-                    Expanded(
-                      child: Text('${entry.won}', style: const TextStyle(color: AppColors.accentCrease, fontSize: 13), textAlign: TextAlign.center),
-                    ),
-                    // Lost
-                    Expanded(
-                      child: Text('${entry.lost}', style: const TextStyle(color: Colors.redAccent, fontSize: 13), textAlign: TextAlign.center),
-                    ),
-                    // Points
-                    Expanded(
-                      child: Text('${entry.points}', style: TextStyle(color: AppColors.pitchGold, fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center),
-                    ),
-                    // Net Run Rate
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        entry.netRunRate.toStringAsFixed(2),
-                        style: TextStyle(
-                          color: entry.netRunRate >= 0 ? Colors.blueAccent : Colors.redAccent,
-                          fontSize: 12,
-                        ),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              );
-            },
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           
           // Qualification notes
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.borderWood),
+              color: AppColors.primaryTurf.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primaryTurf.withOpacity(0.15)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline, color: AppColors.accentCrease, size: 16),
+                const Icon(Icons.info_outline_rounded, color: AppColors.primaryTurf, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     tour.playoffType == 'Semifinals & Final'
-                        ? 'Top 4 teams will qualify for the semi-finals.'
-                        : 'Top 2 teams will qualify directly for the final match.',
-                    style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11),
+                        ? 'Qualifying Zone: Top 4 teams will qualify for the semi-finals.'
+                        : 'Qualifying Zone: Top 2 teams will qualify directly for the final match.',
+                    style: const TextStyle(
+                      color: AppColors.primaryTurf,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -492,6 +539,57 @@ class TournamentDetailScreen extends StatelessWidget {
                         style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 16),
+                      const Divider(color: Colors.amber, height: 1),
+                      const SizedBox(height: 12),
+                      if (tour.playerOfTheTournamentId != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.amber.withOpacity(0.5), width: 1),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.stars_rounded, color: Colors.amber, size: 18),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Player of the Tournament: ${tour.playerOfTheTournamentName}',
+                                style: const TextStyle(
+                                  color: AppColors.textDark,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) ...[
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => _showPlayerOfTheTournamentSelector(context, tour, appState),
+                                  child: const Icon(Icons.edit_rounded, color: AppColors.primaryTurf, size: 14),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ] else if (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) ...[
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryTurf,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            elevation: 0,
+                          ),
+                          onPressed: () => _showPlayerOfTheTournamentSelector(context, tour, appState),
+                          icon: const Icon(Icons.stars_rounded, color: Colors.amber, size: 16),
+                          label: const Text(
+                            'DECLARE PLAYER OF THE TOURNAMENT',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1236,6 +1334,84 @@ class TournamentDetailScreen extends StatelessWidget {
         builder: (context) => FixtureDraftScreen(
           tournament: tour,
           matches: [finalMatch],
+        ),
+      ),
+    );
+  }
+
+  void _showPlayerOfTheTournamentSelector(BuildContext context, Tournament tour, AppState appState) {
+    final allPlayers = tour.teams.expand((t) => t.players).toList();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 10),
+              child: Text(
+                'Select Player of the Tournament 🏆',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(color: AppColors.dividerGreen),
+            Expanded(
+              child: allPlayers.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Text(
+                          'No players registered in tournament teams.',
+                          style: TextStyle(color: AppColors.textDarkSecondary),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: allPlayers.length,
+                      itemBuilder: (context, index) {
+                        final player = allPlayers[index];
+                        final team = tour.teams.firstWhere((t) => t.players.any((p) => p.id == player.id), orElse: () => tour.teams.first);
+                        
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primaryTurf.withOpacity(0.1),
+                            child: Text(
+                              player.name[0],
+                              style: const TextStyle(color: AppColors.primaryTurf, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text(
+                            player.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+                          ),
+                          subtitle: Text(
+                            '${player.role} • ${team.name}',
+                            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11),
+                          ),
+                          onTap: () {
+                            appState.declarePlayerOfTheTournament(tour.id, player.id, player.name);
+                            Navigator.pop(context);
+                            CustomSnackBar.show(
+                              context,
+                              message: '${player.name} declared Player of the Tournament!',
+                              type: SnackBarType.success,
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );

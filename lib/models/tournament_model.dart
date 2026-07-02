@@ -28,6 +28,8 @@ class Tournament {
   List<PointsTableEntry> pointsTable;
   String status; // 'Upcoming', 'Ongoing', 'Completed'
   String? winnerTeamId;
+  String? playerOfTheTournamentId;
+  String? playerOfTheTournamentName;
   final String playoffType; // 'Direct Final', 'Semifinals & Final'
   final int defaultOvers;
   final DateTime startDate;
@@ -42,6 +44,8 @@ class Tournament {
     required this.matches,
     this.status = 'Upcoming',
     this.winnerTeamId,
+    this.playerOfTheTournamentId,
+    this.playerOfTheTournamentName,
     this.playoffType = 'Direct Final',
     this.defaultOvers = 10,
     DateTime? startDate,
