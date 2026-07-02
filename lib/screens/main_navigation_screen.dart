@@ -26,6 +26,81 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
+  Future<bool?> _showLogoutConfirmationDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.borderGreen, width: 1.5),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.borderGreen.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(15)
+              ),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: AppColors.primaryTurf,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Sign Out',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to sign out of CricX?',
+          style: TextStyle(
+            color: AppColors.textDarkSecondary,
+            fontSize: 14.5,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.textDarkSecondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTurf,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -257,107 +332,128 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       _searchController.clear();
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 5),
+                      padding: const EdgeInsets.only(right: 10),
                       child: Icon(Icons.close_rounded, color: Colors.white),
                     ))
-                    : GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isSearching = true;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 5),
-                    child: const Icon(Icons.search_rounded, color: Colors.white,size: 22,),
-                  ),
+                    : Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isSearching = true;
+                      });
+                    },
+                    child: const Icon(
+                      Icons.search_rounded, color: Colors.white, size: 22,),
 
+                  ),
                 ),
               if ((label == 'Home' || label == 'Matches' || label == 'Tournaments' || label == 'Directory') &&
                   (role == UserRole.scorer || role == UserRole.organizer) && !_isSearching)
-                IconButton(
-                  icon: Icon(
-                    appState.filterByCreator ? Icons.how_to_reg_rounded : Icons.group_outlined,
-                    color: appState.filterByCreator ? AppColors.borderGreen : Colors.white,
-                  ),
-                  tooltip: appState.filterByCreator ? 'Showing My Created' : 'Showing All',
-                  onPressed: () {
-                    appState.toggleFilterByCreator();
-                    
-                    String activeMsg = '';
-                    if (label == 'Home') {
-                      activeMsg = appState.filterByCreator
-                          ? 'Showing only your scheduled matches'
-                          : 'Showing all matches';
-                    } else if (label == 'Matches') {
-                      activeMsg = appState.filterByCreator
-                          ? 'Showing only your scheduled matches'
-                          : 'Showing all matches';
-                    } else if (label == 'Tournaments') {
-                      activeMsg = appState.filterByCreator
-                          ? 'Showing only your scheduled tournaments'
-                          : 'Showing all tournaments';
-                    } else if (label == 'Directory') {
-                      activeMsg = appState.filterByCreator
-                          ? 'Showing only your created teams & roster players'
-                          : 'Showing all teams & players';
-                    } else {
-                      activeMsg = appState.filterByCreator
-                          ? 'Filter active: showing your scheduled items'
-                          : 'Filter cleared: showing all items';
-                    }
+                 Padding(
+                   padding: const EdgeInsets.only(right: 15),
+                   child: GestureDetector(
+                      onTap: () {
+                        appState.toggleFilterByCreator();
 
-                    CustomSnackBar.show(
-                      context,
-                      message: activeMsg,
-                      type: SnackBarType.info,
-                    );
-                  },
-                ),
+                        String activeMsg = '';
+                        if (label == 'Home') {
+                          activeMsg = appState.filterByCreator
+                              ? 'Showing only your scheduled matches'
+                              : 'Showing all matches';
+                        } else if (label == 'Matches') {
+                          activeMsg = appState.filterByCreator
+                              ? 'Showing only your scheduled matches'
+                              : 'Showing all matches';
+                        } else if (label == 'Tournaments') {
+                          activeMsg = appState.filterByCreator
+                              ? 'Showing only your scheduled tournaments'
+                              : 'Showing all tournaments';
+                        } else if (label == 'Directory') {
+                          activeMsg = appState.filterByCreator
+                              ? 'Showing only your created teams & roster players'
+                              : 'Showing all teams & players';
+                        } else {
+                          activeMsg = appState.filterByCreator
+                              ? 'Filter active: showing your scheduled items'
+                              : 'Filter cleared: showing all items';
+                        }
+
+                        CustomSnackBar.show(
+                          context,
+                          message: activeMsg,
+                          type: SnackBarType.info,
+                        );
+                      },
+                      child: Tooltip(
+                        message: appState.filterByCreator ? 'Showing My Created' : 'Showing All',
+                        child: Icon(
+                          appState.filterByCreator ? Icons.how_to_reg_rounded : Icons.group_outlined,
+                          color: appState.filterByCreator ? AppColors.borderGreen : Colors.white,
+                        ),
+                      ),
+                    ),
+                 ),
               if (_selectedIndex == screens.length - 1 && !_isSearching)
-                IconButton(
-                  icon: Icon(
-                    FirebaseAuth.instance.currentUser != null
-                        ? Icons.logout_rounded
-                        : Icons.login_rounded,
-                    color: AppColors.borderGreen,
-                    size: 22,
-                  ),
-                  tooltip: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
-                  onPressed: () async {
-                    try {
-                      final isLoggingOut = FirebaseAuth.instance.currentUser != null;
-                      if (isLoggingOut) {
-                        await FirebaseAuth.instance.signOut();
-                      }
-                      appState.changeRole(UserRole.guest);
-                      if (context.mounted) {
-                        CustomSnackBar.show(
-                          context,
-                          message: isLoggingOut
-                              ? 'Logged out successfully.'
-                              : 'Returning to role selection.',
-                          type: SnackBarType.success,
-                          duration: const Duration(seconds: 2),
-                        );
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const WelcomeScreen(),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        CustomSnackBar.show(
-                          context,
-                          message: 'Action failed: $e',
-                          type: SnackBarType.error,
-                        );
-                      }
-                    }
-                  },
-                ),
-              SizedBox(width: 5,)
+               Padding(
+                 padding: const EdgeInsets.only(right: 12),
+                 child: GestureDetector(
+                   onTap: () async {
+                     final isLoggingOut = FirebaseAuth.instance.currentUser != null;
+                     if (isLoggingOut) {
+                       final confirm = await _showLogoutConfirmationDialog(context);
+                       if (confirm != true) return;
+                     }
+                     try {
+                       if (isLoggingOut) {
+                         await FirebaseAuth.instance.signOut();
+                       }
+                       appState.changeRole(UserRole.guest);
+                       if (context.mounted) {
+                         CustomSnackBar.show(
+                           context,
+                           message: isLoggingOut
+                               ? 'Logged out successfully.'
+                               : 'Returning to role selection.',
+                           type: SnackBarType.success,
+                           duration: const Duration(seconds: 2),
+                         );
+                         Navigator.pushReplacement(
+                           context,
+                           MaterialPageRoute(
+                             builder: (context) => const WelcomeScreen(),
+                           ),
+                         );
+                       }
+                     } catch (e) {
+                       if (context.mounted) {
+                         CustomSnackBar.show(
+                           context,
+                           message: 'Action failed: $e',
+                           type: SnackBarType.error,
+                         );
+                       }
+                     }
+                   },
+                   child: Tooltip(
+                     message: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
+                     child: Container(
+                       padding: EdgeInsets.all(5),
+                       decoration: BoxDecoration(
+                         color: AppColors.borderGreen.withOpacity(0.15),
+                       borderRadius: BorderRadius.circular(10)),
+                       child: Icon(
+                         FirebaseAuth.instance.currentUser != null
+                             ? Icons.logout_rounded
+                             : Icons.login_rounded,
+                         color: AppColors.borderGreen,
+                         size: 20,
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+
             ],
         ),
       ),

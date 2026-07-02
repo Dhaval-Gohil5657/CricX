@@ -7,6 +7,9 @@ import '../models/tournament_model.dart';
 import 'scorecard_screen.dart';
 import 'scorer/live_scoring_screen.dart';
 import 'scorer/toss_setup_screen.dart';
+import 'scorer/create_match_screen.dart';
+import 'organizer/create_tournament_screen.dart';
+import '../constants/custom_snackbar.dart';
 import '../constants/app_colors.dart';
 
 class MatchesScreen extends StatefulWidget {
@@ -271,22 +274,119 @@ class _MatchesScreenState extends State<MatchesScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (matchList.isEmpty) {
       final isSearching = searchQuery.isNotEmpty;
+      if (isSearching) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.search_off_rounded,
+                color: AppColors.textDarkMuted,
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'No matches found matching "$searchQuery"',
+                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
+
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSearching ? Icons.search_off_rounded : Icons.sports_cricket,
-              size: 64,
-              color: AppColors.dividerGreen,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isSearching ? 'No matches found matching "$searchQuery"' : emptyMessage,
-              style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryTurf.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _activeSubTab == 'friendly' ? Icons.sports_cricket_rounded : Icons.emoji_events_rounded,
+                  color: AppColors.primaryTurf,
+                  size: 64,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _activeSubTab == 'friendly' ? 'No Matches Scheduled' : 'No Tournament Matches',
+                style: const TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _activeSubTab == 'friendly'
+                    ? 'Schedule a friendly match between two teams to start scoring in real-time.'
+                    : 'Schedule matches under a tournament to track points and statistics.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (role == UserRole.scorer || role == UserRole.organizer) {
+                    if (_activeSubTab == 'friendly') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateMatchScreen(),
+                        ),
+                      );
+                    } else {
+                      if (appState.tournaments.isEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateTournamentScreen(),
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateMatchScreen(),
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Please switch your role to Scorer or Organizer to schedule matches.',
+                      type: SnackBarType.warning,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                label: Text(
+                  _activeSubTab == 'friendly'
+                      ? 'Schedule Match'
+                      : (appState.tournaments.isEmpty ? 'Create Tournament' : 'Schedule Match'),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryTurf,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

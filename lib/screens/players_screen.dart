@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../state/app_state.dart';
 import '../models/player_model.dart';
 import '../constants/app_colors.dart';
+import '../constants/custom_snackbar.dart';
+import 'scorer/create_team_screen.dart';
 import 'main_navigation_screen.dart';
 
 class PlayersScreen extends StatefulWidget {
@@ -171,28 +173,100 @@ class _PlayersScreenState extends State<PlayersScreen> {
           ),
           
           Expanded(
-            child: filteredPlayers.isEmpty
+            child: players.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.people_outline_rounded,
-                          color: AppColors.textDarkMuted,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          searchQuery.isNotEmpty
-                              ? 'No players found matching "$searchQuery"'
-                              : 'No players matching current filters.',
-                          style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryTurf.withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.people_outline_rounded,
+                              color: AppColors.primaryTurf,
+                              size: 64,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'No Players Registered',
+                            style: TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Create teams and add players to see them listed in the directory.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              final role = appState.currentRole;
+                              if (role == UserRole.scorer || role == UserRole.organizer) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CreateTeamScreen(),
+                                  ),
+                                );
+                              } else {
+                                CustomSnackBar.show(
+                                  context,
+                                  message: 'Please switch your role to Scorer or Organizer to create teams and add players.',
+                                  type: SnackBarType.warning,
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.add_rounded, color: Colors.white),
+                            label: const Text('Create Team & Players'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryTurf,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   )
-                : ListView.builder(
+                : filteredPlayers.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.people_outline_rounded,
+                              color: AppColors.textDarkMuted,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              searchQuery.isNotEmpty
+                                  ? 'No players found matching "$searchQuery"'
+                                  : 'No players matching current filters.',
+                              style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
                     padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 90),
                     itemCount: filteredPlayers.length,
                     physics: const BouncingScrollPhysics(),

@@ -188,7 +188,7 @@ class ScorerDashboard extends StatelessWidget {
                 baseColor: Colors.amber,
                 gradientColors: const [
                   Color(0xFFFFF9F3),
-                  Color(0xFFFFE393),
+                  Color(0xFFFFE9AA),
                 ],
                 borderColor: Colors.amber.withOpacity(0.3),
                 onTap: () {

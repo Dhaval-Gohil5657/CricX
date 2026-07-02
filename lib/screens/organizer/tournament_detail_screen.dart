@@ -234,30 +234,55 @@ class TournamentDetailScreen extends StatelessWidget {
     if (matches.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.calendar_month_outlined, color: AppColors.textDarkDisabled, size: 64),
-              const SizedBox(height: 16),
-              const Text(
-                'No fixtures scheduled yet.',
-                style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 14),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryTurf.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.calendar_month_outlined,
+                  color: AppColors.primaryTurf,
+                  size: 64,
+                ),
               ),
               const SizedBox(height: 24),
+              const Text(
+                'No Fixtures Scheduled',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Generate fixtures to schedule round-robin matches for all registered teams.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 32),
                if (appState.currentRole == UserRole.organizer &&
                   (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid))
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryTurf,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                  onPressed: () => _generateFixtures(context, tour, appState),
-                  icon: const Icon(Icons.flash_on, size: 20),
-                  label: const Text('GENERATE LEAGUE FIXTURES', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
+                 ElevatedButton.icon(
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: AppColors.primaryTurf,
+                     foregroundColor: Colors.white,
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                   ),
+                   onPressed: () => _generateFixtures(context, tour, appState),
+                   icon: const Icon(Icons.flash_on, size: 20),
+                   label: const Text('GENERATE LEAGUE FIXTURES', style: TextStyle(fontWeight: FontWeight.bold)),
+                 ),
             ],
           ),
         ),

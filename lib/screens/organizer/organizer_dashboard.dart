@@ -4,6 +4,8 @@ import '../../state/app_state.dart';
 import '../../models/tournament_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tournament_detail_screen.dart';
+import 'create_tournament_screen.dart';
+import '../../constants/custom_snackbar.dart';
 import '../../constants/app_colors.dart';
 
 class OrganizerDashboard extends StatelessWidget {
@@ -25,6 +27,84 @@ class OrganizerDashboard extends StatelessWidget {
       return t.name.toLowerCase().contains(q) ||
              t.venue.toLowerCase().contains(q);
     }).toList();
+
+    final showPlaceholder = tournaments.isEmpty && searchQuery.isEmpty;
+
+    if (showPlaceholder) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTurf.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppColors.primaryTurf,
+                    size: 64,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'No Tournaments Created',
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Create a tournament and add teams to start scheduling fixtures and tracking points.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    if (role == UserRole.scorer || role == UserRole.organizer) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateTournamentScreen(),
+                        ),
+                      );
+                    } else {
+                      CustomSnackBar.show(
+                        context,
+                        message: 'Please switch your role to Scorer or Organizer to create tournaments.',
+                        type: SnackBarType.warning,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  label: const Text('Create Tournament'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return DefaultTabController(
       length: 3,
@@ -83,21 +163,53 @@ class OrganizerDashboard extends StatelessWidget {
     final searchQuery = appState.searchQuery;
     if (list.isEmpty) {
       final isSearching = searchQuery.isNotEmpty;
+      if (isSearching) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.search_off_rounded,
+                color: AppColors.textDarkMuted,
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'No tournaments found matching "$searchQuery"',
+                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                isSearching ? Icons.search_off_rounded : Icons.emoji_events_outlined,
-                color: AppColors.textDarkDisabled,
-                size: 48,
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryTurf.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: AppColors.primaryTurf,
+                  size: 64,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               Text(
-                isSearching ? 'No tournaments found matching "$searchQuery"' : emptyMessage,
-                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
+                emptyMessage,
+                style: const TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
