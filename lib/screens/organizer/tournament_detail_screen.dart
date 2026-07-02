@@ -11,6 +11,7 @@ import '../main_navigation_screen.dart';
 import 'fixture_draft_screen.dart';
 import '../scorer/toss_setup_screen.dart';
 import '../scorer/live_scoring_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TournamentDetailScreen extends StatelessWidget {
   final Tournament tournament;
@@ -244,7 +245,8 @@ class TournamentDetailScreen extends StatelessWidget {
                 style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 14),
               ),
               const SizedBox(height: 24),
-              if (appState.currentRole == UserRole.organizer)
+               if (appState.currentRole == UserRole.organizer &&
+                  (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid))
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryTurf,
@@ -471,8 +473,9 @@ class TournamentDetailScreen extends StatelessWidget {
               ],
 
               // Playoff Actions & Status
-              if (allLeagueCompleted && !hasPlayoffs) ...[
-                if (appState.currentRole == UserRole.organizer) ...[
+               if (allLeagueCompleted && !hasPlayoffs) ...[
+                if (appState.currentRole == UserRole.organizer &&
+                    (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid)) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -530,8 +533,9 @@ class TournamentDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ] else if (hasPlayoffs && sfCompleted && !finalGenerated && tour.playoffType == 'Semifinals & Final') ...[
-                if (appState.currentRole == UserRole.organizer) ...[
+               ] else if (hasPlayoffs && sfCompleted && !finalGenerated && tour.playoffType == 'Semifinals & Final') ...[
+                if (appState.currentRole == UserRole.organizer &&
+                    (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid)) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -630,9 +634,10 @@ class TournamentDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMatchCard(BuildContext context, CricketMatch match) {
+   Widget _buildMatchCard(BuildContext context, CricketMatch match) {
     final appState = Provider.of<AppState>(context, listen: false);
     final role = appState.currentRole;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     // Format match date and time
     final date = match.matchDate;
@@ -860,7 +865,9 @@ class TournamentDetailScreen extends StatelessWidget {
                       ),
                     ),
                     
-                    if ((role == UserRole.scorer || role == UserRole.organizer) && canStart)
+                     if ((role == UserRole.scorer || role == UserRole.organizer) &&
+                        canStart &&
+                        (match.creatorId == null || match.creatorId == currentUserId))
                       Padding(
                         padding: const EdgeInsets.only(left: 5),
                         child: ElevatedButton(

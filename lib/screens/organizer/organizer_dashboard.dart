@@ -15,9 +15,7 @@ class OrganizerDashboard extends StatelessWidget {
     final role = appState.currentRole;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
-    final tournaments = (role == UserRole.scorer || role == UserRole.organizer)
-        ? appState.tournaments.where((t) => t.creatorId == null || t.creatorId == currentUserId).toList()
-        : appState.tournaments;
+    final tournaments = appState.tournaments;
 
     final filteredTournaments = tournaments.where((t) {
       if (searchQuery.isEmpty) return true;

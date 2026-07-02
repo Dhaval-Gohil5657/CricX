@@ -27,13 +27,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
 
-    final allVisibleMatches = (role == UserRole.scorer || role == UserRole.organizer)
-        ? appState.matches.where((m) => m.creatorId == null || m.creatorId == currentUserId).toList()
-        : appState.matches;
+    final allVisibleMatches = appState.matches;
 
-    final allVisibleTournaments = (role == UserRole.scorer || role == UserRole.organizer)
-        ? appState.tournaments.where((t) => t.creatorId == null || t.creatorId == currentUserId).toList()
-        : appState.tournaments;
+    final allVisibleTournaments = appState.tournaments;
 
     // Reset selected tournament if it's not present in the current appState tournaments list anymore
     if (_selectedTournamentId != 'all' &&
@@ -268,6 +264,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
     AppState appState,
   ) {
     final searchQuery = appState.searchQuery;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (matchList.isEmpty) {
       final isSearching = searchQuery.isNotEmpty;
       return Center(
@@ -510,8 +507,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
                           ),
                         ),
 
-                        // Role specific quick actions
-                        if ((role == UserRole.scorer || role == UserRole.organizer) && match.status == MatchStatus.live)
+                        if ((role == UserRole.scorer || role == UserRole.organizer) &&
+                             match.status == MatchStatus.live &&
+                             (match.creatorId == null || match.creatorId == currentUserId))
                           Padding(
                             padding: const EdgeInsets.only(left: 5),
                             child: ElevatedButton(
@@ -536,6 +534,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                           )
                         else if ((role == UserRole.scorer || role == UserRole.organizer) &&
                                  match.status == MatchStatus.upcoming &&
+                                 (match.creatorId == null || match.creatorId == currentUserId) &&
                                  (DateTime(match.matchDate.year, match.matchDate.month, match.matchDate.day)
                                      .isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)) ||
                                  DateTime(match.matchDate.year, match.matchDate.month, match.matchDate.day)

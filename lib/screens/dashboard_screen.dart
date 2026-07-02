@@ -23,9 +23,7 @@ class DashboardScreen extends StatelessWidget {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
 
-    final allVisibleMatches = (role == UserRole.scorer || role == UserRole.organizer)
-        ? appState.matches.where((m) => m.creatorId == null || m.creatorId == currentUserId).toList()
-        : appState.matches;
+    final allVisibleMatches = appState.matches;
 
     final liveMatches = allVisibleMatches.where((m) {
       final isLive = m.status == MatchStatus.live;
@@ -274,6 +272,7 @@ class DashboardScreen extends StatelessWidget {
 
 
   Widget _buildLiveMatchCard(BuildContext context, CricketMatch match, UserRole role, AppState appState, {bool isFullWidth = false}) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final innings1 = match.innings1;
     final isFirstInnings = match.currentInningsNum == 1;
     final currentInnings = match.currentInnings;
@@ -611,7 +610,8 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
 
-                if (role == UserRole.scorer || role == UserRole.organizer) ...[
+                if ((role == UserRole.scorer || role == UserRole.organizer) &&
+                    (match.creatorId == null || match.creatorId == currentUserId)) ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -1080,6 +1080,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildUpcomingMatchCard(BuildContext context, CricketMatch match, AppState appState) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isCreator = match.creatorId == null || match.creatorId == currentUserId;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1104,120 +1107,141 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  match.venue,
-                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                ),
-                Text(
-                  '${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Color(match.teamA.logoColorHex).withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 12)),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              match.teamA.name,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Color(match.teamB.logoColorHex).withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 12)),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              match.teamB.name,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                SizedBox(
-                  height: 35,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.woodMahogany,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
-                      );
-                    },
-                    icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                    label: const Text('START'),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(color: AppColors.dividerGreen, height: 16),
-            Text(
-              'Overs: ${match.totalOvers} Overs Match',
-              style: const TextStyle(
-                color: AppColors.woodMahogany,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ScorecardScreen(match: match),
               ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      match.venue,
+                      style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                    ),
+                    Text(
+                      '${match.matchDate.day}/${match.matchDate.month}/${match.matchDate.year} at ${match.matchDate.hour.toString().padLeft(2, '0')}:${match.matchDate.minute.toString().padLeft(2, '0')}',
+                      style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Color(match.teamA.logoColorHex).withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(match.teamA.logoEmoji, style: const TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  match.teamA.name,
+                                  style: const TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Color(match.teamB.logoColorHex).withOpacity(0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(match.teamB.logoEmoji, style: const TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  match.teamB.name,
+                                  style: const TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    if (isCreator)
+                      SizedBox(
+                        height: 35,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.woodMahogany,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => TossSetupScreen(match: match)),
+                            );
+                          },
+                          icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                          label: const Text('START'),
+                        ),
+                      )
+                    else
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: AppColors.woodMahogany,
+                        size: 14,
+                      ),
+                  ],
+                ),
+                const Divider(color: AppColors.dividerGreen, height: 16),
+                Text(
+                  'Overs: ${match.totalOvers} Overs Match',
+                  style: const TextStyle(
+                    color: AppColors.woodMahogany,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
