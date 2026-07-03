@@ -97,80 +97,153 @@ class LiveScoringScreen extends StatelessWidget {
         children: [
           // Match Header Info Card
           Container(
-            margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderGreen, width: 1.5),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFF4D1A9), // Soft light willow wood edge
+                  Color(0xFFFCF7F0), // Extra light wood face
+                  Color(0xFFF4D1A9), // Soft light willow wood edge
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderWood, width: 1.2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          battingTeam.name,
-                          style: const TextStyle(color: AppColors.textDark, fontSize: 14, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '${innings.runs}/${innings.wickets}',
-                              style: const TextStyle(color: Colors.green, fontSize: 32, fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryTurf.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '($oversCompletedText Overs)',
-                              style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 14),
+                            child: const Text(
+                              'BATTING TEAM',
+                              style: TextStyle(
+                                color: AppColors.primaryTurf,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            battingTeam.name,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '${innings.runs}/${innings.wickets}',
+                                style: const TextStyle(
+                                  color: AppColors.primaryTurf,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '($oversCompletedText ov)',
+                                style: const TextStyle(
+                                  color: AppColors.textDarkSecondary,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Run Rate: ${innings.runRate.toStringAsFixed(2)}',
-                          style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13, fontWeight: FontWeight.bold),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.textDarkSecondary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Run Rate: ${innings.runRate.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                         if (isSecondInnings && target != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'Target: $target',
-                            style: const TextStyle(color: AppColors.pitchGold, fontSize: 14, fontWeight: FontWeight.bold),
-                          ),
-                          if (currentMatch.status != MatchStatus.completed)
-                            Text(
-                              'Need ${target - innings.runs <= 0 ? 0 : target - innings.runs} from ${(currentMatch.totalOvers * 6) - innings.ballsBowled} balls',
-                              style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.pitchGold.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.pitchGold.withOpacity(0.4), width: 1),
                             ),
+                            child: Text(
+                              'Target: $target',
+                              style: const TextStyle(
+                                color: AppColors.woodMahogany,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          if (currentMatch.status != MatchStatus.completed) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Need ${target - innings.runs <= 0 ? 0 : target - innings.runs} from ${(currentMatch.totalOvers * 6) - innings.ballsBowled} b',
+                              style: const TextStyle(
+                                color: AppColors.textDarkMuted,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),
                   ],
                 ),
                 if (currentMatch.status == MatchStatus.completed) ...[
-                  const Divider(color: AppColors.borderGreen, height: 16),
+                  const Divider(color: AppColors.borderWood, height: 10),
                   Text(
                     currentMatch.resultString,
                     style: const TextStyle(
-                      color: AppColors.pitchGold,
-                      fontSize: 14,
+                      color: AppColors.woodMahogany,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
@@ -178,25 +251,38 @@ class LiveScoringScreen extends StatelessWidget {
                     maxLines: null,
                   ),
                 ],
-                const Divider(color: AppColors.borderGreen, height: 24),
+                const Divider(color: AppColors.borderWood, height: 12),
                 
                 // Current Over Tracker
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 6.0),
-                      child: Text(
-                        'This Over: ',
-                        style: TextStyle(color: AppColors.textDarkMuted, fontSize: 12, fontWeight: FontWeight.bold),
+                    const Text(
+                      'THIS OVER: ',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: recentEvents.map((ev) => _buildOverBallCircle(ev)).toList(),
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: recentEvents.isEmpty
+                            ? [
+                                Text(
+                                  'Over starting...',
+                                  style: TextStyle(
+                                    color: AppColors.textDarkMuted.withOpacity(0.6),
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                )
+                              ]
+                            : recentEvents.map((ev) => _buildOverBallCircle(ev)).toList(),
                       ),
                     ),
                   ],
@@ -208,37 +294,44 @@ class LiveScoringScreen extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              padding: const EdgeInsets.fromLTRB(12, 15, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Active Batsmen
                   _buildBatsmenCard(context, currentMatch, battingTeam, appState),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 15),
                   
                   // Active Bowler
                   _buildBowlerCard(context, currentMatch, bowlingTeam, appState),
-                  const SizedBox(height: 12),
-                  
+                  const SizedBox(height: 15),
+
                   // Scoring Buttons Grid wrapped in a card Container
                   Container(
                     decoration: BoxDecoration(
                       color: AppColors.cardBg,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.borderGreen, width: 1),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'SCORING PAD',
-                            style: TextStyle(
-                              color: AppColors.primaryTurf,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryTurf.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'SCORING PAD',
+                              style: TextStyle(
+                                color: AppColors.primaryTurf,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -300,13 +393,13 @@ class LiveScoringScreen extends StatelessWidget {
     }
 
     return Container(
-      width: 26,
-      height: 26,
+      width: 22,
+      height: 22,
       decoration: BoxDecoration(
         color: bg,
         shape: BoxShape.circle,
         border: bg == AppColors.leatherWhite 
-            ? Border.all(color: AppColors.borderGreen, width: 1) 
+            ? Border.all(color: AppColors.borderGreen, width: 0.8) 
             : null,
       ),
       alignment: Alignment.center,
@@ -315,7 +408,7 @@ class LiveScoringScreen extends StatelessWidget {
         style: TextStyle(
           color: textCol,
           fontWeight: FontWeight.bold,
-          fontSize: text.length > 3 ? 7 : (text.length > 2 ? 8 : 10),
+          fontSize: text.length > 3 ? 6.5 : (text.length > 2 ? 7.5 : 9.5),
         ),
       ),
     );
@@ -324,54 +417,96 @@ class LiveScoringScreen extends StatelessWidget {
   Widget _buildBatsmenCard(BuildContext context, CricketMatch match, Team battingTeam, AppState appState) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderGreen, width: 1),
+        color: AppColors.cardBg, // Warm cream/wood theme card
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGreen, width: 1.2),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('BATTING', style: TextStyle(color: AppColors.accentCrease, fontSize: 12, fontWeight: FontWeight.bold)),
-                TextButton.icon(
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTurf.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.sports_cricket, color: AppColors.primaryTurf, size: 12),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'BATTING',
+                        style: TextStyle(
+                          color: AppColors.primaryTurf,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
                   onPressed: () => appState.changeStriker(),
-                  icon: const Icon(Icons.swap_horiz, size: 16, color: AppColors.accentCrease),
-                  label: const Text('Rotate Strike', style: TextStyle(color: AppColors.accentCrease, fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                  icon: const Icon(Icons.swap_horiz, size: 12, color: AppColors.primaryTurf),
+                  label: const Text(
+                    'Rotate Strike',
+                    style: TextStyle(
+                      color: AppColors.primaryTurf,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primaryTurf, width: 0.8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             
             // Batting Column Headers (Shown only once at the top)
             if (match.striker != null || match.nonStriker != null) ...[
               Row(
                 children: [
-                  const Icon(Icons.sports_cricket, color: Colors.transparent, size: 18),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.sports_cricket, color: Colors.transparent, size: 14),
+                  const SizedBox(width: 6),
                   const Expanded(
-                    flex: 4,
-                    child: Text('Batsman', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                    flex: 5,
+                    child: Text(
+                      'BATSMAN',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                   _buildBatsmanHeaderItem('R'),
                   _buildBatsmanHeaderItem('B'),
-                  _buildBatsmanHeaderItem('4s'),
-                  _buildBatsmanHeaderItem('6s'),
+                  _buildBatsmanHeaderItem('4S'),
+                  _buildBatsmanHeaderItem('6S'),
                   _buildBatsmanHeaderItem('SR', flex: 2),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               const Divider(color: AppColors.borderGreen, height: 1),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
             ],
             
             // Striker Row
             _buildBatsmanRow(context, match, match.striker, true, battingTeam, appState),
-            const Divider(color: AppColors.borderGreen, height: 15),
+            const Divider(color: AppColors.borderGreen, height: 10,thickness: 0.6,),
             // Non-Striker Row
             _buildBatsmanRow(context, match, match.nonStriker, false, battingTeam, appState),
           ],
@@ -385,7 +520,7 @@ class LiveScoringScreen extends StatelessWidget {
       flex: flex,
       child: Text(
         label,
-        style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11, fontWeight: FontWeight.bold),
+        style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 9.5, fontWeight: FontWeight.bold),
         textAlign: TextAlign.right,
       ),
     );
@@ -400,28 +535,53 @@ class LiveScoringScreen extends StatelessWidget {
     AppState appState,
   ) {
     if (player == null || player.id == 'dummy') {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('Select Batsman', style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold)),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.dividerGreen,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: Size.zero,
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 5),
+        decoration: BoxDecoration(
+          color: AppColors.woodLight.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.borderWood, width: 0.8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                 Icon(Icons.person_add_alt_1_rounded, color: AppColors.woodMahogany, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  isStriker ? 'Select Striker *' : 'Select Non-Striker',
+                  style: TextStyle(color: AppColors.woodMahogany, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-            onPressed: () {
-              final availablePlayers = battingTeam.players.where((p) {
-                return !match.currentInnings.battingOrder.contains(p.id);
-              }).toList();
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.woodMahogany,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () {
+                final activeStrikerId = match.striker?.id;
+                final activeNonStrikerId = match.nonStriker?.id;
+                final availablePlayers = battingTeam.players.where((p) {
+                  final hasBatted = match.currentInnings.battingOrder.contains(p.id);
+                  final isAtCrease = p.id == activeStrikerId || p.id == activeNonStrikerId;
+                  return !hasBatted && !isAtCrease;
+                }).toList();
 
-              _showPlayerSelector(context, availablePlayers, (newPlayer) {
-                appState.changeStrikerPlayer(newPlayer, isStriker);
-              }, isBowler: false);
-            },
-            child: const Text('Select', style: TextStyle(color: AppColors.textDark, fontSize: 11)),
-          ),
-        ],
+                _showPlayerSelector(context, availablePlayers, (newPlayer) {
+                  appState.changeStrikerPlayer(newPlayer, isStriker);
+                }, isBowler: false);
+              },
+              child: const Text('SELECT', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       );
     }
 
@@ -431,41 +591,62 @@ class LiveScoringScreen extends StatelessWidget {
     final sixes = match.currentInnings.events.where((e) => e.batsmanName == player.name && e.runs == 6 && !e.isWide && (e.isNoBall ? e.isRunsOffBat : true)).length;
     final sr = balls > 0 ? (runs / balls) * 100 : 0.0;
 
-    return Row(
+    final content = Row(
       children: [
         Icon(
           isStriker ? Icons.sports_cricket : Icons.sports_cricket_outlined,
-          color: isStriker ? AppColors.woodLight : AppColors.textDarkDisabled,
-          size: 18,
+          color: isStriker ? AppColors.woodMahogany : AppColors.textDarkDisabled,
+          size: 16,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 5),
         Expanded(
-          flex: 4,
+          flex: 5,
           child: Text(
-            '${player.name}${player.id == battingTeam.captainId && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : player.id == battingTeam.captainId ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}${isStriker ? ' *' : ''}',
+            '${player.name}${player.id == battingTeam.captainId && player.role == 'Wicketkeeper' ? ' (C)(Wk)' : player.id == battingTeam.captainId ? ' (C)' : player.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
             style: TextStyle(
               color: AppColors.textDark,
               fontWeight: isStriker ? FontWeight.bold : FontWeight.normal,
-              fontSize: 13,
+              fontSize: 12,
             ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        _buildBatsmanValueItem('$runs'),
+        _buildBatsmanValueItem('$runs', isHighlight: isStriker),
         _buildBatsmanValueItem('$balls'),
         _buildBatsmanValueItem('$fours'),
         _buildBatsmanValueItem('$sixes'),
-        _buildBatsmanValueItem(sr.toStringAsFixed(1), flex: 2),
+        _buildBatsmanValueItem(sr.toStringAsFixed(1), flex: 2, isHighlight: isStriker),
       ],
     );
+
+    if (isStriker) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primaryTurf.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primaryTurf.withOpacity(0.2), width: 0.5),
+        ),
+        child: content,
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+        child: content,
+      );
+    }
   }
 
-  Widget _buildBatsmanValueItem(String value, {int flex = 1}) {
+  Widget _buildBatsmanValueItem(String value, {int flex = 1, bool isHighlight = false}) {
     return Expanded(
       flex: flex,
       child: Text(
         value,
-        style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: isHighlight ? AppColors.primaryTurf : AppColors.textDark,
+          fontSize: 12,
+          fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
+        ),
         textAlign: TextAlign.right,
       ),
     );
@@ -476,97 +657,188 @@ class LiveScoringScreen extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderGreen, width: 1),
+        color: AppColors.cardBg, // Warm scorer card background
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderWood, width: 1.2),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('BOWLING', style: TextStyle(color: AppColors.pitchGold, fontSize: 12, fontWeight: FontWeight.bold)),
-                TextButton(
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.woodMahogany.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.sports_baseball_rounded, color: AppColors.woodMahogany, size: 12),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'BOWLING',
+                        style: TextStyle(
+                          color: AppColors.woodMahogany,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
                   onPressed: () => _showPlayerSelector(context, bowlingTeam.players, (newBowler) {
                     appState.changeBowler(newBowler);
                   }, isBowler: true, match: match),
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                  child: const Text('Change Bowler', style: TextStyle(color: AppColors.pitchGold, fontSize: 11, fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.swap_horiz, size: 12, color: AppColors.woodMahogany),
+                  label: const Text(
+                    'Change Bowler',
+                    style: TextStyle(
+                      color: AppColors.woodMahogany,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.woodMahogany, width: 0.8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             if (bowler == null)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Select active bowler', style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold)),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.dividerGreen,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      minimumSize: Size.zero,
-                    ),
-                    onPressed: () => _showPlayerSelector(context, bowlingTeam.players, (newBowler) {
-                      appState.changeBowler(newBowler);
-                    }, isBowler: true, match: match),
-                    child: const Text('Select', style: TextStyle(color: AppColors.textDark, fontSize: 11)),
-                  ),
-                ],
-              )
-            else ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('', style: TextStyle(fontSize: 10)),
-                      const SizedBox(height: 2),
-                      const Icon(Icons.sports_baseball, color: AppColors.woodLight, size: 18),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryTurf.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderGreen, width: 0.8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        const Text('', style: TextStyle(fontSize: 10)),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${bowler.name}${bowler.id == bowlingTeam.captainId && bowler.role == 'Wicketkeeper' ? ' (C)(Wk)' : bowler.id == bowlingTeam.captainId ? ' (C)' : bowler.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
-                          style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
-                          overflow: TextOverflow.ellipsis,
+                        const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primaryTurf, size: 16),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Select Bowler *',
+                          style: TextStyle(color: AppColors.primaryTurf, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTurf,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () => _showPlayerSelector(context, bowlingTeam.players, (newBowler) {
+                        appState.changeBowler(newBowler);
+                      }, isBowler: true, match: match),
+                      child: const Text('SELECT', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              // Row 1: Headers
+              Row(
+                children: [
+                  const Icon(Icons.sports_baseball_rounded, color: Colors.transparent, size: 16),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    flex: 3,
+                    child: Text(
+                      'BOWLER',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
-                  _buildBowlerStatItem('O', '${(match.bowlerBallsBowled[bowler.id] ?? 0) ~/ 6}.${(match.bowlerBallsBowled[bowler.id] ?? 0) % 6}'),
-                  _buildBowlerStatItem('R', '${match.bowlerRunsConceded[bowler.id] ?? 0}'),
-                  _buildBowlerStatItem('W', '${match.bowlerWickets[bowler.id] ?? 0}'),
-                  _buildBowlerStatItem('Econ', _calculateEcon(match.bowlerRunsConceded[bowler.id] ?? 0, match.bowlerBallsBowled[bowler.id] ?? 0)),
+                  const SizedBox(width: 6),
+                  _buildBowlerHeaderItem('O'),
+                  _buildBowlerHeaderItem('R'),
+                  _buildBowlerHeaderItem('W'),
+                  _buildBowlerHeaderItem('ECON'),
                 ],
               ),
-            ]
+              const SizedBox(height: 4),
+              const Divider(color: AppColors.borderWood, height: 1,thickness: 0.8,),
+              const SizedBox(height: 5),
+              
+              // Row 2: Bowler Name & Values
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.woodMahogany.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.woodMahogany.withOpacity(0.2), width: 0.8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.sports_baseball_rounded, color: AppColors.woodMahogany, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        '${bowler.name}${bowler.id == bowlingTeam.captainId && bowler.role == 'Wicketkeeper' ? ' (C)(Wk)' : bowler.id == bowlingTeam.captainId ? ' (C)' : bowler.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
+                        style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildBowlerValueItem('${(match.bowlerBallsBowled[bowler.id] ?? 0) ~/ 6}.${(match.bowlerBallsBowled[bowler.id] ?? 0) % 6}'),
+                    _buildBowlerValueItem('${match.bowlerRunsConceded[bowler.id] ?? 0}'),
+                    _buildBowlerValueItem('${match.bowlerWickets[bowler.id] ?? 0}'),
+                    _buildBowlerValueItem(_calculateEcon(match.bowlerRunsConceded[bowler.id] ?? 0, match.bowlerBallsBowled[bowler.id] ?? 0)),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBowlerStatItem(String label, String value) {
+  Widget _buildBowlerHeaderItem(String label) {
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 9)),
-          const SizedBox(height: 2),
-          Text(value, style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.bold)),
-        ],
+      child: Text(
+        label,
+        style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 9.5, fontWeight: FontWeight.bold),
+        textAlign: TextAlign.right,
+      ),
+    );
+  }
+
+  Widget _buildBowlerValueItem(String value) {
+    return Expanded(
+      child: Text(
+        value,
+        style: const TextStyle(
+          color: AppColors.textDark,
+          fontSize: 12.5,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.right,
       ),
     );
   }
@@ -646,12 +918,12 @@ class LiveScoringScreen extends StatelessWidget {
           crossAxisCount: 4,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1.35,
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          childAspectRatio: 1.6,
           children: [
             // Row 1: 0, 1, 2, 3
-            _buildScoringButton(context, title: '0', subtitle: 'Dot', isEnabled: hasPlayers, color: const Color(0xFF1E2E21), onTap: () {
+            _buildScoringButton(context, title: '0', subtitle: 'Dot', isEnabled: hasPlayers, color: const Color(0xFF4A5D4E), onTap: () {
               _recordBallEvent(context, match, appState, runs: 0);
             }),
             _buildScoringButton(context, title: '1', subtitle: 'Run', isEnabled: hasPlayers, color: AppColors.primaryTurf, onTap: () {
@@ -665,13 +937,13 @@ class LiveScoringScreen extends StatelessWidget {
             }),
             
             // Row 2: 4, 5, 6, Wd
-            _buildScoringButton(context, title: '4', subtitle: 'Boundary', isEnabled: hasPlayers, color: Colors.blue.shade900, onTap: () {
+            _buildScoringButton(context, title: '4', subtitle: 'Boundary', isEnabled: hasPlayers, color: AppColors.woodMahogany, onTap: () {
               _recordBallEvent(context, match, appState, runs: 4, comment: '${match.striker!.name} hits a boundary!');
             }),
             _buildScoringButton(context, title: '5', subtitle: 'Overthrow', isEnabled: hasPlayers, color: AppColors.primaryTurf, onTap: () {
               _recordBallEvent(context, match, appState, runs: 5, comment: 'Overthrow runs! ${match.striker!.name} scores 5 runs.');
             }),
-            _buildScoringButton(context, title: '6', subtitle: 'Maximum', isEnabled: hasPlayers, color: AppColors.accentCrease, textColor: Colors.black, onTap: () {
+            _buildScoringButton(context, title: '6', subtitle: 'Maximum', isEnabled: hasPlayers, color: AppColors.accentCrease, onTap: () {
               _recordBallEvent(context, match, appState, runs: 6, comment: 'MASSIVE SIX! ${match.striker!.name} launches it!');
             }),
             _buildScoringButton(context, title: 'Wd', subtitle: 'Wide', isEnabled: hasPlayers, color: Colors.amber.shade900, onTap: () {
@@ -700,13 +972,14 @@ class LiveScoringScreen extends StatelessWidget {
             Expanded(
               flex: 3,
               child: SizedBox(
-                height: 50,
+                height: 45,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasPlayers ? Colors.red.shade900 : Colors.grey.shade200,
                     elevation: 0,
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
                         color: hasPlayers ? Colors.transparent : AppColors.borderGreen,
                         width: 1,
@@ -720,36 +993,40 @@ class LiveScoringScreen extends StatelessWidget {
                       type: SnackBarType.warning,
                     );
                   },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.sports_baseball, color: hasPlayers ? Colors.white : Colors.black38, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'OUT',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                          color: hasPlayers ? Colors.white : Colors.black38,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.sports_baseball, color: hasPlayers ? Colors.white : Colors.black38, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'OUT',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: hasPlayers ? Colors.white : Colors.black38,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             // Retire Button
             Expanded(
               flex: 2,
               child: SizedBox(
-                height: 50,
+                height: 45,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasPlayers ? Colors.orange.shade900 : Colors.grey.shade200,
                     elevation: 0,
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
                         color: hasPlayers ? Colors.transparent : AppColors.borderGreen,
                         width: 1,
@@ -763,37 +1040,40 @@ class LiveScoringScreen extends StatelessWidget {
                       type: SnackBarType.warning,
                     );
                   },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.airline_seat_flat_angled_rounded, color: hasPlayers ? Colors.white : Colors.black38, size: 18),
-                      const SizedBox(height: 2),
-                      Text(
-                        'RETIRE',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                          color: hasPlayers ? Colors.white : Colors.black38,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.airline_seat_flat_angled_rounded, color: hasPlayers ? Colors.white : Colors.black38, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'RETIRE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: hasPlayers ? Colors.white : Colors.black38,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             // Undo Button
             Expanded(
               flex: 2,
               child: SizedBox(
-                height: 50,
+                height: 45,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canUndo ? Colors.blueGrey.shade800 : Colors.grey.shade200,
                     elevation: 0,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
                         color: canUndo ? Colors.transparent : AppColors.borderGreen,
                         width: 1,
@@ -801,24 +1081,23 @@ class LiveScoringScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: canUndo ? () => _undoLastAction(context, match, appState) : null,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.undo_rounded,
-                        color: canUndo ? Colors.white : Colors.black38,
-                        size: 18,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'UNDO',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: canUndo ? Colors.white : Colors.black38,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.undo_rounded, color: canUndo ? Colors.white : Colors.black38, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'UNDO',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: canUndo ? Colors.white : Colors.black38,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -844,16 +1123,16 @@ class LiveScoringScreen extends StatelessWidget {
 
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: isEnabled ? color : Colors.grey.shade200,
+        backgroundColor: isEnabled ? color : Colors.grey.shade100,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           side: BorderSide(
-            color: isEnabled ? Colors.transparent : AppColors.borderGreen,
+            color: isEnabled ? Colors.transparent : Colors.grey.shade300,
             width: 1,
           ),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
       ),
       onPressed: isEnabled ? onTap : () {
         CustomSnackBar.show(
@@ -868,7 +1147,7 @@ class LiveScoringScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: finalTextColor,
             ),
@@ -877,7 +1156,7 @@ class LiveScoringScreen extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 8,
               fontWeight: FontWeight.w500,
               color: finalTextColor,
             ),
@@ -1226,8 +1505,12 @@ class LiveScoringScreen extends StatelessWidget {
                     // Automatically prompt to choose the next batsman of the batting team (if same innings and match still live)
                     if (latestMatch.status == MatchStatus.live && latestMatch.currentInningsNum == match.currentInningsNum) {
                       final battingTeam = latestMatch.battingTeam;
+                      final activeStrikerId = latestMatch.striker?.id;
+                      final activeNonStrikerId = latestMatch.nonStriker?.id;
                       final availablePlayers = battingTeam.players.where((p) {
-                        return !latestMatch.currentInnings.battingOrder.contains(p.id);
+                        final hasBatted = latestMatch.currentInnings.battingOrder.contains(p.id);
+                        final isAtCrease = p.id == activeStrikerId || p.id == activeNonStrikerId;
+                        return !hasBatted && !isAtCrease;
                       }).toList();
 
                       if (availablePlayers.isNotEmpty) {
@@ -1334,8 +1617,12 @@ class LiveScoringScreen extends StatelessWidget {
 
                     // Prompt to choose the next batsman immediately
                     final battingTeam = match.battingTeam;
+                    final activeStrikerId = match.striker?.id;
+                    final activeNonStrikerId = match.nonStriker?.id;
                     final availablePlayers = battingTeam.players.where((p) {
-                      return !match.currentInnings.battingOrder.contains(p.id);
+                      final hasBatted = match.currentInnings.battingOrder.contains(p.id);
+                      final isAtCrease = p.id == activeStrikerId || p.id == activeNonStrikerId;
+                      return !hasBatted && !isAtCrease;
                     }).toList();
 
                     if (availablePlayers.isNotEmpty) {

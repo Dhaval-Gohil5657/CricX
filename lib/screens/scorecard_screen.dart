@@ -872,19 +872,19 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                   }
 
                   return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                       border: Border(bottom: BorderSide(color: AppColors.dividerGreen.withOpacity(0.5), width: 1)),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          flex: 4,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 4,
+                              child: Row(
                                 children: [
                                   if (isCurrentBatsman) ...[
                                     const Icon(Icons.sports_cricket, size: 12, color: AppColors.primaryTurf),
@@ -903,44 +903,62 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                statusStr,
-                                style: TextStyle(
-                                  color: isCurrentBatsman ? AppColors.primaryTurf : AppColors.textDarkMuted,
-                                  fontSize: 10,
-                                  fontWeight: isCurrentBatsman ? FontWeight.bold : FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '$runs',
-                            style: TextStyle(
-                              color: isCurrentBatsman ? AppColors.woodMahogany : AppColors.textDark,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
                             ),
-                            textAlign: TextAlign.right,
+                            Expanded(
+                              child: Text(
+                                '$runs',
+                                style: TextStyle(
+                                  color: isCurrentBatsman ? AppColors.woodMahogany : AppColors.textDark,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                            Expanded(
+                              child: Text('$balls', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.right),
+                            ),
+                            Expanded(
+                              child: Text('$fours', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.right),
+                            ),
+                            Expanded(
+                              child: Text('$sixes', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.right),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                sr.toStringAsFixed(1),
+                                style: const TextStyle(color: AppColors.primaryTurf, fontSize: 13, fontWeight: FontWeight.w500),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: isCurrentBatsman
+                                ? Colors.transparent
+                                : AppColors.borderGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isCurrentBatsman
+                                  ? Colors.transparent
+                                  : AppColors.borderGreen.withOpacity(0.4),
+                              width: 0.8,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text('$balls', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.right),
-                        ),
-                        Expanded(
-                          child: Text('$fours', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.right),
-                        ),
-                        Expanded(
-                          child: Text('$sixes', style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13), textAlign: TextAlign.right),
-                        ),
-                        Expanded(
-                          flex: 2,
                           child: Text(
-                            sr.toStringAsFixed(1),
-                            style: const TextStyle(color: AppColors.primaryTurf, fontSize: 13, fontWeight: FontWeight.w500),
-                            textAlign: TextAlign.right,
+                            statusStr,
+                            style: TextStyle(
+                              color: isCurrentBatsman
+                                  ? AppColors.primaryTurf
+                                  : (isOut ? AppColors.textDarkSecondary : AppColors.primaryTurf),
+                              fontSize: 10.5,
+                              fontWeight: isCurrentBatsman || isOut ? FontWeight.w500 : FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],

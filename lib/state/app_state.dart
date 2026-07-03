@@ -246,11 +246,20 @@ class AppState extends ChangeNotifier {
       match.playerBallsFaced[striker.id] ??= 0;
       match.playerBallsFaced[nonStriker.id] ??= 0;
       
+      final order = match.currentInnings.battingOrder;
+      if (!order.contains(striker.id)) {
+        order.add(striker.id);
+      }
+      if (!order.contains(nonStriker.id)) {
+        order.add(nonStriker.id);
+      }
+      
       match.bowlerRunsConceded[bowler.id] ??= 0;
       match.bowlerWickets[bowler.id] ??= 0;
       match.bowlerBallsBowled[bowler.id] ??= 0;
       
       _db.updateMatch(match);
+      notifyListeners();
     }
   }
 
@@ -438,51 +447,8 @@ class AppState extends ChangeNotifier {
       innings.ballsBowled--;
     }
 
-    // 1. Revert over-end strike rotation and bowler clearing
-    final wasOverEnd = event.countsAsBall && (innings.ballsBowled + 1) % 6 == 0;
-    if (wasOverEnd) {
-      final temp = match.striker;
-      match.striker = match.nonStriker;
-      match.nonStriker = temp;
-      
-      final bowlingTeam = match.bowlingTeam;
-      try {
-        final prevBowler = bowlingTeam.players.firstWhere((p) => p.name == event.bowlerName);
-        match.currentBowler = prevBowler;
-      } catch (_) {}
-    }
-
-    // 2. Revert run-based strike rotation
-    if (event.runs % 2 != 0) {
-      final temp = match.striker;
-      match.striker = match.nonStriker;
-      match.nonStriker = temp;
-    }
-
-    // 3. Revert batsman stats
-    final strikerId = match.striker?.id;
-    if (strikerId != null) {
-      match.playerRuns[strikerId] = (match.playerRuns[strikerId] ?? 0) - event.runsAddedToBatsman;
-      if (!event.isWide) {
-        match.playerBallsFaced[strikerId] = (match.playerBallsFaced[strikerId] ?? 0) - 1;
-      }
-    }
-
-    // 4. Revert bowler stats
-    final bowlerId = match.currentBowler?.id;
-    if (bowlerId != null) {
-      final runsConceded = event.isLegBye || event.isPenalty || event.isBye ? 0 : event.runsAddedToTeam;
-      match.bowlerRunsConceded[bowlerId] = (match.bowlerRunsConceded[bowlerId] ?? 0) - runsConceded;
-      if (event.countsAsBall) {
-        match.bowlerBallsBowled[bowlerId] = (match.bowlerBallsBowled[bowlerId] ?? 0) - 1;
-      }
-      if (event.isWicket && event.wicketType != 'Run Out' && event.wicketType != 'Retired Out') {
-        match.bowlerWickets[bowlerId] = (match.bowlerWickets[bowlerId] ?? 0) - 1;
-      }
-    }
-
-    // 5. Revert wicket replacement/dismissal
-    if (event.isWicket || event.wicketType == 'Retired Hurt') {
+    // 1. Revert wicket replacement/dismissal first so the correct batsman is back at the crease
+    if (event.isWicket || event.wicketType == 'Retired Hurt' || event.wicketType == 'Retired Out') {
       final battingTeam = match.battingTeam;
       Player? outBatsman;
       try {
@@ -510,6 +476,49 @@ class AppState extends ChangeNotifier {
       }
     }
 
+    // 2. Revert over-end strike rotation and bowler clearing
+    final wasOverEnd = event.countsAsBall && (innings.ballsBowled + 1) % 6 == 0;
+    if (wasOverEnd) {
+      final temp = match.striker;
+      match.striker = match.nonStriker;
+      match.nonStriker = temp;
+      
+      final bowlingTeam = match.bowlingTeam;
+      try {
+        final prevBowler = bowlingTeam.players.firstWhere((p) => p.name == event.bowlerName);
+        match.currentBowler = prevBowler;
+      } catch (_) {}
+    }
+
+    // 3. Revert run-based strike rotation
+    if (event.runs % 2 != 0) {
+      final temp = match.striker;
+      match.striker = match.nonStriker;
+      match.nonStriker = temp;
+    }
+
+    // 4. Revert batsman stats (now match.striker is restored to the batsman who faced the ball)
+    final strikerId = match.striker?.id;
+    if (strikerId != null) {
+      match.playerRuns[strikerId] = (match.playerRuns[strikerId] ?? 0) - event.runsAddedToBatsman;
+      if (!event.isWide) {
+        match.playerBallsFaced[strikerId] = (match.playerBallsFaced[strikerId] ?? 0) - 1;
+      }
+    }
+
+    // 5. Revert bowler stats
+    final bowlerId = match.currentBowler?.id;
+    if (bowlerId != null) {
+      final runsConceded = event.isLegBye || event.isPenalty || event.isBye ? 0 : event.runsAddedToTeam;
+      match.bowlerRunsConceded[bowlerId] = (match.bowlerRunsConceded[bowlerId] ?? 0) - runsConceded;
+      if (event.countsAsBall) {
+        match.bowlerBallsBowled[bowlerId] = (match.bowlerBallsBowled[bowlerId] ?? 0) - 1;
+      }
+      if (event.isWicket && event.wicketType != 'Run Out' && event.wicketType != 'Retired Out') {
+        match.bowlerWickets[bowlerId] = (match.bowlerWickets[bowlerId] ?? 0) - 1;
+      }
+    }
+
     _activeScoringMatch = match;
     _db.updateMatch(match);
     notifyListeners();
@@ -521,6 +530,7 @@ class AppState extends ChangeNotifier {
       _activeScoringMatch!.striker = _activeScoringMatch!.nonStriker;
       _activeScoringMatch!.nonStriker = temp;
       _db.updateMatch(_activeScoringMatch!);
+      notifyListeners();
     }
   }
 
@@ -533,6 +543,7 @@ class AppState extends ChangeNotifier {
         _activeScoringMatch!.bowlerBallsBowled[newBowler.id] ??= 0;
       }
       _db.updateMatch(_activeScoringMatch!);
+      notifyListeners();
     }
   }
 
@@ -562,6 +573,7 @@ class AppState extends ChangeNotifier {
         }
       }
       _db.updateMatch(_activeScoringMatch!);
+      notifyListeners();
     }
   }
 
