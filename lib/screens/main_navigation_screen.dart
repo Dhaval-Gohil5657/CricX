@@ -394,7 +394,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       ),
                     ),
                  ),
-              if (_selectedIndex == screens.length - 1 && !_isSearching)
+              if (_selectedIndex == screens.length - 1 && !_isSearching &&  role != UserRole.guest)
                Padding(
                  padding: const EdgeInsets.only(right: 12),
                  child: GestureDetector(
@@ -436,16 +436,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                      }
                    },
                    child: Tooltip(
-                     message: FirebaseAuth.instance.currentUser != null ? 'Sign Out' : 'Sign In / Switch Role',
+                     message: 'Sign Out',
                      child: Container(
                        padding: EdgeInsets.all(5),
                        decoration: BoxDecoration(
                          color: AppColors.borderGreen.withOpacity(0.15),
                        borderRadius: BorderRadius.circular(10)),
-                       child: Icon(
-                         FirebaseAuth.instance.currentUser != null
-                             ? Icons.logout_rounded
-                             : Icons.login_rounded,
+                       child: Icon( Icons.logout_rounded,
                          color: AppColors.borderGreen,
                          size: 20,
                        ),

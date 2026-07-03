@@ -18,9 +18,9 @@ Because the backend team is using **MongoDB** (which is a document NoSQL databas
 The database should contain 5 primary collections:
 1. `users`: Stores user profile data, credentials, and app roles.
 2. `players`: Central directory of cricket players and their career statistics.
-3. `teams`: Stores team profiles, captain ID, and player ID lists (stored as an array of document references).
-4. `matches`: Stores match listings, scores, toss details, and live scoring events.
-5. `tournaments`: Stores tournament configurations, points tables, and team standings.
+3. `teams`: Stores team profiles, captain ID, player ID lists (stored as an array of document references), and creator ID (`creatorId`).
+4. `matches`: Stores match listings, scores, toss details, live scoring events, creator ID (`creatorId`), and Player of the Match (`playerOfTheMatchId`, `playerOfTheMatchName`).
+5. `tournaments`: Stores tournament configurations, points tables, team standings, winner ID (`winnerTeamId`), creator ID (`creatorId`), and Player of the Tournament (`playerOfTheTournamentId`, `playerOfTheTournamentName`).
 
 ### 2. Document Nesting Guidelines
 Unlike relational databases, nested objects should be stored directly inside the parent documents:
@@ -150,6 +150,11 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
   ```
 
 #### Get Players (`GET /api/v1/players`)
+* **Query Params**:
+  - `q` (String, optional): Search query to filter players by name, role, batting style, or bowling style.
+  - `role` (String, optional): Filter by player role (`Batsman`, `Bowler`, `All-Rounder`, `Wicketkeeper`).
+  - `sortBy` (String, optional): Sort the results (`runs` | `wickets` | `matches`).
+  - `creatorId` (String, optional): Filter players who belong to teams created by a specific user ID.
 * **Response Body (`200 OK`)**: Array of player objects.
 
 #### Update Player Stats (`PUT /api/v1/players/{id}/stats`)
@@ -209,6 +214,13 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
   }
   ```
 
+#### Get Teams (`GET /api/v1/teams`)
+* **Description**: Retrieves list of teams with optional search and creator filters.
+* **Query Params**:
+  - `q` (String, optional): Search query to filter teams by name or abbreviation.
+  - `creatorId` (String, optional): Filter teams created by a specific user (the Scorer/Organizer filter).
+* **Response Body (`200 OK`)**: Array of team objects.
+
 ---
 
 ### 3. Matches API
@@ -223,15 +235,20 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
     "venue": "Chinnaswamy Stadium, Bengaluru",
     "matchDate": "2026-07-02T19:30:00.000Z",
     "tournamentId": null,
-    "tournamentName": null
+    "tournamentName": null,
+    "creatorId": "usr_9988aa77"
   }
   ```
 
 #### Get Matches (`GET /api/v1/matches`)
-* **Query Params**: `status` (`upcoming` | `live` | `completed`)
+* **Query Params**:
+  - `status` (String, optional): Filter by status (`upcoming` | `live` | `completed`).
+  - `q` (String, optional): Search query to filter matches by team names, venue, or tournament name.
+  - `creatorId` (String, optional): Filter matches created by a specific user (the Scorer/Organizer filter).
+* **Response Body (`200 OK`)**: Array of match objects.
 
 #### Update Match State (`PUT /api/v1/matches/{id}`)
-*Represents updates to scoring, batsman runs conceeded, balls faced, and inning totals during match scoring.*
+*Represents updates to scoring, batsman runs conceded, balls faced, inning totals, and player of the match.*
 * **Request Body**:
   ```json
   {
@@ -243,6 +260,9 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
     "strikerId": "player_rohit_45",
     "nonStrikerId": "player_ishan_23",
     "currentBowlerId": "player_siraj_73",
+    "playerOfTheMatchId": "player_virat_18",
+    "playerOfTheMatchName": "Virat Kohli",
+    "creatorId": "usr_9988aa77",
     "innings1": {
       "teamId": "team_mumbai_001",
       "runs": 12,
@@ -263,6 +283,25 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
   }
   ```
 
+#### Declare Player of the Match (`PATCH /api/v1/matches/{id}/player-of-the-match`)
+* **Description**: Declares the Player of the Match.
+* **Request Body**:
+  ```json
+  {
+    "playerOfTheMatchId": "player_virat_18",
+    "playerOfTheMatchName": "Virat Kohli"
+  }
+  ```
+* **Response Body (`200 OK`)**:
+  ```json
+  {
+    "id": "match_mumbai_rcb_001",
+    "playerOfTheMatchId": "player_virat_18",
+    "playerOfTheMatchName": "Virat Kohli",
+    "updatedAt": "2026-07-03T10:35:00.000Z"
+  }
+  ```
+
 ---
 
 ### 4. Tournaments API
@@ -277,12 +316,48 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
     "playoffType": "Direct Final",
     "defaultOvers": 10,
     "startDate": "2026-07-02T10:00:00.000Z",
-    "venue": "BCCI Stadium"
+    "venue": "BCCI Stadium",
+    "creatorId": "usr_9988aa77"
   }
   ```
 
 #### Get Tournaments (`GET /api/v1/tournaments`)
+* **Query Params**:
+  - `q` (String, optional): Search query to filter tournaments by name.
+  - `creatorId` (String, optional): Filter tournaments created by a specific user (the Scorer/Organizer filter).
 * **Response Body (`200 OK`)**: Array of Tournament objects.
+
+#### Update Tournament (`PUT /api/v1/tournaments/{id}`)
+* **Description**: Updates tournament state, winner, and awards.
+* **Request Body**:
+  ```json
+  {
+    "winnerTeamId": "team_rcb_002",
+    "playerOfTheTournamentId": "player_virat_18",
+    "playerOfTheTournamentName": "Virat Kohli",
+    "status": "Completed"
+  }
+  ```
+* **Response Body (`200 OK`)**: Updated Tournament object.
+
+#### Declare Player of the Tournament (`PATCH /api/v1/tournaments/{id}/player-of-the-tournament`)
+* **Description**: Declares the Player of the Tournament.
+* **Request Body**:
+  ```json
+  {
+    "playerOfTheTournamentId": "player_virat_18",
+    "playerOfTheTournamentName": "Virat Kohli"
+  }
+  ```
+* **Response Body (`200 OK`)**:
+  ```json
+  {
+    "id": "tour_cpl_2026",
+    "playerOfTheTournamentId": "player_virat_18",
+    "playerOfTheTournamentName": "Virat Kohli",
+    "updatedAt": "2026-07-03T10:35:00.000Z"
+  }
+  ```
 
 ---
 

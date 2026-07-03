@@ -6,6 +6,7 @@ import '../state/app_state.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
+import '../widgets/dotted_circular_loader.dart';
 
 class LoginScreen extends StatefulWidget {
   final UserRole targetRole;
@@ -398,14 +399,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       elevation: 2,
                     ),
                     child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
+                        ? const DottedCircularLoader()
                         : Text(
                             _isSignUp ? 'Sign Up' : 'Log In',
                             style: const TextStyle(
