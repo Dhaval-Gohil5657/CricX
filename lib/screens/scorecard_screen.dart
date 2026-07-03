@@ -1217,7 +1217,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.borderGreen, width: 1),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -1234,7 +1234,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
           }
 
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
+            padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -1251,18 +1251,18 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         overSummary,
                         style: const TextStyle(
-                          color: AppColors.textDarkMuted,
+                          color: AppColors.textDarkSecondary,
                           fontSize: 10,
+                          // fontWeight: FontWeight.w500
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Wrap(
                     spacing: 6,
@@ -1322,8 +1322,8 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
     }
 
     return Container(
-      width: 26,
-      height: 26,
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
         color: bg,
         shape: BoxShape.circle,

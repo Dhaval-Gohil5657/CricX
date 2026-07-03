@@ -350,7 +350,7 @@ class LiveScoringScreen extends StatelessWidget {
   }
 
   Widget _buildOverBallCircle(BallEvent event) {
-    Color bg = AppColors.logoBg;
+    Color bg = AppColors.guestCardBg;
     Color textCol = Colors.black; // High-contrast black text by default on light cream background
     String text = '${event.runs}';
 
@@ -393,8 +393,8 @@ class LiveScoringScreen extends StatelessWidget {
     }
 
     return Container(
-      width: 22,
-      height: 22,
+      width: 23,
+      height: 23,
       decoration: BoxDecoration(
         color: bg,
         shape: BoxShape.circle,
