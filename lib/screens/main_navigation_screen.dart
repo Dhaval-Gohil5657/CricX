@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import 'dashboard_screen.dart';
 import 'matches_screen.dart';
@@ -8,6 +9,7 @@ import 'directory_screen.dart';
 import 'scorer/scorer_dashboard.dart';
 import 'organizer/organizer_dashboard.dart';
 import 'welcome_screen.dart';
+import 'profile_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 
@@ -285,30 +287,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 )
               : Row(
                   children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: AppColors.logoBg,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.borderWood,
-                          width: 0.5,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          'assets/CricX_logo.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.sports_cricket_rounded,
-                            color: AppColors.accentCrease,
-                            size: 18,
+                    role != UserRole.guest
+                        ? UserProfileAvatar(role: role)
+                        : Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: AppColors.logoBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.borderWood,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                'assets/CricX_logo.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) => const Icon(
+                                  Icons.sports_cricket_rounded,
+                                  color: AppColors.accentCrease,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(width: 15),
                     Text(
                       label,
@@ -394,62 +398,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       ),
                     ),
                  ),
-              if (_selectedIndex == screens.length - 1 && !_isSearching &&  role != UserRole.guest)
-               Padding(
-                 padding: const EdgeInsets.only(right: 12),
-                 child: GestureDetector(
-                   onTap: () async {
-                     final isLoggingOut = FirebaseAuth.instance.currentUser != null;
-                     if (isLoggingOut) {
-                       final confirm = await _showLogoutConfirmationDialog(context);
-                       if (confirm != true) return;
-                     }
-                     try {
-                       if (isLoggingOut) {
-                         await FirebaseAuth.instance.signOut();
-                       }
-                       appState.changeRole(UserRole.guest);
-                       if (context.mounted) {
-                         CustomSnackBar.show(
-                           context,
-                           message: isLoggingOut
-                               ? 'Logged out successfully.'
-                               : 'Returning to role selection.',
-                           type: SnackBarType.success,
-                           duration: const Duration(seconds: 2),
-                         );
-                         Navigator.pushReplacement(
-                           context,
-                           MaterialPageRoute(
-                             builder: (context) => const WelcomeScreen(),
-                           ),
-                         );
-                       }
-                     } catch (e) {
-                       if (context.mounted) {
-                         CustomSnackBar.show(
-                           context,
-                           message: 'Action failed: $e',
-                           type: SnackBarType.error,
-                         );
-                       }
-                     }
-                   },
-                   child: Tooltip(
-                     message: 'Sign Out',
-                     child: Container(
-                       padding: EdgeInsets.all(5),
-                       decoration: BoxDecoration(
-                         color: AppColors.borderGreen.withOpacity(0.15),
-                       borderRadius: BorderRadius.circular(10)),
-                       child: Icon( Icons.logout_rounded,
-                         color: AppColors.borderGreen,
-                         size: 20,
-                       ),
-                     ),
-                   ),
-                 ),
-               ),
 
             ],
         ),
@@ -730,5 +678,175 @@ class PitchCreasePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class UserProfileAvatar extends StatefulWidget {
+  final UserRole role;
+  const UserProfileAvatar({super.key, required this.role});
+
+  @override
+  State<UserProfileAvatar> createState() => _UserProfileAvatarState();
+}
+
+class _UserProfileAvatarState extends State<UserProfileAvatar> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+          builder: (context, snapshot) {
+            String? userName;
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final data = snapshot.data!.data() as Map<String, dynamic>?;
+              if (data != null) {
+                userName = data['name'] as String?;
+              }
+            }
+
+            final String email = user.email ?? 'U';
+            final String fallbackName = email.split('@')[0].replaceAll('.', ' ').toUpperCase();
+            final String nameToUse = userName ?? fallbackName;
+            final String initial = nameToUse.isNotEmpty ? nameToUse[0].toUpperCase() : 'U';
+
+            // Premium gradient based on role (Same turf green brand colors for both)
+            final List<Color> gradientColors = [AppColors.primaryTurf, Color(0xFF339C4D)];
+
+            // Outer border glow
+            final Color borderColor = Colors.white;
+
+            // Initial text color
+            final Color textColor = Colors.white;
+
+            final IconData badgeIcon = widget.role == UserRole.scorer || widget.role == UserRole.organizer
+                ? Icons.emoji_events_rounded
+                : Icons.sports_cricket_rounded;
+
+            final Color badgeBgColor = Colors.white;
+
+            final Color badgeIconColor = Color(0xFF2E6B3E);
+
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Main Avatar Container
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    // shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: gradientColors,
+                    ),
+                    border: Border.all(
+                      color: borderColor.withOpacity(0.85),
+                      width: 1.8,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.18),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: _buildInitialText(initial, textColor),
+                ),
+                // Small Role Badge Overlay
+                Positioned(
+                  bottom: -1,
+                  right: -1,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: badgeBgColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      badgeIcon,
+                      size: 10,
+                      color: badgeIconColor,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInitialText(String initial, Color textColor) {
+    return Text(
+      initial,
+      style: TextStyle(
+        color: textColor,
+        fontWeight: FontWeight.w800,
+        fontSize: 18,
+        letterSpacing: 0.2,
+        shadows: textColor == Colors.white
+            ? const [
+                Shadow(
+                  color: Colors.black26,
+                  offset: Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ]
+            : const [
+                Shadow(
+                  color: Colors.white24,
+                  offset: Offset(0, 0.5),
+                  blurRadius: 1,
+                ),
+              ],
+      ),
+    );
+  }
 }
 
