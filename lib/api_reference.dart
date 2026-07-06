@@ -246,6 +246,8 @@ Update Match State (`PUT /api/v1/matches/{id}`)
     "status": "live",
     "tossWinnerId": "team_rcb_002",
     "tossDecision": "Bowl",
+    "teamAPlayerIds": ["player_rohit_45", "player_ishan_23"],
+    "teamBPlayerIds": ["player_siraj_73"],
     "currentInningsNum": 1,
     "resultString": "Royal Challengers won toss & elected to bowl first",
     "strikerId": "player_rohit_45",

@@ -282,13 +282,50 @@ class FirestoreService implements DatabaseService {
     final teamAId = data['teamAId'] ?? '';
     final teamBId = data['teamBId'] ?? '';
 
-    final teamA = allTeams.firstWhere(
+    final teamAPlayerIds = List<String>.from(data['teamAPlayerIds'] ?? []);
+    final teamBPlayerIds = List<String>.from(data['teamBPlayerIds'] ?? []);
+
+    final baseTeamA = allTeams.firstWhere(
       (t) => t.id == teamAId,
       orElse: () => Team(id: teamAId, name: 'Team A (Unknown)', abbreviation: 'A', logoEmoji: '🏏', logoColorHex: 0xFF9E9E9E, players: []),
     );
-    final teamB = allTeams.firstWhere(
+    final baseTeamB = allTeams.firstWhere(
       (t) => t.id == teamBId,
       orElse: () => Team(id: teamBId, name: 'Team B (Unknown)', abbreviation: 'B', logoEmoji: '🏏', logoColorHex: 0xFF9E9E9E, players: []),
+    );
+
+    final teamA = Team(
+      id: baseTeamA.id,
+      name: baseTeamA.name,
+      abbreviation: baseTeamA.abbreviation,
+      logoEmoji: baseTeamA.logoEmoji,
+      logoColorHex: baseTeamA.logoColorHex,
+      players: teamAPlayerIds.isNotEmpty
+          ? baseTeamA.players.where((p) => teamAPlayerIds.contains(p.id)).toList()
+          : List.from(baseTeamA.players),
+      matchesPlayed: baseTeamA.matchesPlayed,
+      matchesWon: baseTeamA.matchesWon,
+      matchesLost: baseTeamA.matchesLost,
+      netRunRate: baseTeamA.netRunRate,
+      creatorId: baseTeamA.creatorId,
+      captainId: baseTeamA.captainId,
+    );
+
+    final teamB = Team(
+      id: baseTeamB.id,
+      name: baseTeamB.name,
+      abbreviation: baseTeamB.abbreviation,
+      logoEmoji: baseTeamB.logoEmoji,
+      logoColorHex: baseTeamB.logoColorHex,
+      players: teamBPlayerIds.isNotEmpty
+          ? baseTeamB.players.where((p) => teamBPlayerIds.contains(p.id)).toList()
+          : List.from(baseTeamB.players),
+      matchesPlayed: baseTeamB.matchesPlayed,
+      matchesWon: baseTeamB.matchesWon,
+      matchesLost: baseTeamB.matchesLost,
+      netRunRate: baseTeamB.netRunRate,
+      creatorId: baseTeamB.creatorId,
+      captainId: baseTeamB.captainId,
     );
 
     final statusStr = data['status'] ?? 'upcoming';
@@ -318,6 +355,8 @@ class FirestoreService implements DatabaseService {
       creatorId: data['creatorId'],
       playerOfTheMatchId: data['playerOfTheMatchId'],
       playerOfTheMatchName: data['playerOfTheMatchName'],
+      teamAPlayerIds: teamAPlayerIds.isNotEmpty ? teamAPlayerIds : null,
+      teamBPlayerIds: teamBPlayerIds.isNotEmpty ? teamBPlayerIds : null,
     );
 
     // Innings
@@ -356,6 +395,8 @@ class FirestoreService implements DatabaseService {
     return {
       'teamAId': match.teamA.id,
       'teamBId': match.teamB.id,
+      'teamAPlayerIds': match.teamAPlayerIds ?? match.teamA.players.map((p) => p.id).toList(),
+      'teamBPlayerIds': match.teamBPlayerIds ?? match.teamB.players.map((p) => p.id).toList(),
       'totalOvers': match.totalOvers,
       'status': match.status.name,
       'tossWinnerId': match.tossWinnerId,

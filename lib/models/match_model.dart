@@ -104,6 +104,8 @@ class CricketMatch {
 
   String? playerOfTheMatchId;
   String? playerOfTheMatchName;
+  List<String>? teamAPlayerIds;
+  List<String>? teamBPlayerIds;
 
   CricketMatch({
     required this.id,
@@ -122,6 +124,8 @@ class CricketMatch {
     this.creatorId,
     this.playerOfTheMatchId,
     this.playerOfTheMatchName,
+    this.teamAPlayerIds,
+    this.teamBPlayerIds,
   });
 
   Team get battingTeam => currentInningsNum == 1 

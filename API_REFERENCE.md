@@ -255,6 +255,8 @@ All endpoints below expect a `Bearer <JWT_TOKEN>` header for mutative actions (P
     "status": "live",
     "tossWinnerId": "team_rcb_002",
     "tossDecision": "Bowl",
+    "teamAPlayerIds": ["player_rohit_45", "player_ishan_23"],
+    "teamBPlayerIds": ["player_siraj_73"],
     "currentInningsNum": 1,
     "resultString": "Royal Challengers won toss & elected to bowl first",
     "strikerId": "player_rohit_45",

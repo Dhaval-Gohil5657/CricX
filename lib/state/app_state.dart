@@ -178,10 +178,23 @@ class AppState extends ChangeNotifier {
     required Player striker,
     required Player nonStriker,
     required Player bowler,
+    List<Player>? teamAPlayingXI,
+    List<Player>? teamBPlayingXI,
   }) {
     final index = _matches.indexWhere((m) => m.id == matchId);
     if (index != -1) {
       final match = _matches[index];
+      
+      // Update team players to selected playing XI
+      if (teamAPlayingXI != null) {
+        match.teamAPlayerIds = teamAPlayingXI.map((p) => p.id).toList();
+        match.teamA.players = teamAPlayingXI;
+      }
+      if (teamBPlayingXI != null) {
+        match.teamBPlayerIds = teamBPlayingXI.map((p) => p.id).toList();
+        match.teamB.players = teamBPlayingXI;
+      }
+
       match.tossWinnerId = tossWinnerId;
       match.tossDecision = decision;
       match.status = MatchStatus.live;
