@@ -111,83 +111,117 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
                 ),
-                child: Row(
+                child: Stack(
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _activeViewTab = 'overview';
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(10),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: _activeViewTab == 'overview' ? AppColors.primaryTurf : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.info_outline_rounded,
-                                size: 16,
-                                color: _activeViewTab == 'overview' ? Colors.white : AppColors.textDarkMuted,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Overview',
-                                style: TextStyle(
-                                  color: _activeViewTab == 'overview' ? Colors.white : AppColors.textDarkSecondary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                    Positioned.fill(
+                      child: AnimatedAlign(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        alignment: _activeViewTab == 'overview' ? Alignment.centerLeft : Alignment.centerRight,
+                        child: FractionallySizedBox(
+                          widthFactor: 0.5,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryTurf,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _activeViewTab = 'scorecard';
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(10),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: _activeViewTab == 'scorecard' ? AppColors.primaryTurf : Colors.transparent,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _activeViewTab = 'overview';
+                              });
+                            },
                             borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.analytics_outlined,
-                                size: 16,
-                                color: _activeViewTab == 'scorecard' ? Colors.white : AppColors.textDarkMuted,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Scorecard',
-                                style: TextStyle(
-                                  color: _activeViewTab == 'scorecard' ? Colors.white : AppColors.textDarkSecondary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  TweenAnimationBuilder<Color?>(
+                                    duration: const Duration(milliseconds: 250),
+                                    tween: ColorTween(
+                                      end: _activeViewTab == 'overview' ? Colors.white : AppColors.textDarkMuted,
+                                    ),
+                                    builder: (context, color, child) {
+                                      return Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 16,
+                                        color: color,
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 250),
+                                    style: TextStyle(
+                                      color: _activeViewTab == 'overview' ? Colors.white : AppColors.textDarkSecondary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    child: const Text('Overview'),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _activeViewTab = 'scorecard';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  TweenAnimationBuilder<Color?>(
+                                    duration: const Duration(milliseconds: 250),
+                                    tween: ColorTween(
+                                      end: _activeViewTab == 'scorecard' ? Colors.white : AppColors.textDarkMuted,
+                                    ),
+                                    builder: (context, color, child) {
+                                      return Icon(
+                                        Icons.analytics_outlined,
+                                        size: 16,
+                                        color: color,
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 250),
+                                    style: TextStyle(
+                                      color: _activeViewTab == 'scorecard' ? Colors.white : AppColors.textDarkSecondary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    child: const Text('Scorecard'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1899,11 +1933,14 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             Future<void> pickDate() async {
+              final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
+              final initialDate = selectedDateTime.isBefore(today) ? today : selectedDateTime;
               final date = await showDatePicker(
                 context: context,
-                initialDate: selectedDateTime,
-                firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
+                initialDate: initialDate,
+                firstDate: today,
+                lastDate: today.add(const Duration(days: 365)),
                 builder: (context, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(

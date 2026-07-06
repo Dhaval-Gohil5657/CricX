@@ -82,30 +82,37 @@ class _MatchesScreenState extends State<MatchesScreen> {
             });
           },
           borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          child: Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryTurf : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: 14,
-                  color: isSelected ? Colors.white : AppColors.textDarkMuted,
+                TweenAnimationBuilder<Color?>(
+                  duration: const Duration(milliseconds: 250),
+                  tween: ColorTween(
+                    end: isSelected ? Colors.white : AppColors.textDarkMuted,
+                  ),
+                  builder: (context, color, child) {
+                    return Icon(
+                      icon,
+                      size: 14,
+                      color: color,
+                    );
+                  },
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  label,
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 250),
                   style: TextStyle(
                     color: isSelected ? Colors.white : AppColors.textDarkSecondary,
                     fontWeight: FontWeight.bold,
                     fontSize: 11.5,
                   ),
+                  child: Text(label),
                 ),
               ],
             ),
@@ -122,10 +129,30 @@ class _MatchesScreenState extends State<MatchesScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          buildSegmentButton('friendly', 'Individual Matches', Icons.sports_cricket_rounded),
-          buildSegmentButton('tournament', 'Tournament Matches', Icons.emoji_events_rounded),
+          Positioned.fill(
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              alignment: _activeSubTab == 'friendly' ? Alignment.centerLeft : Alignment.centerRight,
+              child: FractionallySizedBox(
+                widthFactor: 0.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTurf,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              buildSegmentButton('friendly', 'Individual Matches', Icons.sports_cricket_rounded),
+              buildSegmentButton('tournament', 'Tournament Matches', Icons.emoji_events_rounded),
+            ],
+          ),
         ],
       ),
     );

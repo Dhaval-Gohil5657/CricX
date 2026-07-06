@@ -429,30 +429,37 @@ class TournamentDetailScreen extends StatelessWidget {
                 });
               },
               borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryTurf : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      icon,
-                      size: 16,
-                      color: isSelected ? Colors.white : AppColors.textDarkMuted,
+                    TweenAnimationBuilder<Color?>(
+                      duration: const Duration(milliseconds: 250),
+                      tween: ColorTween(
+                        end: isSelected ? Colors.white : AppColors.textDarkMuted,
+                      ),
+                      builder: (context, color, child) {
+                        return Icon(
+                          icon,
+                          size: 16,
+                          color: color,
+                        );
+                      },
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      label,
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 250),
                       style: TextStyle(
                         color: isSelected ? Colors.white : AppColors.textDarkSecondary,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
+                      child: Text(label),
                     ),
                   ],
                 ),
@@ -462,41 +469,56 @@ class TournamentDetailScreen extends StatelessWidget {
         }
 
         final switcher = Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 5),
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: AppColors.borderGreen.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.borderGreen.withOpacity(0.3)),
           ),
-          child: Row(
+          child: Stack(
             children: [
-              _buildSegmentButton('league', 'League Stage', Icons.sports_cricket_rounded),
-              _buildSegmentButton('playoffs', 'Playoffs', Icons.emoji_events),
+              Positioned.fill(
+                child: AnimatedAlign(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  alignment: activeSubTab == 'league' ? Alignment.centerLeft : Alignment.centerRight,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.5,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryTurf,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  _buildSegmentButton('league', 'League Stage', Icons.sports_cricket_rounded),
+                  _buildSegmentButton('playoffs', 'Playoffs', Icons.emoji_events),
+                ],
+              ),
             ],
           ),
         );
 
-        return ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+        return Column(
           children: [
-            switcher,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 5, 16, 0),
+              child: switcher,
+            ),
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                children: [
             
             if (activeSubTab == 'league') ...[
               // League Stage Header & Fixtures
               if (leagueMatches.isNotEmpty) ...[
-                const Row(
-                  children: [
-                    Icon(Icons.sports_cricket_rounded, color: AppColors.primaryTurf, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'LEAGUE STAGE',
-                      style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 ...leagueMatches.map((m) => _buildMatchCard(context, m)),
               ] else ...[
                 const Center(
@@ -755,7 +777,10 @@ class TournamentDetailScreen extends StatelessWidget {
               ],
             ],
           ],
-        );
+        ),
+      ),
+    ],
+  );
       },
     );
   }
