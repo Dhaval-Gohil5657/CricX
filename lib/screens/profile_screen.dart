@@ -461,254 +461,215 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String displayName = _userName ?? fallbackName;
     final String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(50.0),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(20),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        image: const DecorationImage(
+          image: AssetImage('assets/cricx_back.png'),
+          fit: BoxFit.cover,
+        )
+      ),
+      child: Scaffold(
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
             ),
-          ),
-          flexibleSpace: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(20),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
             ),
-            child: SizedBox.expand(
-              child: CustomPaint(
-                painter: PitchCreasePainter(
-                  groundColorLight: const Color(0xFF2E6B3E),
-                  groundColorDark: const Color(0xFF1F4D28),
+            flexibleSpace: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+              child: SizedBox.expand(
+                child: CustomPaint(
+                  painter: PitchCreasePainter(
+                    groundColorLight: const Color(0xFF2E6B3E),
+                    groundColorDark: const Color(0xFF1F4D28),
+                  ),
                 ),
               ),
             ),
-          ),
-          title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          actions: [
-            IconButton(
-              icon: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                  color: AppColors.borderGreen.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10)
+            title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            actions: [
+              IconButton(
+                icon: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                    color: AppColors.borderGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10)
+                ),
+                    child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20)),
+                onPressed: () => _confirmSignOut(context, appState),
+                tooltip: 'Sign Out',
               ),
-                  child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20)),
-              onPressed: () => _confirmSignOut(context, appState),
-              tooltip: 'Sign Out',
-            ),
-            SizedBox(width: 5,)
-          ],
+              SizedBox(width: 5,)
+            ],
+          ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryTurf))
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Profile Summary Card
-                  Card(
-                    elevation: 0,
-                    color: AppColors.cardBg,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryTurf,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.8),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  initial,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 24,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 1,
-                                right: 1,
-                                child: Container(
-                                  padding: const EdgeInsets.all(3),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.primaryTurf))
+            : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Profile Summary Card
+                    Card(
+                      elevation: 0,
+                      color: AppColors.cardBg,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 64,
+                                  height: 64,
                                   decoration: BoxDecoration(
-                                    color: AppColors.borderGreen,
+                                    color: AppColors.primaryTurf,
                                     shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.8),
+                                      width: 2,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.12),
-                                        blurRadius: 2,
-                                        offset: const Offset(0, 1),
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
-                                  child: Icon(
-                                    currentRole == UserRole.scorer || currentRole == UserRole.organizer ? Icons.emoji_events_rounded
-                                    : Icons.sports_cricket_rounded,
-                                    size: 15,
-                                    color: AppColors.primaryTurf,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        displayName,
-                                        style: const TextStyle(
-                                          color: AppColors.textDark,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    GestureDetector(
-                                      onTap: () => _showEditNameDialog(context, displayName),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryTurf.withOpacity(0.08),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.edit_rounded,
-                                          color: AppColors.primaryTurf,
-                                          size: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  user?.email ?? '',
-                                  style: const TextStyle(
-                                    color: AppColors.textDarkSecondary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryTurf.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                                  alignment: Alignment.center,
                                   child: Text(
-                                    currentRole == UserRole.scorer || currentRole == UserRole.organizer
-                                        ? 'ORGANIZER & SCORER'
-                                        : 'REGISTERED USER',
+                                    initial,
                                     style: const TextStyle(
-                                      color: AppColors.primaryTurf,
-                                      fontSize: 10,
+                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 1,
+                                  right: 1,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.borderGreen,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.12),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      currentRole == UserRole.scorer || currentRole == UserRole.organizer ? Icons.emoji_events_rounded
+                                      : Icons.sports_cricket_rounded,
+                                      size: 15,
+                                      color: AppColors.primaryTurf,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          displayName,
+                                          style: const TextStyle(
+                                            color: AppColors.textDark,
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      GestureDetector(
+                                        onTap: () => _showEditNameDialog(context, displayName),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryTurf.withOpacity(0.08),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.edit_rounded,
+                                            color: AppColors.primaryTurf,
+                                            size: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    user?.email ?? '',
+                                    style: const TextStyle(
+                                      color: AppColors.textDarkSecondary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryTurf.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      currentRole == UserRole.scorer || currentRole == UserRole.organizer
+                                          ? 'ORGANIZER & SCORER'
+                                          : 'REGISTERED USER',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryTurf,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // 2. Select Role Card
-                  const Text(
-                    'SWITCH ACTIVE ROLE',
-                    style: TextStyle(
-                      color: AppColors.textDarkSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 0,
-                    color: AppColors.cardBg,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildRoleTile(
-                          title: 'Registered User',
-                          description: 'View stats and schedules, teams & players profile',
-                          role: UserRole.user,
-                          currentRole: currentRole,
-                          appState: appState,
-                          icon: Icons.person_pin,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: const Divider(color: AppColors.dividerGreen, height: 1),
-                        ),
-                        _buildRoleTile(
-                          title: 'Organizer / Scorer',
-                          description: 'Create & manage teams, matches and tournaments.',
-                          role: UserRole.organizer,
-                          currentRole: currentRole,
-                          appState: appState,
-                          icon: Icons.emoji_events_rounded,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-
-
-                  // 3b. My Stats & Details Row (Filtered by creatorId)
-                  if (currentRole == UserRole.scorer || currentRole == UserRole.organizer) ...[
+                    // 2. Select Role Card
                     const Text(
-                      'MY STATISTICS',
+                      'SWITCH ACTIVE ROLE',
                       style: TextStyle(
                         color: AppColors.textDarkSecondary,
                         fontSize: 11,
@@ -717,64 +678,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _buildStatCard('Teams', '${appState.teams.where((t) => t.creatorId == user?.uid).length}', Icons.group_work_rounded, color: AppColors.pitchGold),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Matches', '${appState.matches.where((m) => m.creatorId == user?.uid).length}', Icons.sports_cricket_rounded, color: AppColors.pitchGold),
-                        const SizedBox(width: 8),
-                        _buildStatCard('Tournaments', '${appState.tournaments.where((t) => t.creatorId == user?.uid).length}', Icons.emoji_events_rounded, color: AppColors.pitchGold),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // 3. Stats & Details Card (App Wide)
-                  const Text(
-                    'APP STATISTICS',
-                    style: TextStyle(
-                      color: AppColors.textDarkSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 0,
-                    color: AppColors.cardBg,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                    Card(
+                      elevation: 0,
+                      color: AppColors.cardBg,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
+                      ),
                       child: Column(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(child: _buildInlineStat('Teams', '${appState.teams.length}', Icons.group_work_rounded)),
-                              Container(height: 40, width: 1, color: AppColors.borderGreen),
-                              Expanded(child: _buildInlineStat('Players', '${appState.players.length}', Icons.people_alt_rounded)),
-                            ],
+                          _buildRoleTile(
+                            title: 'Registered User',
+                            description: 'View stats and schedules, teams & players profile',
+                            role: UserRole.user,
+                            currentRole: currentRole,
+                            appState: appState,
+                            icon: Icons.person_pin,
                           ),
-                          const Divider(color: AppColors.borderGreen, height: 24),
-                          Row(
-                            children: [
-                              Expanded(child: _buildInlineStat('Matches', '${appState.matches.length}', Icons.sports_cricket_rounded)),
-                              Container(height: 40, width: 1, color: AppColors.borderGreen),
-                              Expanded(child: _buildInlineStat('Tournaments', '${appState.tournaments.length}', Icons.emoji_events_rounded)),
-                            ],
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: const Divider(color: AppColors.dividerGreen, height: 1),
+                          ),
+                          _buildRoleTile(
+                            title: 'Organizer / Scorer',
+                            description: 'Create & manage teams, matches and tournaments.',
+                            role: UserRole.organizer,
+                            currentRole: currentRole,
+                            appState: appState,
+                            icon: Icons.emoji_events_rounded,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  if (_isBiometricHardwareAvailable) ...[
+
+
+                    // 3b. My Stats & Details Row (Filtered by creatorId)
+                    if (currentRole == UserRole.scorer || currentRole == UserRole.organizer) ...[
+                      const Text(
+                        'MY STATISTICS',
+                        style: TextStyle(
+                          color: AppColors.textDarkSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildStatCard('Teams', '${appState.teams.where((t) => t.creatorId == user?.uid).length}', Icons.group_work_rounded, color: AppColors.pitchGold),
+                          const SizedBox(width: 8),
+                          _buildStatCard('Matches', '${appState.matches.where((m) => m.creatorId == user?.uid).length}', Icons.sports_cricket_rounded, color: AppColors.pitchGold),
+                          const SizedBox(width: 8),
+                          _buildStatCard('Tournaments', '${appState.tournaments.where((t) => t.creatorId == user?.uid).length}', Icons.emoji_events_rounded, color: AppColors.pitchGold),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // 3. Stats & Details Card (App Wide)
                     const Text(
-                      'SECURITY SETTINGS',
+                      'APP STATISTICS',
                       style: TextStyle(
                         color: AppColors.textDarkSecondary,
                         fontSize: 11,
@@ -791,63 +757,107 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                        child: Row(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryTurf.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.fingerprint_rounded,
-                                color: AppColors.primaryTurf,
-                                size: 24,
-                              ),
+                            Row(
+                              children: [
+                                Expanded(child: _buildInlineStat('Teams', '${appState.teams.length}', Icons.group_work_rounded)),
+                                Container(height: 40, width: 1, color: AppColors.borderGreen),
+                                Expanded(child: _buildInlineStat('Players', '${appState.players.length}', Icons.people_alt_rounded)),
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    'Biometric Login',
-                                    style: TextStyle(
-                                      color: AppColors.textDark,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  SizedBox(height: 3),
-                                  Text(
-                                    'Use Fingerprint/Face ID for quick access',
-                                    style: TextStyle(
-                                      color: AppColors.textDarkSecondary,
-                                      fontSize: 11.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Switch.adaptive(
-                              value: _isBiometricEnabledForUser,
-                              activeColor: AppColors.primaryTurf,
-                              activeTrackColor: AppColors.primaryTurf.withOpacity(0.2),
-                              inactiveThumbColor: AppColors.textDarkSecondary,
-                              inactiveTrackColor: AppColors.dividerGreen.withOpacity(0.4),
-                              onChanged: _isLoading ? null : _toggleBiometric,
+                            const Divider(color: AppColors.borderGreen, height: 24),
+                            Row(
+                              children: [
+                                Expanded(child: _buildInlineStat('Matches', '${appState.matches.length}', Icons.sports_cricket_rounded)),
+                                Container(height: 40, width: 1, color: AppColors.borderGreen),
+                                Expanded(child: _buildInlineStat('Tournaments', '${appState.tournaments.length}', Icons.emoji_events_rounded)),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    if (_isBiometricHardwareAvailable) ...[
+                      const Text(
+                        'SECURITY SETTINGS',
+                        style: TextStyle(
+                          color: AppColors.textDarkSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        elevation: 0,
+                        color: AppColors.cardBg,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryTurf.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.fingerprint_rounded,
+                                  color: AppColors.primaryTurf,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text(
+                                      'Biometric Login',
+                                      style: TextStyle(
+                                        color: AppColors.textDark,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    SizedBox(height: 3),
+                                    Text(
+                                      'Use Fingerprint/Face ID for quick access',
+                                      style: TextStyle(
+                                        color: AppColors.textDarkSecondary,
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch.adaptive(
+                                value: _isBiometricEnabledForUser,
+                                activeColor: AppColors.primaryTurf,
+                                activeTrackColor: AppColors.primaryTurf.withOpacity(0.2),
+                                inactiveThumbColor: AppColors.textDarkSecondary,
+                                inactiveTrackColor: AppColors.dividerGreen.withOpacity(0.4),
+                                onChanged: _isLoading ? null : _toggleBiometric,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    const SizedBox(height: 16),
                   ],
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

@@ -368,8 +368,14 @@ class AppState extends ChangeNotifier {
     }
 
     final battingTeam = match.battingTeam;
-    final maxWickets = battingTeam.players.isEmpty ? 10 : (battingTeam.players.length - 1);
-    final totalBalls = match.totalOvers * 6;
+    final isSuperOver = match.currentInningsNum == 3 || match.currentInningsNum == 4;
+    final maxWickets = isSuperOver
+        ? 2
+        : (battingTeam.players.isEmpty ? 10 : (battingTeam.players.length - 1));
+    final totalBalls = isSuperOver
+        ? 6
+        : (match.totalOvers * 6);
+
     if (innings.wickets >= maxWickets || innings.ballsBowled >= totalBalls) {
       if (match.currentInningsNum == 1) {
         match.currentInningsNum = 2;
@@ -377,12 +383,25 @@ class AppState extends ChangeNotifier {
         match.striker = null;
         match.nonStriker = null;
         match.currentBowler = null;
-      } else {
+      } else if (match.currentInningsNum == 2) {
+        completeMatch(matchId);
+      } else if (match.currentInningsNum == 3) {
+        match.currentInningsNum = 4;
+        match.superOverInnings2 = MatchTeamInnings(teamId: match.battingTeam.id);
+        match.striker = null;
+        match.nonStriker = null;
+        match.currentBowler = null;
+      } else if (match.currentInningsNum == 4) {
         completeMatch(matchId);
       }
     } else if (match.currentInningsNum == 2) {
       final firstInningsRuns = match.innings1?.runs ?? 0;
       if (innings.runs > firstInningsRuns) {
+        completeMatch(matchId);
+      }
+    } else if (match.currentInningsNum == 4) {
+      final superOver1Runs = match.superOverInnings1?.runs ?? 0;
+      if (innings.runs > superOver1Runs) {
         completeMatch(matchId);
       }
     }
@@ -442,8 +461,23 @@ class AppState extends ChangeNotifier {
 
     var innings = match.currentInnings;
     
+    // Check if we need to transition back from innings 4 to innings 3
+    if (match.currentInningsNum == 4 && innings.events.isEmpty && match.superOverInnings1 != null) {
+      match.currentInningsNum = 3;
+      match.superOverInnings2 = null;
+      innings = match.superOverInnings1!;
+    }
+    // Check if we need to transition back from innings 3 to innings 2
+    else if (match.currentInningsNum == 3 && innings.events.isEmpty && match.innings2 != null) {
+      match.currentInningsNum = 2;
+      match.superOverInnings1 = null;
+      match.isSuperOverPlayed = false;
+      match.status = MatchStatus.completed;
+      match.resultString = 'Match Tied';
+      innings = match.innings2!;
+    }
     // Check if we need to transition back from innings 2 to innings 1
-    if (match.currentInningsNum == 2 && innings.events.isEmpty && match.innings1 != null) {
+    else if (match.currentInningsNum == 2 && innings.events.isEmpty && match.innings1 != null) {
       match.currentInningsNum = 1;
       match.innings2 = null;
       innings = match.innings1!;
@@ -590,21 +624,51 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void completeMatch(String matchId, [String? customResult]) {
+  void completeMatch(String matchId, {String? customResult, bool forceComplete = false}) {
     final index = _matches.indexWhere((m) => m.id == matchId);
     if (index != -1) {
       final match = _matches[index];
-      match.status = MatchStatus.completed;
-      
+
+      // Calculate results to check if it's a tie
       final team1Runs = match.innings1?.runs ?? 0;
       final team2Runs = match.innings2?.runs ?? 0;
-      
-      final team1Name = match.innings1 != null ? _teams.firstWhere((t) => t.id == match.innings1!.teamId).name : match.teamA.name;
-      final team2Name = match.innings2 != null ? _teams.firstWhere((t) => t.id == match.innings2!.teamId).name : match.teamB.name;
+      final isTie = team1Runs == team2Runs;
+
+      if (isTie && !match.isSuperOverPlayed && !forceComplete) {
+        // If it's a tie and not forced, we do not mark as completed yet.
+        match.resultString = "Match Tied";
+        _db.updateMatch(match);
+        notifyListeners();
+        return;
+      }
+
+      match.status = MatchStatus.completed;
       
       if (customResult != null) {
         match.resultString = customResult;
+      } else if (match.isSuperOverPlayed) {
+        final so1Runs = match.superOverInnings1?.runs ?? 0;
+        final so2Runs = match.superOverInnings2?.runs ?? 0;
+        final so1TeamId = match.superOverInnings1?.teamId;
+        final so2TeamId = match.superOverInnings2?.teamId;
+        
+        final so1TeamName = so1TeamId != null ? _teams.firstWhere((t) => t.id == so1TeamId).name : 'Team 1';
+        final so2TeamName = so2TeamId != null ? _teams.firstWhere((t) => t.id == so2TeamId).name : 'Team 2';
+        
+        if (so2Runs > so1Runs) {
+          match.resultString = "$so2TeamName won via Super Over";
+        } else if (so1Runs > so2Runs) {
+          match.resultString = "$so1TeamName won via Super Over";
+        } else {
+          match.resultString = "Super Over Tied";
+        }
       } else {
+        final team1Runs = match.innings1?.runs ?? 0;
+        final team2Runs = match.innings2?.runs ?? 0;
+        
+        final team1Name = match.innings1 != null ? _teams.firstWhere((t) => t.id == match.innings1!.teamId).name : match.teamA.name;
+        final team2Name = match.innings2 != null ? _teams.firstWhere((t) => t.id == match.innings2!.teamId).name : match.teamB.name;
+        
         if (team2Runs > team1Runs) {
           final chasingTeam = match.innings2 != null ? _teams.firstWhere((t) => t.id == match.innings2!.teamId) : match.bowlingTeam;
           final maxWickets = chasingTeam.players.isEmpty ? 10 : (chasingTeam.players.length - 1);
@@ -621,8 +685,10 @@ class AppState extends ChangeNotifier {
       final teamA = _teams.firstWhere((t) => t.id == match.teamA.id);
       final teamB = _teams.firstWhere((t) => t.id == match.teamB.id);
       
-      teamA.matchesPlayed++;
-      teamB.matchesPlayed++;
+      if (!match.isSuperOverPlayed) {
+        teamA.matchesPlayed++;
+        teamB.matchesPlayed++;
+      }
       
       if (match.resultString.contains(teamA.name)) {
         teamA.matchesWon++;
@@ -673,34 +739,58 @@ class AppState extends ChangeNotifier {
         }
       }
 
-      match.playerRuns.forEach((playerId, runs) {
-        final p = _players.firstWhere((pl) => pl.id == playerId);
-        p.matchesPlayed++;
-        p.runsScored += runs;
-        final balls = match.playerBallsFaced[playerId] ?? 0;
-        p.ballsFaced += balls;
-        if (runs > p.highestScore) {
-          p.highestScore = runs;
-        }
-        _db.updatePlayerStats(p);
-      });
-
-      match.bowlerBallsBowled.forEach((bowlerId, balls) {
-        final p = _players.firstWhere((pl) => pl.id == bowlerId);
-        if (!match.playerRuns.containsKey(bowlerId)) {
+      if (!match.isSuperOverPlayed) {
+        match.playerRuns.forEach((playerId, runs) {
+          final p = _players.firstWhere((pl) => pl.id == playerId);
           p.matchesPlayed++;
-        }
-        p.ballsBowled += balls;
-        p.runsConceded += match.bowlerRunsConceded[bowlerId] ?? 0;
-        p.wicketsTaken += match.bowlerWickets[bowlerId] ?? 0;
-        _db.updatePlayerStats(p);
-      });
+          p.runsScored += runs;
+          final balls = match.playerBallsFaced[playerId] ?? 0;
+          p.ballsFaced += balls;
+          if (runs > p.highestScore) {
+            p.highestScore = runs;
+          }
+          _db.updatePlayerStats(p);
+        });
+
+        match.bowlerBallsBowled.forEach((bowlerId, balls) {
+          final p = _players.firstWhere((pl) => pl.id == bowlerId);
+          if (!match.playerRuns.containsKey(bowlerId)) {
+            p.matchesPlayed++;
+          }
+          p.ballsBowled += balls;
+          p.runsConceded += match.bowlerRunsConceded[bowlerId] ?? 0;
+          p.wicketsTaken += match.bowlerWickets[bowlerId] ?? 0;
+          _db.updatePlayerStats(p);
+        });
+      }
 
       if (_activeScoringMatch?.id == matchId) {
         _activeScoringMatch = null;
       }
       
       _db.updateMatch(match);
+    }
+  }
+
+  void startSuperOver(String matchId) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index != -1) {
+      final match = _matches[index];
+      match.status = MatchStatus.live;
+      match.isSuperOverPlayed = true;
+      match.currentInningsNum = 3; // Super Over Innings 1
+      match.resultString = "";
+      match.superOverInnings1 = MatchTeamInnings(teamId: match.battingTeam.id);
+      match.superOverInnings2 = null;
+      match.striker = null;
+      match.nonStriker = null;
+      match.currentBowler = null;
+      
+      // Make this match the active scoring match again
+      _activeScoringMatch = match;
+      
+      _db.updateMatch(match);
+      notifyListeners();
     }
   }
 

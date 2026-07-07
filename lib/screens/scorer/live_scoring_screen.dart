@@ -24,8 +24,10 @@ class LiveScoringScreen extends StatelessWidget {
     final bowlingTeam = currentMatch.bowlingTeam;
     final innings = currentMatch.currentInnings;
     
-    final isSecondInnings = currentMatch.currentInningsNum == 2;
-    final target = isSecondInnings ? (currentMatch.innings1!.runs + 1) : null;
+    final isSecondInnings = currentMatch.currentInningsNum == 2 || currentMatch.currentInningsNum == 4;
+    final target = currentMatch.currentInningsNum == 2 
+        ? (currentMatch.innings1!.runs + 1) 
+        : (currentMatch.currentInningsNum == 4 ? (currentMatch.superOverInnings1!.runs + 1) : null);
     
     // Calculate balls bowled in current over
     final currentOverBalls = innings.ballsBowled % 6;
@@ -81,7 +83,9 @@ class LiveScoringScreen extends StatelessWidget {
             ),
           ),
           title: Text(
-            'Live Scoring – Overs: ${currentMatch.totalOvers}',
+            currentMatch.currentInningsNum >= 3
+                ? 'Super Over Scoring'
+                : 'Live Scoring – Overs: ${currentMatch.totalOvers}',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
           actions: [
@@ -133,15 +137,19 @@ class LiveScoringScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryTurf.withOpacity(0.1),
+                              color: currentMatch.currentInningsNum >= 3
+                                  ? AppColors.woodMahogany.withOpacity(0.5)
+                                  : AppColors.primaryTurf.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
-                              'BATTING TEAM',
+                            child: Text(
+                              currentMatch.currentInningsNum >= 3 ? '⚡ SUPER OVER BATTING' : 'BATTING TEAM',
                               style: TextStyle(
-                                color: AppColors.primaryTurf,
+                                color: currentMatch.currentInningsNum >= 3
+                                    ? AppColors.cardBg
+                                    : AppColors.primaryTurf,
                                 fontSize: 8,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -204,33 +212,53 @@ class LiveScoringScreen extends StatelessWidget {
                           ),
                         ),
                         if (isSecondInnings && target != null) ...[
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.pitchGold.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.pitchGold.withOpacity(0.4), width: 1),
-                            ),
-                            child: Text(
-                              'Target: $target',
-                              style: const TextStyle(
-                                color: AppColors.woodMahogany,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
+                          if (currentMatch.resultString == "Match Tied" && currentMatch.currentInningsNum < 3) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.redAccent.withOpacity(0.4), width: 1),
+                              ),
+                              child: const Text(
+                                'Match Tied',
+                                style: TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          if (currentMatch.status != MatchStatus.completed) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              'Need ${target - innings.runs <= 0 ? 0 : target - innings.runs} from ${(currentMatch.totalOvers * 6) - innings.ballsBowled} b',
-                              style: const TextStyle(
-                                color: AppColors.textDarkMuted,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
+                          ] else ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.pitchGold.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.pitchGold.withOpacity(0.4), width: 1),
+                              ),
+                              child: Text(
+                                'Target: $target',
+                                style: const TextStyle(
+                                  color: AppColors.woodMahogany,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                            if (currentMatch.status != MatchStatus.completed) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Need ${target - innings.runs <= 0 ? 0 : target - innings.runs} from ${((currentMatch.currentInningsNum >= 3 ? 1 : currentMatch.totalOvers) * 6) - innings.ballsBowled} b',
+                                style: const TextStyle(
+                                  color: AppColors.textDarkMuted,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ],
                         ],
                       ],
@@ -298,13 +326,17 @@ class LiveScoringScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Active Batsmen
-                  _buildBatsmenCard(context, currentMatch, battingTeam, appState),
-                  const SizedBox(height: 15),
+                   // Active Batsmen
+                  if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
+                    _buildBatsmenCard(context, currentMatch, battingTeam, appState),
+                    const SizedBox(height: 15),
+                  ],
                   
                   // Active Bowler
-                  _buildBowlerCard(context, currentMatch, bowlingTeam, appState),
-                  const SizedBox(height: 15),
+                  if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
+                    _buildBowlerCard(context, currentMatch, bowlingTeam, appState),
+                    const SizedBox(height: 15),
+                  ],
 
                   // Scoring Buttons Grid wrapped in a card Container
                   Container(
@@ -585,8 +617,12 @@ class LiveScoringScreen extends StatelessWidget {
       );
     }
 
-    final runs = match.playerRuns[player.id] ?? 0;
-    final balls = match.playerBallsFaced[player.id] ?? 0;
+    final runs = match.currentInningsNum >= 3
+        ? match.currentInnings.events.where((e) => e.batsmanName == player.name).fold(0, (sum, e) => sum + e.runsAddedToBatsman)
+        : match.playerRuns[player.id] ?? 0;
+    final balls = match.currentInningsNum >= 3
+        ? match.currentInnings.events.where((e) => e.batsmanName == player.name && e.countsAsBall).length
+        : match.playerBallsFaced[player.id] ?? 0;
     final fours = match.currentInnings.events.where((e) => e.batsmanName == player.name && e.runs == 4 && !e.isWide && (e.isNoBall ? e.isRunsOffBat : true)).length;
     final sixes = match.currentInnings.events.where((e) => e.batsmanName == player.name && e.runs == 6 && !e.isWide && (e.isNoBall ? e.isRunsOffBat : true)).length;
     final sr = balls > 0 ? (runs / balls) * 100 : 0.0;
@@ -755,62 +791,83 @@ class LiveScoringScreen extends StatelessWidget {
                 ),
               )
             else ...[
-              // Row 1: Headers
-              Row(
-                children: [
-                  const Icon(Icons.sports_baseball_rounded, color: Colors.transparent, size: 16),
-                  const SizedBox(width: 6),
-                  const Expanded(
-                    flex: 3,
-                    child: Text(
-                      'BOWLER',
-                      style: TextStyle(
-                        color: AppColors.textDarkSecondary,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+              Builder(
+                builder: (context) {
+                  final bowlerBalls = match.currentInningsNum >= 3
+                      ? match.currentInnings.events.where((e) => e.bowlerName == bowler.name && e.countsAsBall).length
+                      : match.bowlerBallsBowled[bowler.id] ?? 0;
+
+                  final bowlerRuns = match.currentInningsNum >= 3
+                      ? match.currentInnings.events.where((e) => e.bowlerName == bowler.name).fold(0, (sum, e) => sum + e.runsAddedToTeam)
+                      : match.bowlerRunsConceded[bowler.id] ?? 0;
+
+                  final bowlerWickets = match.currentInningsNum >= 3
+                      ? match.currentInnings.events.where((e) => e.bowlerName == bowler.name && e.isWicket && e.wicketType != 'Run Out').length
+                      : match.bowlerWickets[bowler.id] ?? 0;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Row 1: Headers
+                      Row(
+                        children: [
+                          const Icon(Icons.sports_baseball_rounded, color: Colors.transparent, size: 16),
+                          const SizedBox(width: 6),
+                          const Expanded(
+                            flex: 3,
+                            child: Text(
+                              'BOWLER',
+                              style: TextStyle(
+                                color: AppColors.textDarkSecondary,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildBowlerHeaderItem('O'),
+                          _buildBowlerHeaderItem('R'),
+                          _buildBowlerHeaderItem('W'),
+                          _buildBowlerHeaderItem('ECON'),
+                        ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  _buildBowlerHeaderItem('O'),
-                  _buildBowlerHeaderItem('R'),
-                  _buildBowlerHeaderItem('W'),
-                  _buildBowlerHeaderItem('ECON'),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Divider(color: AppColors.borderWood, height: 1,thickness: 0.8,),
-              const SizedBox(height: 5),
-              
-              // Row 2: Bowler Name & Values
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.woodMahogany.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.woodMahogany.withOpacity(0.2), width: 0.8),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.sports_baseball_rounded, color: AppColors.woodMahogany, size: 16),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        '${bowler.name}${bowler.id == bowlingTeam.captainId && bowler.role == 'Wicketkeeper' ? ' (C)(Wk)' : bowler.id == bowlingTeam.captainId ? ' (C)' : bowler.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
-                        style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
-                        overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 4),
+                      const Divider(color: AppColors.borderWood, height: 1, thickness: 0.8),
+                      const SizedBox(height: 5),
+
+                      // Row 2: Bowler Name & Values
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.woodMahogany.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.woodMahogany.withOpacity(0.2), width: 0.8),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.sports_baseball_rounded, color: AppColors.woodMahogany, size: 16),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                '${bowler.name}${bowler.id == bowlingTeam.captainId && bowler.role == 'Wicketkeeper' ? ' (C)(Wk)' : bowler.id == bowlingTeam.captainId ? ' (C)' : bowler.role == 'Wicketkeeper' ? ' (Wk)' : ''}',
+                                style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildBowlerValueItem('${bowlerBalls ~/ 6}.${bowlerBalls % 6}'),
+                            _buildBowlerValueItem('$bowlerRuns'),
+                            _buildBowlerValueItem('$bowlerWickets'),
+                            _buildBowlerValueItem(_calculateEcon(bowlerRuns, bowlerBalls)),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildBowlerValueItem('${(match.bowlerBallsBowled[bowler.id] ?? 0) ~/ 6}.${(match.bowlerBallsBowled[bowler.id] ?? 0) % 6}'),
-                    _buildBowlerValueItem('${match.bowlerRunsConceded[bowler.id] ?? 0}'),
-                    _buildBowlerValueItem('${match.bowlerWickets[bowler.id] ?? 0}'),
-                    _buildBowlerValueItem(_calculateEcon(match.bowlerRunsConceded[bowler.id] ?? 0, match.bowlerBallsBowled[bowler.id] ?? 0)),
-                  ],
-                ),
+                    ],
+                  );
+                }
               ),
             ],
           ],
@@ -843,13 +900,52 @@ class LiveScoringScreen extends StatelessWidget {
     );
   }
 
+  void _showStartSuperOverDialog(BuildContext context, CricketMatch match, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.bolt, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text('Start Super Over?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'This will re-open the match in Live Scoring mode for a 1-over tie-breaker. Are you sure you want to proceed?',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL', style: TextStyle(color: AppColors.textDarkSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              appState.startSuperOver(match.id);
+            },
+            child: const Text('PROCEED', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _calculateEcon(int runs, int balls) {
     if (balls == 0) return '0.0';
     return ((runs / balls) * 6).toStringAsFixed(1);
   }
 
   Widget _buildScoringPad(BuildContext context, CricketMatch match, AppState appState) {
-    if (match.status == MatchStatus.completed) {
+    final isTiedState = match.resultString == "Match Tied" && !match.isSuperOverPlayed;
+
+    if (match.status == MatchStatus.completed || isTiedState) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -862,9 +958,9 @@ class LiveScoringScreen extends StatelessWidget {
               size: 56,
             ),
             const SizedBox(height: 12),
-            const Text(
-              'MATCH COMPLETED',
-              style: TextStyle(
+            Text(
+              match.status == MatchStatus.completed ? 'MATCH COMPLETED' : 'MATCH TIED',
+              style: const TextStyle(
                 color: AppColors.textDark,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -884,20 +980,67 @@ class LiveScoringScreen extends StatelessWidget {
               maxLines: null,
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                appState.setActiveScoringMatch(null);
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
-              label: const Text('Return to Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryTurf,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            if (isTiedState) ...[
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        appState.completeMatch(match.id, forceComplete: true);
+                      },
+                      icon: const Icon(Icons.done_all_rounded, size: 18, color: Colors.white),
+                      label: const Text('MARK MATCH AS COMPLETED (TIE)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTurf,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _showStartSuperOverDialog(context, match, appState);
+                      },
+                      icon: const Icon(Icons.bolt, size: 18, color: Colors.white),
+                      label: const Text('START SUPER OVER', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () {
+                      appState.setActiveScoringMatch(null);
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.dashboard_rounded, size: 16, color: AppColors.primaryTurf),
+                    label: const Text('Return to Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryTurf)),
+                  ),
+                ],
               ),
-            ),
+            ] else ...[
+              ElevatedButton.icon(
+                onPressed: () {
+                  appState.setActiveScoringMatch(null);
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Colors.white),
+                label: const Text('Return to Dashboard', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryTurf,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -1675,7 +1818,7 @@ class LiveScoringScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                appState.completeMatch(match.id, resultController.text.trim());
+                appState.completeMatch(match.id, customResult: resultController.text.trim(), forceComplete: true);
                 Navigator.pop(context); // Close dialog
                 Navigator.pop(context); // Close LiveScoringScreen
               },

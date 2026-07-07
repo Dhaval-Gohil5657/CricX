@@ -28,7 +28,7 @@ class DashboardScreen extends StatelessWidget {
         : appState.matches;
 
     final liveMatches = allVisibleMatches.where((m) {
-      final isLive = m.status == MatchStatus.live;
+      final isLive = m.status == MatchStatus.live || (m.status == MatchStatus.completed && m.resultString == "Match Tied" && !m.isSuperOverPlayed);
       if (!isLive) return false;
       if (searchQuery.isEmpty) return true;
       final q = searchQuery.trim().toLowerCase();
@@ -38,7 +38,7 @@ class DashboardScreen extends StatelessWidget {
              (m.tournamentName != null && m.tournamentName!.toLowerCase().contains(q));
     }).toList();
     
-    final completedMatches = allVisibleMatches.where((m) => m.status == MatchStatus.completed).toList();
+    final completedMatches = allVisibleMatches.where((m) => m.status == MatchStatus.completed && !(m.resultString == "Match Tied" && !m.isSuperOverPlayed)).toList();
     final now = DateTime.now();
     final upcomingMatches = allVisibleMatches.where((m) {
       return m.status == MatchStatus.upcoming &&
@@ -275,9 +275,54 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildLiveMatchCard(BuildContext context, CricketMatch match, UserRole role, AppState appState, {bool isFullWidth = false}) {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    final innings1 = match.innings1;
-    final isFirstInnings = match.currentInningsNum == 1;
+    final isSuperOver = match.currentInningsNum >= 3;
+    final isFirstInnings = match.currentInningsNum == 1 || match.currentInningsNum == 3;
     final currentInnings = match.currentInnings;
+
+    final superOverA = match.superOverInnings1?.teamId == match.teamA.id 
+        ? match.superOverInnings1 
+        : (match.superOverInnings2?.teamId == match.teamA.id ? match.superOverInnings2 : null);
+
+    final superOverB = match.superOverInnings1?.teamId == match.teamB.id 
+        ? match.superOverInnings1 
+        : (match.superOverInnings2?.teamId == match.teamB.id ? match.superOverInnings2 : null);
+
+    final strikerRuns = isSuperOver && match.striker != null
+        ? match.currentInnings.events.where((e) => e.batsmanName == match.striker!.name).fold(0, (sum, e) => sum + e.runsAddedToBatsman)
+        : (match.striker != null ? (match.playerRuns[match.striker!.id] ?? 0) : 0);
+
+    final strikerBalls = isSuperOver && match.striker != null
+        ? match.currentInnings.events.where((e) => e.batsmanName == match.striker!.name && e.countsAsBall).length
+        : (match.striker != null ? (match.playerBallsFaced[match.striker!.id] ?? 0) : 0);
+
+    final nonStrikerRuns = isSuperOver && match.nonStriker != null
+        ? match.currentInnings.events.where((e) => e.batsmanName == match.nonStriker!.name).fold(0, (sum, e) => sum + e.runsAddedToBatsman)
+        : (match.nonStriker != null ? (match.playerRuns[match.nonStriker!.id] ?? 0) : 0);
+
+    final nonStrikerBalls = isSuperOver && match.nonStriker != null
+        ? match.currentInnings.events.where((e) => e.batsmanName == match.nonStriker!.name && e.countsAsBall).length
+        : (match.nonStriker != null ? (match.playerBallsFaced[match.nonStriker!.id] ?? 0) : 0);
+
+    final bowlerWickets = isSuperOver && match.currentBowler != null
+        ? match.currentInnings.events.where((e) => e.bowlerName == match.currentBowler!.name && e.isWicket && e.wicketType != 'Run Out').length
+        : (match.currentBowler != null ? (match.bowlerWickets[match.currentBowler!.id] ?? 0) : 0);
+
+    final bowlerRunsConceded = isSuperOver && match.currentBowler != null
+        ? match.currentInnings.events.where((e) => e.bowlerName == match.currentBowler!.name).fold(0, (sum, e) => sum + e.runsAddedToTeam)
+        : (match.currentBowler != null ? (match.bowlerRunsConceded[match.currentBowler!.id] ?? 0) : 0);
+
+    final bowlerBallsBowled = isSuperOver && match.currentBowler != null
+        ? match.currentInnings.events.where((e) => e.bowlerName == match.currentBowler!.name && e.countsAsBall).length
+        : (match.currentBowler != null ? (match.bowlerBallsBowled[match.currentBowler!.id] ?? 0) : 0);
+
+    final targetRuns = isSuperOver
+        ? (match.superOverInnings1 != null ? match.superOverInnings1!.runs + 1 : 0)
+        : (match.innings1 != null ? match.innings1!.runs + 1 : 0);
+
+    final runsNeeded = targetRuns - currentInnings.runs;
+
+    final maxBalls = isSuperOver ? 6 : (match.totalOvers * 6);
+    final ballsRemaining = maxBalls - currentInnings.ballsBowled;
 
     return Container(
       width: isFullWidth ? double.infinity : MediaQuery.of(context).size.width * 0.85,
@@ -403,25 +448,60 @@ class DashboardScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          match.teamAInnings != null 
-                              ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' 
-                              : 'Yet to Bat',
-                          style: TextStyle(
-                            fontSize: match.teamAInnings != null ? 15 : 13,
-                            fontWeight: match.teamAInnings != null ? FontWeight.w800 : FontWeight.w500,
-                            color: match.battingTeam.id == match.teamA.id ? AppColors.woodMahogany : AppColors.textDarkSecondary,
-                          ),
-                        ),
-                        if (match.teamAInnings != null)
-                          Text(
-                            '(${match.teamAInnings!.oversCompleted}/${match.totalOvers})',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textDarkMuted,
-                              fontWeight: FontWeight.w600
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  match.teamAInnings != null 
+                                      ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' 
+                                      : 'Yet to Bat',
+                                  style: TextStyle(
+                                    fontSize: match.teamAInnings != null ? 15 : 13,
+                                    fontWeight: match.teamAInnings != null ? FontWeight.w800 : FontWeight.w500,
+                                    color: match.battingTeam.id == match.teamA.id ? AppColors.woodMahogany : AppColors.textDarkSecondary,
+                                  ),
+                                ),
+                                if (match.teamAInnings != null)
+                                  Text(
+                                    '(${match.teamAInnings!.oversCompleted}/${match.totalOvers})',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.textDarkMuted,
+                                      fontWeight: FontWeight.w600
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
+                            if (match.isSuperOverPlayed && superOverA != null) ...[
+                              const SizedBox(width: 15),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${superOverA.runs}/${superOverA.wickets}',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primaryTurf,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'S.O.',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.primaryTurf,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -468,32 +548,67 @@ class DashboardScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          match.teamBInnings != null 
-                              ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' 
-                              : 'Yet to Bat',
-                          style: TextStyle(
-                            fontSize: match.teamBInnings != null ? 15 : 13,
-                            fontWeight: match.teamBInnings != null ? FontWeight.w800 : FontWeight.w500,
-                            color: match.battingTeam.id == match.teamB.id ? AppColors.woodMahogany : AppColors.textDarkSecondary,
-                          ),
-                        ),
-                        if (match.teamBInnings != null)
-                          Text(
-                            '(${match.teamBInnings!.oversCompleted}/${match.totalOvers})',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textDarkMuted,
-                              fontWeight: FontWeight.w600
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  match.teamBInnings != null 
+                                      ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' 
+                                      : 'Yet to Bat',
+                                  style: TextStyle(
+                                    fontSize: match.teamBInnings != null ? 15 : 13,
+                                    fontWeight: match.teamBInnings != null ? FontWeight.w800 : FontWeight.w500,
+                                    color: match.battingTeam.id == match.teamB.id ? AppColors.woodMahogany : AppColors.textDarkSecondary,
+                                  ),
+                                ),
+                                if (match.teamBInnings != null)
+                                  Text(
+                                    '(${match.teamBInnings!.oversCompleted}/${match.totalOvers})',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.textDarkMuted,
+                                      fontWeight: FontWeight.w600
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
+                            if (match.isSuperOverPlayed && superOverB != null) ...[
+                              const SizedBox(width: 15),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${superOverB.runs}/${superOverB.wickets}',
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primaryTurf,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'S.O.',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.primaryTurf,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
                   ],
                 ),
 
                 // Second Innings Target box
-                if (!isFirstInnings && innings1 != null) ...[
+                if (!isFirstInnings && (isSuperOver ? match.superOverInnings1 != null : match.innings1 != null)) ...[
                   const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
@@ -505,7 +620,9 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        'Target: ${innings1.runs + 1} | Need ${(innings1.runs + 1 - currentInnings.runs) <= 0 ? 0 : (innings1.runs + 1 - currentInnings.runs)} off ${(match.totalOvers * 6) - currentInnings.ballsBowled} balls',
+                        match.resultString == "Match Tied"
+                            ? "Match Tied"
+                            : 'Target: $targetRuns | Need ${runsNeeded <= 0 ? 0 : runsNeeded} off ${ballsRemaining <= 0 ? 0 : ballsRemaining} balls',
                         style: const TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
@@ -535,7 +652,7 @@ class DashboardScreen extends StatelessWidget {
                                 const Text('🏏 ', style: TextStyle(fontSize: 10)),
                                 Expanded(
                                   child: Text(
-                                    '${match.striker!.name} ${match.playerRuns[match.striker!.id] ?? 0}(${match.playerBallsFaced[match.striker!.id] ?? 0})*',
+                                    '${match.striker!.name} $strikerRuns($strikerBalls)*',
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.textDarkSecondary,
@@ -558,7 +675,7 @@ class DashboardScreen extends StatelessWidget {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Text(
-                                    '${match.nonStriker!.name} ${match.playerRuns[match.nonStriker!.id] ?? 0}(${match.playerBallsFaced[match.nonStriker!.id] ?? 0})',
+                                    '${match.nonStriker!.name} $nonStrikerRuns($nonStrikerBalls)',
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.textDarkSecondary,
@@ -592,7 +709,7 @@ class DashboardScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${match.bowlerWickets[match.currentBowler!.id] ?? 0}/${match.bowlerRunsConceded[match.currentBowler!.id] ?? 0} (${(match.bowlerBallsBowled[match.currentBowler!.id] ?? 0) ~/ 6}.${(match.bowlerBallsBowled[match.currentBowler!.id] ?? 0) % 6} Ov)',
+                              '$bowlerWickets/$bowlerRunsConceded (${bowlerBallsBowled ~/ 6}.${bowlerBallsBowled % 6} Ov)',
                               style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textDarkSecondary,

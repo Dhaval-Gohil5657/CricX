@@ -79,7 +79,10 @@ class CricketMatch {
   // Scoring state
   MatchTeamInnings? innings1;
   MatchTeamInnings? innings2;
-  int currentInningsNum; // 1 or 2
+  MatchTeamInnings? superOverInnings1;
+  MatchTeamInnings? superOverInnings2;
+  int currentInningsNum; // 1, 2, 3 (Super Over 1), or 4 (Super Over 2)
+  bool isSuperOverPlayed;
   
   // Live player states
   Player? striker;
@@ -116,6 +119,9 @@ class CricketMatch {
     this.tossWinnerId,
     this.tossDecision,
     this.currentInningsNum = 1,
+    this.isSuperOverPlayed = false,
+    this.superOverInnings1,
+    this.superOverInnings2,
     this.resultString = 'Match not started yet',
     required this.venue,
     required this.matchDate,
@@ -128,15 +134,31 @@ class CricketMatch {
     this.teamBPlayerIds,
   });
 
-  Team get battingTeam => currentInningsNum == 1 
-      ? (tossDecision == 'Bat' ? (tossWinnerId == teamA.id ? teamA : teamB) : (tossWinnerId == teamA.id ? teamB : teamA))
-      : (tossDecision == 'Bat' ? (tossWinnerId == teamA.id ? teamB : teamA) : (tossWinnerId == teamA.id ? teamA : teamB));
+  Team get battingTeam {
+    final Team teamFirst = tossDecision == 'Bat'
+        ? (tossWinnerId == teamA.id ? teamA : teamB)
+        : (tossWinnerId == teamA.id ? teamB : teamA);
+    final Team teamSecond = teamFirst.id == teamA.id ? teamB : teamA;
+
+    if (currentInningsNum == 1) return teamFirst;
+    if (currentInningsNum == 2) return teamSecond;
+    if (currentInningsNum == 3) return teamSecond; // Super Over Innings 1 (Second team in main match bats first)
+    return teamFirst;                              // Super Over Innings 2 (First team in main match chases)
+  }
 
   Team get bowlingTeam => battingTeam.id == teamA.id ? teamB : teamA;
 
-  MatchTeamInnings get currentInnings => currentInningsNum == 1 
-      ? (innings1 ??= MatchTeamInnings(teamId: battingTeam.id))
-      : (innings2 ??= MatchTeamInnings(teamId: battingTeam.id));
+  MatchTeamInnings get currentInnings {
+    if (currentInningsNum == 1) {
+      return innings1 ??= MatchTeamInnings(teamId: battingTeam.id);
+    } else if (currentInningsNum == 2) {
+      return innings2 ??= MatchTeamInnings(teamId: battingTeam.id);
+    } else if (currentInningsNum == 3) {
+      return superOverInnings1 ??= MatchTeamInnings(teamId: battingTeam.id);
+    } else {
+      return superOverInnings2 ??= MatchTeamInnings(teamId: battingTeam.id);
+    }
+  }
 
   MatchTeamInnings? get teamAInnings => innings1?.teamId == teamA.id 
       ? innings1 
@@ -149,18 +171,31 @@ class CricketMatch {
   String get statusText {
     if (status == MatchStatus.upcoming) {
       return 'Match not started yet';
-    } else if (status == MatchStatus.live) {
+    }
+    if (resultString == "Match Tied" && !isSuperOverPlayed) {
+      return "Match Tied";
+    }
+    if (status == MatchStatus.live) {
       if (tossWinnerId != null && tossDecision != null) {
         final tossWinnerTeam = tossWinnerId == teamA.id ? teamA : teamB;
         if (currentInningsNum == 1) {
           return "${tossWinnerTeam.name} won toss & elected to ${tossDecision!.toLowerCase()} first";
-        } else {
+        } else if (currentInningsNum == 2) {
           final target = (innings1?.runs ?? 0) + 1;
           final currentRuns = innings2?.runs ?? 0;
           final runsNeeded = target - currentRuns;
           final ballsBowled = innings2?.ballsBowled ?? 0;
           final ballsRemaining = (totalOvers * 6) - ballsBowled;
           return "${battingTeam.name} needs $runsNeeded runs from $ballsRemaining balls";
+        } else if (currentInningsNum == 3) {
+          return "Super Over: ${battingTeam.name} batting (Innings 1)";
+        } else if (currentInningsNum == 4) {
+          final target = (superOverInnings1?.runs ?? 0) + 1;
+          final currentRuns = superOverInnings2?.runs ?? 0;
+          final runsNeeded = target - currentRuns;
+          final ballsBowled = superOverInnings2?.ballsBowled ?? 0;
+          final ballsRemaining = 6 - ballsBowled;
+          return "Super Over: ${battingTeam.name} needs $runsNeeded runs from $ballsRemaining balls";
         }
       }
       return 'Match in progress';

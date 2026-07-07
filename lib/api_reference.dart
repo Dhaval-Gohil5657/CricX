@@ -15,7 +15,7 @@ The database should contain 5 primary collections:
 
 2. Document Nesting Guidelines
 Unlike relational databases, nested objects should be stored directly inside the parent documents:
-* **Match Innings**: Innings details (`innings1` and `innings2`) should be stored as nested sub-documents inside the `matches` collection documents.
+* **Match Innings**: Innings details (`innings1`, `innings2`, and optional Super Over innings `superOverInnings1`, `superOverInnings2`) should be stored as nested sub-documents inside the `matches` collection documents.
 * **Ball Events**: Deliveries logged ball-by-ball should be stored as an array of sub-documents (`events`) inside their respective Innings sub-document.
 * **Points Table**: Standings rows should be stored as an array of sub-documents (`pointsTable`) inside the `tournaments` collection documents.
 
@@ -268,6 +268,9 @@ Update Match State (`PUT /api/v1/matches/{id}`)
       "battingOrder": ["player_rohit_45", "player_ishan_23"]
     },
     "innings2": null,
+    "isSuperOverPlayed": false,
+    "superOverInnings1": null,
+    "superOverInnings2": null,
     "playerRuns": { "player_rohit_45": 5, "player_ishan_23": 7 },
     "playerBallsFaced": { "player_rohit_45": 3, "player_ishan_23": 3 },
     "bowlerRunsConceded": { "player_siraj_73": 12 },

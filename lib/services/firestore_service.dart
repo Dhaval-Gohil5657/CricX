@@ -347,6 +347,7 @@ class FirestoreService implements DatabaseService {
       tossWinnerId: data['tossWinnerId'],
       tossDecision: data['tossDecision'],
       currentInningsNum: data['currentInningsNum'] ?? 1,
+      isSuperOverPlayed: data['isSuperOverPlayed'] ?? false,
       resultString: data['resultString'] ?? 'Match not started yet',
       venue: data['venue'] ?? 'Unknown Venue',
       matchDate: (data['matchDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -365,6 +366,12 @@ class FirestoreService implements DatabaseService {
     }
     if (data['innings2'] != null) {
       match.innings2 = _inningsFromMap(data['innings2'] as Map<String, dynamic>);
+    }
+    if (data['superOverInnings1'] != null) {
+      match.superOverInnings1 = _inningsFromMap(data['superOverInnings1'] as Map<String, dynamic>);
+    }
+    if (data['superOverInnings2'] != null) {
+      match.superOverInnings2 = _inningsFromMap(data['superOverInnings2'] as Map<String, dynamic>);
     }
 
     // Active Players
@@ -402,11 +409,14 @@ class FirestoreService implements DatabaseService {
       'tossWinnerId': match.tossWinnerId,
       'tossDecision': match.tossDecision,
       'currentInningsNum': match.currentInningsNum,
+      'isSuperOverPlayed': match.isSuperOverPlayed,
       'resultString': match.resultString,
       'venue': match.venue,
       'matchDate': Timestamp.fromDate(match.matchDate),
       'innings1': match.innings1 != null ? _inningsToMap(match.innings1!) : null,
       'innings2': match.innings2 != null ? _inningsToMap(match.innings2!) : null,
+      'superOverInnings1': match.superOverInnings1 != null ? _inningsToMap(match.superOverInnings1!) : null,
+      'superOverInnings2': match.superOverInnings2 != null ? _inningsToMap(match.superOverInnings2!) : null,
       'strikerId': match.striker?.id,
       'nonStrikerId': match.nonStriker?.id,
       'currentBowlerId': match.currentBowler?.id,

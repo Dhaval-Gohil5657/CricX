@@ -10,6 +10,7 @@ import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 import 'organizer/tournament_detail_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'scorer/live_scoring_screen.dart';
 
 class ScorecardScreen extends StatefulWidget {
   final CricketMatch match;
@@ -47,8 +48,10 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         isMatchCreator && 
         currentMatch.status == MatchStatus.upcoming;
 
+    final isSuperOverPlayed = currentMatch.isSuperOverPlayed;
+
     return DefaultTabController(
-      length: 2,
+      length: isSuperOverPlayed ? 4 : 2,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: PreferredSize(
@@ -283,12 +286,16 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                       )
                     : Column(
                         children: [
-                          _buildInningsTabBar(team1, team2),
+                          _buildInningsTabBar(team1, team2, isSuperOverPlayed),
                           Expanded(
                             child: TabBarView(
                               children: [
                                 _buildInningsTabContent(context, currentMatch, 1, appState),
                                 _buildInningsTabContent(context, currentMatch, 2, appState),
+                                if (isSuperOverPlayed) ...[
+                                  _buildInningsTabContent(context, currentMatch, 3, appState),
+                                  _buildInningsTabContent(context, currentMatch, 4, appState),
+                                ],
                               ],
                             ),
                           ),
@@ -308,18 +315,93 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                 ),
                 child: _buildMatchOverviewCard(context, currentMatch, appState),
               ),
-              _buildInningsTabBar(team1, team2),
+              _buildInningsTabBar(team1, team2, isSuperOverPlayed),
               Expanded(
                 child: TabBarView(
                   children: [
                     _buildInningsTabContent(context, currentMatch, 1, appState),
                     _buildInningsTabContent(context, currentMatch, 2, appState),
+                    if (isSuperOverPlayed) ...[
+                      _buildInningsTabContent(context, currentMatch, 3, appState),
+                      _buildInningsTabContent(context, currentMatch, 4, appState),
+                    ],
                   ],
                 ),
               ),
             ],
           ],
         ),
+        bottomNavigationBar: ((currentMatch.status == MatchStatus.completed || currentMatch.resultString == "Match Tied") &&
+                !currentMatch.isSuperOverPlayed &&
+                (role == UserRole.scorer || role == UserRole.organizer) &&
+                isMatchCreator)
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBg,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryTurf,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            appState.completeMatch(currentMatch.id, forceComplete: true);
+                          },
+                          icon: const Icon(Icons.done_all_rounded, color: Colors.white, size: 16),
+                          label: const Text(
+                            'MARK COMPLETE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            _showStartSuperOverDialog(context, currentMatch, appState);
+                          },
+                          icon: const Icon(Icons.bolt, color: Colors.white, size: 16),
+                          label: const Text(
+                            'START SUPER OVER',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }
@@ -377,7 +459,51 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
     );
   }
 
-  Widget _buildInningsTabBar(Team team1, Team team2) {
+  void _showStartSuperOverDialog(BuildContext context, CricketMatch match, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.bolt, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text('Start Super Over?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'This will re-open the match in Live Scoring mode for a 1-over tie-breaker. Are you sure you want to proceed?',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL', style: TextStyle(color: AppColors.textDarkSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              appState.startSuperOver(match.id);
+              // Navigate directly to LiveScoringScreen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LiveScoringScreen(match: match),
+                ),
+              );
+            },
+            child: const Text('PROCEED', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInningsTabBar(Team team1, Team team2, [bool isSuperOver = false]) {
     return Container(
       height: 40,
       decoration: const BoxDecoration(
@@ -386,31 +512,48 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         ),
       ),
       child: TabBar(
+        isScrollable: false,
         indicatorColor: AppColors.primaryTurf,
         indicatorWeight: 3,
         labelColor: AppColors.primaryTurf,
         unselectedLabelColor: AppColors.textDarkSecondary,
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 13.0),
+        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: isSuperOver ? 11.5 : 13.5),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: isSuperOver ? 11.0 : 13.0),
         tabs: [
           Tab(
             child: Text(
-              team1.name,
+              isSuperOver ? team1.abbreviation.toUpperCase() : team1.name,
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(height: 1.1),
             ),
           ),
           Tab(
             child: Text(
-              team2.name,
+              isSuperOver ? team2.abbreviation.toUpperCase() : team2.name,
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(height: 1.1),
             ),
           ),
+          if (isSuperOver) ...[
+            Tab(
+              child: Text(
+                'SO-${team2.abbreviation.toUpperCase()}',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Tab(
+              child: Text(
+                'SO-${team1.abbreviation.toUpperCase()}',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -435,11 +578,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         return;
       }
       final overs = innings.oversCompleted;
-      buffer.writeln('🏏 *$teamName*: ${innings.runs}/${innings.wickets} ($overs/${match.totalOvers} ov)');
+      final displayOversLimit = match.currentInningsNum >= 3 ? 1 : match.totalOvers;
+      buffer.writeln('🏏 *$teamName*: ${innings.runs}/${innings.wickets} ($overs/$displayOversLimit ov)');
 
       final battedPlayers = team.players.where((player) {
-        final isCurrentBatsman = player.id == match.striker?.id || player.id == match.nonStriker?.id;
-        return match.playerBallsFaced[player.id] != null || isCurrentBatsman;
+        final isCurrentBatsman = (match.status == MatchStatus.live && match.currentInnings == innings) &&
+            (player.id == match.striker?.id || player.id == match.nonStriker?.id);
+        return innings.events.any((e) => e.batsmanName == player.name) || isCurrentBatsman;
       }).toList();
 
       final battingOrder = innings.battingOrder;
@@ -456,21 +601,26 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         buffer.writeln('  *Batting:*');
         for (var i = 0; i < battedPlayers.length && i < 3; i++) {
           final player = battedPlayers[i];
-          final runs = match.playerRuns[player.id] ?? 0;
-          final balls = match.playerBallsFaced[player.id] ?? 0;
+          final runs = innings.events.where((e) => e.batsmanName == player.name).fold(0, (sum, e) => sum + e.runsAddedToBatsman);
+          final balls = innings.events.where((e) => e.batsmanName == player.name && e.countsAsBall).length;
           final isOut = innings.events.any((e) => e.isWicket && e.batsmanName == player.name);
-          final isCurrentBatsman = player.id == match.striker?.id || player.id == match.nonStriker?.id;
+          final isCurrentBatsman = (match.status == MatchStatus.live && match.currentInnings == innings) &&
+              (player.id == match.striker?.id || player.id == match.nonStriker?.id);
           final star = (!isOut && isCurrentBatsman) ? '*' : '';
           buffer.writeln('  • ${player.name}: $runs$star ($balls)');
         }
       }
 
-      final activeBowlers = oppTeam.players.where((p) => (match.bowlerBallsBowled[p.id] ?? 0) > 0 || (match.bowlerRunsConceded[p.id] ?? 0) > 0).toList();
+      final activeBowlers = oppTeam.players.where((player) {
+        final isCurrentBowler = (match.status == MatchStatus.live && match.currentInnings == innings) &&
+            (player.id == match.currentBowler?.id);
+        return innings.events.any((e) => e.bowlerName == player.name) || isCurrentBowler;
+      }).toList();
       activeBowlers.sort((a, b) {
-        final wicketsA = match.bowlerWickets[a.id] ?? 0;
-        final wicketsB = match.bowlerWickets[b.id] ?? 0;
-        final runsA = match.bowlerRunsConceded[a.id] ?? 999;
-        final runsB = match.bowlerRunsConceded[b.id] ?? 999;
+        final wicketsA = innings.events.where((e) => e.bowlerName == a.name && e.isWicket && e.wicketType != 'Run Out').length;
+        final wicketsB = innings.events.where((e) => e.bowlerName == b.name && e.isWicket && e.wicketType != 'Run Out').length;
+        final runsA = innings.events.where((e) => e.bowlerName == a.name).fold(0, (sum, e) => sum + e.runsAddedToTeam);
+        final runsB = innings.events.where((e) => e.bowlerName == b.name).fold(0, (sum, e) => sum + e.runsAddedToTeam);
         
         if (wicketsA != wicketsB) {
           return wicketsB.compareTo(wicketsA);
@@ -482,9 +632,9 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
         buffer.writeln('  *Bowling:*');
         for (var i = 0; i < activeBowlers.length && i < 2; i++) {
           final bowler = activeBowlers[i];
-          final wickets = match.bowlerWickets[bowler.id] ?? 0;
-          final runs = match.bowlerRunsConceded[bowler.id] ?? 0;
-          final balls = match.bowlerBallsBowled[bowler.id] ?? 0;
+          final balls = innings.events.where((e) => e.bowlerName == bowler.name && e.countsAsBall).length;
+          final runs = innings.events.where((e) => e.bowlerName == bowler.name).fold(0, (sum, e) => sum + e.runsAddedToTeam);
+          final wickets = innings.events.where((e) => e.bowlerName == bowler.name && e.isWicket && e.wicketType != 'Run Out').length;
           final ov = (balls ~/ 6) + (balls % 6) / 10;
           buffer.writeln('  • ${bowler.name}: $wickets/$runs ($ov ov)');
         }
@@ -506,6 +656,12 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
 
     formatInnings(match.innings1, team1.name, team1, opp1);
     formatInnings(match.innings2, team2.name, team2, opp2);
+    
+    if (match.isSuperOverPlayed) {
+      buffer.writeln('⚡ *SUPER OVER* ⚡');
+      formatInnings(match.superOverInnings1, 'S.O. - ${team2.name}', team2, team1);
+      formatInnings(match.superOverInnings2, 'S.O. - ${team1.name}', team1, team2);
+    }
 
     buffer.writeln('----------------------------------');
     buffer.writeln('Scored live on *CricX* app! 🏏');
@@ -519,7 +675,17 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
   }
 
   Widget _buildInningsTabContent(BuildContext context, CricketMatch match, int inningsNum, AppState appState) {
-    final innings = inningsNum == 1 ? match.innings1 : match.innings2;
+    final MatchTeamInnings? innings;
+    if (inningsNum == 1) {
+      innings = match.innings1;
+    } else if (inningsNum == 2) {
+      innings = match.innings2;
+    } else if (inningsNum == 3) {
+      innings = match.superOverInnings1;
+    } else {
+      innings = match.superOverInnings2;
+    }
+
     if (innings == null) {
       final team1 = match.innings1 != null 
           ? appState.teams.firstWhere((t) => t.id == match.innings1!.teamId) 
@@ -529,7 +695,17 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
           : (match.innings1 != null 
               ? (match.innings1!.teamId == match.teamA.id ? match.teamB : match.teamA) 
               : match.teamB);
-      final team = inningsNum == 1 ? team1 : team2;
+      
+      final Team team;
+      if (inningsNum == 1) {
+        team = team1;
+      } else if (inningsNum == 2) {
+        team = team2;
+      } else if (inningsNum == 3) {
+        team = team2;
+      } else {
+        team = team1;
+      }
 
       return Center(
         child: Padding(
@@ -576,7 +752,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.all(15.0),
+        padding: const EdgeInsets.all(12.0),
         child: _buildInningsTable(context, match, innings, appState),
       ),
     );
@@ -680,6 +856,18 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                             oversAStr,
                             style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10, fontWeight: FontWeight.w500),
                           ),
+                        if (match.isSuperOverPlayed && match.superOverInnings2 != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              'S.O. ${match.superOverInnings2!.runs}/${match.superOverInnings2!.wickets}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primaryTurf,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -718,6 +906,18 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                           Text(
                             oversBStr,
                             style: const TextStyle(color: AppColors.textDarkMuted, fontSize: 10, fontWeight: FontWeight.w500),
+                          ),
+                        if (match.isSuperOverPlayed && match.superOverInnings1 != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              'S.O. ${match.superOverInnings1!.runs}/${match.superOverInnings1!.wickets}',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primaryTurf,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -791,14 +991,21 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
     
     final hasStarted = match.status == MatchStatus.live || match.status == MatchStatus.completed || innings.events.isNotEmpty;
     final activeBowlers = hasStarted 
-        ? oppTeam.players.where((p) => (match.bowlerBallsBowled[p.id] ?? 0) > 0 || (match.bowlerRunsConceded[p.id] ?? 0) > 0).toList()
+        ? oppTeam.players.where((player) {
+            final isCurrentBowler = (match.status == MatchStatus.live && match.currentInnings == innings) &&
+                (player.id == match.currentBowler?.id);
+            return innings.events.any((e) => e.bowlerName == player.name) || isCurrentBowler;
+          }).toList()
         : oppTeam.players.take(2).toList();
 
     // Separate batted players (in batting order) from yet-to-bat players
     final battedPlayers = team.players.where((player) {
       if (!hasStarted) return true;
-      final isCurrentBatsman = player.id == match.striker?.id || player.id == match.nonStriker?.id;
-      return match.playerBallsFaced[player.id] != null || isCurrentBatsman;
+      final isCurrentBatsman = (match.status == MatchStatus.live && match.currentInnings == innings) &&
+          (player.id == match.striker?.id || player.id == match.nonStriker?.id);
+      return innings.battingOrder.contains(player.id) || 
+             innings.events.any((e) => e.batsmanName == player.name) || 
+             isCurrentBatsman;
     }).toList();
 
     if (hasStarted) {
@@ -814,10 +1021,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
     }
 
     final yetToBatPlayers = hasStarted
-        ? team.players.where((player) {
-            final isCurrentBatsman = player.id == match.striker?.id || player.id == match.nonStriker?.id;
-            return !(match.playerBallsFaced[player.id] != null || isCurrentBatsman);
-          }).toList()
+        ? team.players.where((player) => !battedPlayers.contains(player)).toList()
         : <Player>[];
     
     return Column(
@@ -841,11 +1045,11 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                   color: Color(0xFFF1F6F2), // Very soft turf green tint
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 child: const Row(
                   children: [
                     Expanded(
-                      flex: 4,
+                      flex: 5,
                       child: Text('Batsman', style: TextStyle(color: AppColors.textDark, fontSize: 11.5, fontWeight: FontWeight.w900, letterSpacing: 0.3)),
                     ),
                     Expanded(
@@ -876,8 +1080,12 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                 itemBuilder: (context, index) {
                   final player = battedPlayers[index];
                   
-                  int runs = match.playerRuns[player.id] ?? (hasStarted ? 0 : (index == 0 ? 34 : (index == 1 ? 21 : 5)));
-                  int balls = match.playerBallsFaced[player.id] ?? (hasStarted ? 0 : (index == 0 ? 22 : (index == 1 ? 16 : 8)));
+                  int runs = hasStarted
+                      ? innings.events.where((e) => e.batsmanName == player.name).fold(0, (sum, e) => sum + e.runsAddedToBatsman)
+                      : (index == 0 ? 34 : (index == 1 ? 21 : 5));
+                  int balls = hasStarted
+                      ? innings.events.where((e) => e.batsmanName == player.name && e.countsAsBall).length
+                      : (index == 0 ? 22 : (index == 1 ? 16 : 8));
                   
                   int fours = hasStarted 
                       ? innings.events.where((e) => e.batsmanName == player.name && e.runs == 4 && !e.isWide && (e.isNoBall ? e.isRunsOffBat : true)).length
@@ -888,8 +1096,8 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                   double sr = balls > 0 ? (runs / balls) * 100 : 0.0;
 
                   final isOut = hasStarted && innings.events.any((e) => e.isWicket && e.batsmanName == player.name);
-                  final isCurrentBatsman = hasStarted && (player.id == match.striker?.id || player.id == match.nonStriker?.id);
-                  final hasBatted = hasStarted && (match.playerBallsFaced[player.id] != null || isCurrentBatsman);
+                  final isCurrentBatsman = hasStarted && (match.status == MatchStatus.live && match.currentInnings == innings) && (player.id == match.striker?.id || player.id == match.nonStriker?.id);
+                  final hasBatted = hasStarted && (innings.battingOrder.contains(player.id) || innings.events.any((e) => e.batsmanName == player.name) || isCurrentBatsman);
 
                   String statusStr = 'yet to bat';
                   if (!hasStarted) {
@@ -917,7 +1125,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                         Row(
                           children: [
                             Expanded(
-                              flex: 4,
+                              flex: 5,
                               child: Row(
                                 children: [
                                   if (isCurrentBatsman) ...[
@@ -1136,14 +1344,20 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                 itemBuilder: (context, index) {
                   final player = activeBowlers[index];
                   
-                  int balls = match.bowlerBallsBowled[player.id] ?? (hasStarted ? 0 : (index == 0 ? 12 : 6));
-                  int runs = match.bowlerRunsConceded[player.id] ?? (hasStarted ? 0 : (index == 0 ? 14 : 9));
-                  int wickets = match.bowlerWickets[player.id] ?? (hasStarted ? 0 : (index == 0 ? 2 : 0));
+                  int balls = hasStarted
+                      ? innings.events.where((e) => e.bowlerName == player.name && e.countsAsBall).length
+                      : (index == 0 ? 12 : 6);
+                  int runs = hasStarted
+                      ? innings.events.where((e) => e.bowlerName == player.name).fold(0, (sum, e) => sum + e.runsAddedToTeam)
+                      : (index == 0 ? 14 : 9);
+                  int wickets = hasStarted
+                      ? innings.events.where((e) => e.bowlerName == player.name && e.isWicket && e.wicketType != 'Run Out').length
+                      : (index == 0 ? 2 : 0);
                   
                   double overs = (balls ~/ 6) + (balls % 6) / 10;
                   double econ = balls > 0 ? (runs / balls) * 6 : 0.0;
 
-                  final isCurrentBowler = hasStarted && (player.id == match.currentBowler?.id);
+                  final isCurrentBowler = hasStarted && (match.status == MatchStatus.live && match.currentInnings == innings) && (player.id == match.currentBowler?.id);
 
                   return Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),

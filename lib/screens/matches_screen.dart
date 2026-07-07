@@ -68,9 +68,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
                    (m.tournamentName != null && m.tournamentName!.toLowerCase().contains(q));
           }).toList();
 
-    final live = searchedMatches.where((m) => m.status == MatchStatus.live).toList();
+    final live = searchedMatches.where((m) => m.status == MatchStatus.live || (m.status == MatchStatus.completed && m.resultString == "Match Tied" && !m.isSuperOverPlayed)).toList();
     final upcoming = searchedMatches.where((m) => m.status == MatchStatus.upcoming).toList();
-    final completed = searchedMatches.where((m) => m.status == MatchStatus.completed).toList();
+    final completed = searchedMatches.where((m) => m.status == MatchStatus.completed && !(m.resultString == "Match Tied" && !m.isSuperOverPlayed)).toList();
 
     Widget buildSegmentButton(String tab, String label, IconData icon) {
       final isSelected = _activeSubTab == tab;
@@ -566,13 +566,29 @@ class _MatchesScreenState extends State<MatchesScreen> {
                             ),
                           ],
                         ),
-                        Text(
-                          match.teamAInnings != null ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' : '-',
-                          style: const TextStyle(
-                            color: AppColors.textDark,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              match.teamAInnings != null ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' : '-',
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            if (match.isSuperOverPlayed && match.superOverInnings2 != null) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                '(S.O. ${match.superOverInnings2!.runs}/${match.superOverInnings2!.wickets})',
+                                style: const TextStyle(
+                                  color: AppColors.primaryTurf,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -605,13 +621,29 @@ class _MatchesScreenState extends State<MatchesScreen> {
                             ),
                           ],
                         ),
-                        Text(
-                          match.teamBInnings != null ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' : '-',
-                          style: const TextStyle(
-                            color: AppColors.textDark,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              match.teamBInnings != null ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' : '-',
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            if (match.isSuperOverPlayed && match.superOverInnings1 != null) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                '(S.O. ${match.superOverInnings1!.runs}/${match.superOverInnings1!.wickets})',
+                                style: const TextStyle(
+                                  color: AppColors.primaryTurf,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
