@@ -1,3 +1,4 @@
+import 'package:cricx/widgets/dotted_circular_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +8,7 @@ import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'welcome_screen.dart';
 import 'main_navigation_screen.dart';
+import '../services/biometric_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,11 +20,15 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   String? _userName;
+  final _biometricService = BiometricService();
+  bool _isBiometricHardwareAvailable = false;
+  bool _isBiometricEnabledForUser = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _checkBiometrics();
   }
 
   Future<void> _loadUserProfile() async {
@@ -40,6 +46,193 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       } catch (e) {
         debugPrint('Failed to load user profile: $e');
+      }
+    }
+  }
+
+  Future<void> _checkBiometrics() async {
+    final hasHardware = await _biometricService.isBiometricHardwareAvailable();
+    final isEnabled = await _biometricService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _isBiometricHardwareAvailable = hasHardware;
+        _isBiometricEnabledForUser = isEnabled;
+      });
+    }
+  }
+
+  Future<void> _toggleBiometric(bool enabled) async {
+    if (!enabled) {
+      await _biometricService.disableBiometric();
+      setState(() {
+        _isBiometricEnabledForUser = false;
+      });
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Biometric login disabled successfully.',
+          type: SnackBarType.success,
+        );
+      }
+    } else {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.email == null) return;
+
+      final passwordController = TextEditingController();
+      bool isVerifying = false;
+
+      final password = await showDialog<String>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            backgroundColor: AppColors.cardBg,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.borderGreen, width: 1.5),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTurf.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fingerprint_rounded,
+                    color: AppColors.primaryTurf,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Enable Biometrics',
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Enter your password to verify identity and enable biometric login.',
+                  style: TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 13.5,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  autofocus: true,
+                  style: const TextStyle(color: AppColors.textDark),
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    labelStyle: TextStyle(color: AppColors.textDarkSecondary),
+                    prefixIcon: Icon(Icons.lock_outline, color: AppColors.primaryTurf),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryTurf),
+                    ),
+                  ),
+                ),
+                if (isVerifying) ...[
+                  const SizedBox(height: 12),
+                  const Center(
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: DottedCircularLoader(color: AppColors.primaryTurf,)
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isVerifying ? null : () => Navigator.pop(context),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.textDarkSecondary),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryTurf,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: isVerifying
+                    ? null
+                    : () async {
+                        final pw = passwordController.text.trim();
+                        if (pw.isEmpty) return;
+
+                        setDialogState(() {
+                          isVerifying = true;
+                        });
+
+                        try {
+                          final credential = EmailAuthProvider.credential(
+                            email: user.email!,
+                            password: pw,
+                          );
+                          await user.reauthenticateWithCredential(credential);
+                          
+                          if (context.mounted) {
+                            Navigator.pop(context, pw);
+                          }
+                        } catch (e) {
+                          setDialogState(() {
+                            isVerifying = false;
+                          });
+                          if (context.mounted) {
+                            CustomSnackBar.show(
+                              context,
+                              message: 'Incorrect password. Verification failed.',
+                              type: SnackBarType.error,
+                            );
+                          }
+                        }
+                      },
+                child: const Text('Verify'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (password != null && password.isNotEmpty) {
+        setState(() => _isLoading = true);
+        try {
+          await _biometricService.enableBiometric(user.email!, password);
+          setState(() {
+            _isBiometricEnabledForUser = true;
+          });
+          if (mounted) {
+            CustomSnackBar.show(
+              context,
+              message: 'Biometric login enabled successfully.',
+              type: SnackBarType.success,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            CustomSnackBar.show(
+              context,
+              message: 'Failed to enable biometric login.',
+              type: SnackBarType.error,
+            );
+          }
+        } finally {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -510,6 +703,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 24),
 
+
+
                   // 3b. My Stats & Details Row (Filtered by creatorId)
                   if (currentRole == UserRole.scorer || currentRole == UserRole.organizer) ...[
                     const Text(
@@ -575,6 +770,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  if (_isBiometricHardwareAvailable) ...[
+                    const Text(
+                      'SECURITY SETTINGS',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      color: AppColors.cardBg,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryTurf.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.fingerprint_rounded,
+                                color: AppColors.primaryTurf,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Biometric Login',
+                                    style: TextStyle(
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  SizedBox(height: 3),
+                                  Text(
+                                    'Use Fingerprint/Face ID for quick access',
+                                    style: TextStyle(
+                                      color: AppColors.textDarkSecondary,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch.adaptive(
+                              value: _isBiometricEnabledForUser,
+                              activeColor: AppColors.primaryTurf,
+                              activeTrackColor: AppColors.primaryTurf.withOpacity(0.2),
+                              inactiveThumbColor: AppColors.textDarkSecondary,
+                              inactiveTrackColor: AppColors.dividerGreen.withOpacity(0.4),
+                              onChanged: _isLoading ? null : _toggleBiometric,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   const SizedBox(height: 16),
                 ],
               ),

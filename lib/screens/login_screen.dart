@@ -7,6 +7,7 @@ import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 import '../widgets/dotted_circular_loader.dart';
+import '../services/biometric_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final UserRole targetRole;
@@ -28,6 +29,53 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscureConfirmPassword = true;
 
   final _auth = FirebaseAuth.instance;
+  final _biometricService = BiometricService();
+  bool _isBiometricHardwareAvailable = false;
+  bool _isBiometricEnabledForUser = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final hasHardware = await _biometricService.isBiometricHardwareAvailable();
+    final isEnabled = await _biometricService.isBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _isBiometricHardwareAvailable = hasHardware;
+        _isBiometricEnabledForUser = isEnabled;
+      });
+    }
+  }
+
+  Future<void> _biometricLogin() async {
+    // 1. Authenticate with biometrics
+    final authenticated = await _biometricService.authenticate(
+      reason: 'Scan your biometric to log into CricX',
+    );
+
+    if (!authenticated) {
+      return;
+    }
+
+    // 2. Fetch credentials
+    final credentials = await _biometricService.getSavedCredentials();
+    if (credentials == null || credentials['email'] == null || credentials['password'] == null) {
+      _showError('No saved biometric credentials. Please log in with email and password first.');
+      return;
+    }
+
+    // 3. Fill text fields
+    setState(() {
+      _emailController.text = credentials['email']!;
+      _passwordController.text = credentials['password']!;
+    });
+
+    // 4. Submit
+    _submit();
+  }
 
   @override
   void dispose() {
@@ -101,6 +149,15 @@ class _LoginScreenState extends State<LoginScreen> {
         // Update AppState with the chosen role
         final appState = Provider.of<AppState>(context, listen: false);
         appState.changeRole(widget.targetRole);
+
+        // Save biometric credentials if hardware is available
+        if (_isBiometricHardwareAvailable) {
+          try {
+            await _biometricService.enableBiometric(email, password);
+          } catch (e) {
+            debugPrint('Failed to save biometric credentials: $e');
+          }
+        }
 
         CustomSnackBar.show(
           context,
@@ -386,28 +443,87 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
                   
                   // Submit Button
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryTurf,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: AppColors.primaryTurf.withOpacity(0.6),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? () {} : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryTurf,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: _isLoading
+                                ? const DottedCircularLoader()
+                                : Text(
+                                    _isSignUp ? 'Sign Up' : 'Log In',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                          ),
+                        ),
                       ),
-                      elevation: 2,
-                    ),
-                    child: _isLoading
-                        ? const DottedCircularLoader()
-                        : Text(
-                            _isSignUp ? 'Sign Up' : 'Log In',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
+                      if (!_isSignUp && _isBiometricHardwareAvailable) ...[
+                        const SizedBox(width: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryTurf.withOpacity(0.35),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: _isLoading ? null : _biometricLogin,
+                              splashColor: Colors.white.withOpacity(0.2),
+                              highlightColor: Colors.white.withOpacity(0.1),
+                              child: Ink(
+                                height: 52,
+                                width: 52,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.primaryTurf,
+                                      Color(0xFF2E6B3E),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.15),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.fingerprint_rounded,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 20),
                   
