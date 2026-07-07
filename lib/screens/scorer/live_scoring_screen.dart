@@ -89,6 +89,18 @@ class LiveScoringScreen extends StatelessWidget {
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
           actions: [
+            if (currentMatch.isOnBreak)
+              IconButton(
+                icon: const Icon(Icons.play_circle_fill_rounded, color: Colors.white),
+                tooltip: 'Resume Play',
+                onPressed: () => appState.endMatchBreak(currentMatch.id),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.incomplete_circle_rounded, color: Colors.white),
+                tooltip: 'Start Break',
+                onPressed: () => _showStartBreakDialog(context, currentMatch, appState),
+              ),
             IconButton(
               icon: const Icon(Icons.done_all_rounded, color: Colors.white),
               tooltip: 'Complete Match',
@@ -320,61 +332,63 @@ class LiveScoringScreen extends StatelessWidget {
           ),
           
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(12, 15, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   // Active Batsmen
-                  if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
-                    _buildBatsmenCard(context, currentMatch, battingTeam, appState),
-                    const SizedBox(height: 15),
-                  ],
-                  
-                  // Active Bowler
-                  if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
-                    _buildBowlerCard(context, currentMatch, bowlingTeam, appState),
-                    const SizedBox(height: 15),
-                  ],
+            child: currentMatch.isOnBreak
+                ? _buildBreakView(context, currentMatch, appState)
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(12, 15, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                         // Active Batsmen
+                        if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
+                          _buildBatsmenCard(context, currentMatch, battingTeam, appState),
+                          const SizedBox(height: 15),
+                        ],
+                        
+                        // Active Bowler
+                        if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
+                          _buildBowlerCard(context, currentMatch, bowlingTeam, appState),
+                          const SizedBox(height: 15),
+                        ],
 
-                  // Scoring Buttons Grid wrapped in a card Container
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.borderGreen, width: 1),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryTurf.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'SCORING PAD',
-                              style: TextStyle(
-                                color: AppColors.primaryTurf,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
+                        // Scoring Buttons Grid wrapped in a card Container
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderGreen, width: 1),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryTurf.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'SCORING PAD',
+                                    style: TextStyle(
+                                      color: AppColors.primaryTurf,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                _buildScoringPad(context, currentMatch, appState),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          _buildScoringPad(context, currentMatch, appState),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -1053,7 +1067,15 @@ class LiveScoringScreen extends StatelessWidget {
         (match.currentInningsNum == 2 &&
             match.innings2?.events.isEmpty == true &&
             match.innings1 != null &&
-            match.innings1!.events.isNotEmpty);
+            match.innings1!.events.isNotEmpty) ||
+        (match.currentInningsNum == 3 &&
+            match.superOverInnings1?.events.isEmpty == true &&
+            match.innings2 != null &&
+            match.innings2!.events.isNotEmpty) ||
+        (match.currentInningsNum == 4 &&
+            match.superOverInnings2?.events.isEmpty == true &&
+            match.superOverInnings1 != null &&
+            match.superOverInnings1!.events.isNotEmpty);
 
     return Column(
       children: [
@@ -1784,47 +1806,369 @@ class LiveScoringScreen extends StatelessWidget {
     );
   }
 
-  void _showCompleteMatchDialog(BuildContext context, CricketMatch match, AppState appState) {
-    final resultController = TextEditingController(text: '${match.battingTeam.name} won');
+  Widget _buildBreakView(BuildContext context, CricketMatch match, AppState appState) {
+    final isSuperOver = match.currentInningsNum >= 3;
     
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.appBarBg,
-          title: const Text('Complete Cricket Match', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Enter custom result description to finish this match:', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 13)),
-              const SizedBox(height: 12),
-              TextField(
-                controller: resultController,
-                style: const TextStyle(color: AppColors.textDark),
-                decoration: InputDecoration(
-                  hintText: 'e.g. Mumbai Titans won by 15 runs',
-                  hintStyle: const TextStyle(color: AppColors.textDarkMuted),
-                  filled: true,
-                  fillColor: AppColors.cardBg,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    String title = "Match on Break";
+    String description = "";
+    
+    if (match.breakReason == 'Innings Break') {
+      title = isSuperOver ? "Super Over Innings Break" : "Innings Break";
+      if (match.currentInningsNum == 2 && match.innings1 != null) {
+        final target = match.innings1!.runs + 1;
+        description = "${match.battingTeam.name} needs $target runs from ${match.totalOvers} overs to win.";
+      } else if (match.currentInningsNum == 4 && match.superOverInnings1 != null) {
+        final target = match.superOverInnings1!.runs + 1;
+        description = "${match.battingTeam.name} needs $target runs from 1 over (6 balls) to win the Super Over.";
+      } else if (match.currentInningsNum == 3) {
+        description = "Ready for the Super Over to begin. ${match.battingTeam.name} to bat first.";
+      }
+    } else {
+      title = match.breakReason ?? "Match Paused";
+      description = "Scoring is temporarily suspended. Resume play to continue recording balls.";
+    }
+
+    final canUndo = match.currentInnings.events.isNotEmpty ||
+        (match.currentInningsNum == 2 &&
+            match.innings2?.events.isEmpty == true &&
+            match.innings1 != null &&
+            match.innings1!.events.isNotEmpty) ||
+        (match.currentInningsNum == 3 &&
+            match.superOverInnings1?.events.isEmpty == true &&
+            match.innings2 != null &&
+            match.innings2!.events.isNotEmpty) ||
+        (match.currentInningsNum == 4 &&
+            match.superOverInnings2?.events.isEmpty == true &&
+            match.superOverInnings1 != null &&
+            match.superOverInnings1!.events.isNotEmpty);
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.primaryTurf.withOpacity(0.08),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primaryTurf.withOpacity(0.2), width: 2),
+              ),
+              child: Icon(
+                match.breakReason == 'Rain Delay'
+                    ? Icons.cloudy_snowing
+                    : (match.breakReason == 'Drinks Break'
+                        ? Icons.local_cafe_rounded
+                        : Icons.pause_circle_filled_rounded),
+                size: 48,
+                color: AppColors.primaryTurf,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                color: AppColors.textDark,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                description,
+                style: const TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 14,
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 36),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTurf,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              onPressed: () {
+                appState.endMatchBreak(match.id);
+              },
+              icon: const Icon(Icons.play_arrow_rounded, size: 20),
+              label: const Text(
+                'RESUME PLAY',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            if (canUndo) ...[
+              const SizedBox(height: 16),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                ),
+                onPressed: () {
+                  _undoLastAction(context, match, appState);
+                },
+                icon: const Icon(Icons.undo_rounded, size: 16),
+                label: const Text(
+                  'UNDO LAST BALL',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('CANCEL', style: TextStyle(color: AppColors.textDarkMuted)),
-            ),
-            TextButton(
-              onPressed: () {
-                appState.completeMatch(match.id, customResult: resultController.text.trim(), forceComplete: true);
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Close LiveScoringScreen
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStartBreakDialog(BuildContext context, CricketMatch match, AppState appState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        title: const Text(
+          'Start Match Break',
+          style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.local_cafe_rounded, color: AppColors.primaryTurf),
+              title: const Text('Drinks Break', style: TextStyle(color: AppColors.textDark, fontSize: 14)),
+              onTap: () {
+                Navigator.pop(context);
+                appState.startMatchBreak(match.id, 'Drinks Break');
               },
-              child: const Text('FINISH MATCH', style: TextStyle(color: AppColors.accentCrease, fontWeight: FontWeight.bold)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloudy_snowing, color: Colors.blueAccent),
+              title: const Text('Rain Delay', style: TextStyle(color: AppColors.textDark, fontSize: 14)),
+              onTap: () {
+                Navigator.pop(context);
+                appState.startMatchBreak(match.id, 'Rain Delay');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.pause_circle_outline_rounded, color: Colors.grey),
+              title: const Text('General Break', style: TextStyle(color: AppColors.textDark, fontSize: 14)),
+              onTap: () {
+                Navigator.pop(context);
+                appState.startMatchBreak(match.id, 'General Break');
+              },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showCompleteMatchDialog(BuildContext context, CricketMatch match, AppState appState) {
+    String selectedOption = 'team_a'; // Default option
+    if (match.innings2 != null) {
+      selectedOption = match.battingTeam.id == match.teamA.id ? 'team_a' : 'team_b';
+    }
+    
+    final resultController = TextEditingController();
+    
+    String getResultString(String option, String customVal) {
+      if (option == 'team_a') {
+        return '${match.teamA.name} won';
+      } else if (option == 'team_b') {
+        return '${match.teamB.name} won';
+      } else if (option == 'tied') {
+        return 'Match Tied';
+      } else if (option == 'abandoned') {
+        return 'Match Abandoned';
+      } else {
+        return customVal;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBg,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text(
+                'Complete Match',
+                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select the match outcome:',
+                    style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.borderGreen, width: 1.2),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedOption,
+                        isExpanded: true,
+                        dropdownColor: AppColors.cardBg,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryTurf),
+                        style: const TextStyle(color: AppColors.textDark, fontSize: 14, fontWeight: FontWeight.bold),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'team_a',
+                            child: Text('${match.teamA.name} Won'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'team_b',
+                            child: Text('${match.teamB.name} Won'),
+                          ),
+                          const DropdownMenuItem(
+                            value: 'tied',
+                            child: Text('Match Tied'),
+                          ),
+                          const DropdownMenuItem(
+                            value: 'abandoned',
+                            child: Text('Match Abandoned'),
+                          ),
+                          const DropdownMenuItem(
+                            value: 'custom',
+                            child: Text('Custom Result...'),
+                          ),
+                        ],
+                        onChanged: (String? newVal) {
+                          if (newVal != null) {
+                            setState(() {
+                              selectedOption = newVal;
+                              if (newVal == 'custom') {
+                                resultController.text = '';
+                              } else {
+                                resultController.text = getResultString(newVal, '');
+                              }
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  if (selectedOption == 'custom') ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Enter custom result description:',
+                      style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: resultController,
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 13.5),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. Mumbai Titans won by 15 runs',
+                        hintStyle: const TextStyle(color: AppColors.textDarkMuted),
+                        filled: true,
+                        fillColor: AppColors.background,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.borderGreen, width: 1.2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryTurf.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.borderGreen.withOpacity(0.4), width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'RESULT PREVIEW',
+                            style: TextStyle(
+                              color: AppColors.primaryTurf,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            getResultString(selectedOption, ''),
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('CANCEL', style: TextStyle(color: AppColors.textDarkMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  onPressed: () {
+                    final finalResult = getResultString(selectedOption, resultController.text.trim());
+                    appState.completeMatch(
+                      match.id,
+                      customResult: finalResult.isNotEmpty ? finalResult : 'Match Completed',
+                      forceComplete: true,
+                    );
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Close LiveScoringScreen
+                  },
+                  child: const Text('FINISH MATCH', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              ],
+            );
+          },
         );
       },
     );

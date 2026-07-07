@@ -269,6 +269,8 @@ Update Match State (`PUT /api/v1/matches/{id}`)
     },
     "innings2": null,
     "isSuperOverPlayed": false,
+    "isOnBreak": false,
+    "breakReason": null,
     "superOverInnings1": null,
     "superOverInnings2": null,
     "playerRuns": { "player_rohit_45": 5, "player_ishan_23": 7 },

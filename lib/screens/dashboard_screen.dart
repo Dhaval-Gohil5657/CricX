@@ -371,36 +371,72 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 // Header: LIVE Badge and Venue info
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      match.venue,
-                      style: const TextStyle(
-                        color: AppColors.textDarkMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.left,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
-                            ? AppColors.primaryTurf.withOpacity(0.12)
-                            : AppColors.woodMahogany.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    Expanded(
+                      flex: 3,
                       child: Text(
-                        (match.tournamentId != null && match.tournamentId!.isNotEmpty)
-                            ? 'Tournament'
-                            : 'Friendly',
-                        style: TextStyle(
-                          color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
-                              ? AppColors.primaryTurf
-                              : AppColors.woodMahogany,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
+                        match.venue,
+                        style: const TextStyle(
+                          color: AppColors.textDarkMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.left,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: match.isOnBreak
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryTurf.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: AppColors.primaryTurf.withOpacity(0.3), width: 0.8),
+                                ),
+                                child: Text(
+                                      match.breakReason == 'Rain Delay'
+                                          ? 'RAIN DELAY'
+                                          : (match.breakReason == 'Drinks Break' ? 'DRINKS' : 'BREAK'),
+                                      style: const TextStyle(
+                                        color: AppColors.primaryTurf,
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                                ? AppColors.primaryTurf.withOpacity(0.12)
+                                : AppColors.woodMahogany.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                                ? 'Tournament'
+                                : 'Friendly',
+                            style: TextStyle(
+                              color: (match.tournamentId != null && match.tournamentId!.isNotEmpty)
+                                  ? AppColors.primaryTurf
+                                  : AppColors.woodMahogany,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ),

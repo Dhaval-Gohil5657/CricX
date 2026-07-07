@@ -876,9 +876,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  match.status == MatchStatus.live ? 'LIVE' : 'VS',
+                  match.status == MatchStatus.live 
+                      ? (match.isOnBreak ? (match.breakReason == 'Rain Delay' ? 'RAIN DELAY' : 'BREAK') : 'LIVE')
+                      : 'VS',
                   style: TextStyle(
-                    color: match.status == MatchStatus.live ? Colors.redAccent : AppColors.textDarkDisabled,
+                    color: match.status == MatchStatus.live 
+                        ? (match.isOnBreak ? AppColors.primaryTurf : Colors.redAccent)
+                        : AppColors.textDarkDisabled,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),

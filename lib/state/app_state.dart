@@ -383,6 +383,8 @@ class AppState extends ChangeNotifier {
         match.striker = null;
         match.nonStriker = null;
         match.currentBowler = null;
+        match.isOnBreak = true;
+        match.breakReason = 'Innings Break';
       } else if (match.currentInningsNum == 2) {
         completeMatch(matchId);
       } else if (match.currentInningsNum == 3) {
@@ -391,6 +393,8 @@ class AppState extends ChangeNotifier {
         match.striker = null;
         match.nonStriker = null;
         match.currentBowler = null;
+        match.isOnBreak = true;
+        match.breakReason = 'Innings Break';
       } else if (match.currentInningsNum == 4) {
         completeMatch(matchId);
       }
@@ -466,6 +470,8 @@ class AppState extends ChangeNotifier {
       match.currentInningsNum = 3;
       match.superOverInnings2 = null;
       innings = match.superOverInnings1!;
+      match.isOnBreak = false;
+      match.breakReason = null;
     }
     // Check if we need to transition back from innings 3 to innings 2
     else if (match.currentInningsNum == 3 && innings.events.isEmpty && match.innings2 != null) {
@@ -475,12 +481,16 @@ class AppState extends ChangeNotifier {
       match.status = MatchStatus.completed;
       match.resultString = 'Match Tied';
       innings = match.innings2!;
+      match.isOnBreak = false;
+      match.breakReason = null;
     }
     // Check if we need to transition back from innings 2 to innings 1
     else if (match.currentInningsNum == 2 && innings.events.isEmpty && match.innings1 != null) {
       match.currentInningsNum = 1;
       match.innings2 = null;
       innings = match.innings1!;
+      match.isOnBreak = false;
+      match.breakReason = null;
     }
     
     if (innings.events.isEmpty) return;
@@ -785,10 +795,34 @@ class AppState extends ChangeNotifier {
       match.striker = null;
       match.nonStriker = null;
       match.currentBowler = null;
+      match.isOnBreak = true;
+      match.breakReason = 'Innings Break'; // Break before Super Over starts
       
       // Make this match the active scoring match again
       _activeScoringMatch = match;
       
+      _db.updateMatch(match);
+      notifyListeners();
+    }
+  }
+
+  void startMatchBreak(String matchId, String reason) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index != -1) {
+      final match = _matches[index];
+      match.isOnBreak = true;
+      match.breakReason = reason;
+      _db.updateMatch(match);
+      notifyListeners();
+    }
+  }
+
+  void endMatchBreak(String matchId) {
+    final index = _matches.indexWhere((m) => m.id == matchId);
+    if (index != -1) {
+      final match = _matches[index];
+      match.isOnBreak = false;
+      match.breakReason = null;
       _db.updateMatch(match);
       notifyListeners();
     }

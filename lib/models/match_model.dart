@@ -84,6 +84,9 @@ class CricketMatch {
   int currentInningsNum; // 1, 2, 3 (Super Over 1), or 4 (Super Over 2)
   bool isSuperOverPlayed;
   
+  bool isOnBreak;
+  String? breakReason; // 'Innings Break', 'Drinks Break', 'Rain Delay', 'Lunch Break', 'Tea Break', 'Custom Break'
+  
   // Live player states
   Player? striker;
   Player? nonStriker;
@@ -122,6 +125,8 @@ class CricketMatch {
     this.isSuperOverPlayed = false,
     this.superOverInnings1,
     this.superOverInnings2,
+    this.isOnBreak = false,
+    this.breakReason,
     this.resultString = 'Match not started yet',
     required this.venue,
     required this.matchDate,
@@ -176,6 +181,17 @@ class CricketMatch {
       return "Match Tied";
     }
     if (status == MatchStatus.live) {
+      if (isOnBreak) {
+        if (breakReason == 'Innings Break') {
+          if (currentInningsNum == 2) {
+            return "Innings Break: Target ${(innings1?.runs ?? 0) + 1}";
+          } else if (currentInningsNum == 4) {
+            return "Super Over Innings Break: Target ${(superOverInnings1?.runs ?? 0) + 1}";
+          }
+          return "Innings Break";
+        }
+        return breakReason ?? "Match on Break";
+      }
       if (tossWinnerId != null && tossDecision != null) {
         final tossWinnerTeam = tossWinnerId == teamA.id ? teamA : teamB;
         if (currentInningsNum == 1) {
