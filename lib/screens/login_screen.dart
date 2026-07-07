@@ -32,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _biometricService = BiometricService();
   bool _isBiometricHardwareAvailable = false;
   bool _isBiometricEnabledForUser = false;
+  bool _isBiometricAttempt = false;
 
   @override
   void initState() {
@@ -47,6 +48,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _isBiometricHardwareAvailable = hasHardware;
         _isBiometricEnabledForUser = isEnabled;
       });
+
+      if (isEnabled) {
+        final credentials = await _biometricService.getSavedCredentials();
+        if (credentials != null && credentials['email'] != null) {
+          setState(() {
+            _emailController.text = credentials['email']!;
+          });
+        }
+      }
     }
   }
 
@@ -71,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _emailController.text = credentials['email']!;
       _passwordController.text = credentials['password']!;
+      _isBiometricAttempt = true;
     });
 
     // 4. Submit
@@ -159,6 +170,10 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
 
+        setState(() {
+          _isBiometricAttempt = false;
+        });
+
         CustomSnackBar.show(
           context,
           message: _isSignUp 
@@ -177,13 +192,21 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
+      if (_isBiometricAttempt) {
+        await _biometricService.disableBiometric();
+      }
       setState(() {
         _isLoading = false;
+        _isBiometricAttempt = false;
       });
       _showError(e.message ?? 'Authentication failed.');
     } catch (e) {
+      if (_isBiometricAttempt) {
+        await _biometricService.disableBiometric();
+      }
       setState(() {
         _isLoading = false;
+        _isBiometricAttempt = false;
       });
       _showError('An error occurred: ${e.toString()}');
     }

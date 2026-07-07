@@ -43,7 +43,7 @@ class BiometricService {
     try {
       return await _auth.authenticate(
         localizedReason: reason,
-        biometricOnly: true,
+        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
     } on PlatformException catch (e) {
