@@ -49,8 +49,8 @@ class _GlobalBannerAdState extends State<GlobalBannerAd> {
     // For production, use: 'ca-app-pub-1829431093631944/2181376555'
     final bannerAd = BannerAd(
       adUnitId: Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/6300978111' // Android test banner
-          : 'ca-app-pub-3940256099942544/2934735716', // iOS test banner
+          ? 'ca-app-pub-1829431093631944/2181376555' // Android test banner
+          : 'ca-app-pub-1829431093631944/2181376555', // iOS test banner
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
