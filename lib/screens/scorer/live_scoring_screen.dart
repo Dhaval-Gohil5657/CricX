@@ -336,20 +336,20 @@ class LiveScoringScreen extends StatelessWidget {
                 ? _buildBreakView(context, currentMatch, appState)
                 : SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(12, 15, 12, 12),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                          // Active Batsmen
                         if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
                           _buildBatsmenCard(context, currentMatch, battingTeam, appState),
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 12),
                         ],
                         
                         // Active Bowler
                         if (!(currentMatch.resultString == "Match Tied" && !currentMatch.isSuperOverPlayed)) ...[
                           _buildBowlerCard(context, currentMatch, bowlingTeam, appState),
-                          const SizedBox(height: 15),
+                          const SizedBox(height: 12),
                         ],
 
                         // Scoring Buttons Grid wrapped in a card Container
@@ -468,7 +468,7 @@ class LiveScoringScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderGreen, width: 1.2),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -476,7 +476,7 @@ class LiveScoringScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                   decoration: BoxDecoration(
                     color: AppColors.primaryTurf.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(6),
@@ -511,14 +511,14 @@ class LiveScoringScreen extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.primaryTurf, width: 0.8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             
             // Batting Column Headers (Shown only once at the top)
             if (match.striker != null || match.nonStriker != null) ...[
@@ -545,7 +545,7 @@ class LiveScoringScreen extends StatelessWidget {
                   _buildBatsmanHeaderItem('SR', flex: 2),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               const Divider(color: AppColors.borderGreen, height: 1),
               const SizedBox(height: 4),
             ],
@@ -582,7 +582,7 @@ class LiveScoringScreen extends StatelessWidget {
   ) {
     if (player == null || player.id == 'dummy') {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 5),
+        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
         decoration: BoxDecoration(
           color: AppColors.woodLight.withOpacity(0.03),
           borderRadius: BorderRadius.circular(8),
@@ -671,7 +671,7 @@ class LiveScoringScreen extends StatelessWidget {
 
     if (isStriker) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
         decoration: BoxDecoration(
           color: AppColors.primaryTurf.withOpacity(0.04),
           borderRadius: BorderRadius.circular(8),
@@ -681,7 +681,7 @@ class LiveScoringScreen extends StatelessWidget {
       );
     } else {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 6),
         child: content,
       );
     }
@@ -712,7 +712,7 @@ class LiveScoringScreen extends StatelessWidget {
         border: Border.all(color: AppColors.borderWood, width: 1.2),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -720,7 +720,7 @@ class LiveScoringScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.woodMahogany.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -757,7 +757,7 @@ class LiveScoringScreen extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.woodMahogany, width: 0.8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -767,7 +767,7 @@ class LiveScoringScreen extends StatelessWidget {
             const SizedBox(height: 8),
             if (bowler == null)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 5),
+                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
                 decoration: BoxDecoration(
                   color: AppColors.primaryTurf.withOpacity(0.03),
                   borderRadius: BorderRadius.circular(8),
@@ -846,13 +846,13 @@ class LiveScoringScreen extends StatelessWidget {
                           _buildBowlerHeaderItem('ECON'),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       const Divider(color: AppColors.borderWood, height: 1, thickness: 0.8),
                       const SizedBox(height: 5),
 
                       // Row 2: Bowler Name & Values
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+                        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
                         decoration: BoxDecoration(
                           color: AppColors.woodMahogany.withOpacity(0.04),
                           borderRadius: BorderRadius.circular(8),

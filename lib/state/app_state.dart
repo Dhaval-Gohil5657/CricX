@@ -19,6 +19,16 @@ class AppState extends ChangeNotifier {
   
   CricketMatch? _activeScoringMatch;
 
+  bool _showGlobalAd = false;
+  bool get showGlobalAd => _showGlobalAd;
+
+  void setShowGlobalAd(bool value) {
+    if (_showGlobalAd != value) {
+      _showGlobalAd = value;
+      notifyListeners();
+    }
+  }
+
   final DatabaseService _db = FirestoreService();
   StreamSubscription? _playersSub;
   StreamSubscription? _teamsSub;

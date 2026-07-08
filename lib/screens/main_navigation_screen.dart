@@ -28,6 +28,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
+
+
   Future<bool?> _showLogoutConfirmationDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,

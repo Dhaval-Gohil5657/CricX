@@ -3,14 +3,17 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' hide AppState;
 import 'state/app_state.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'constants/app_colors.dart';
+import 'widgets/global_banner_ad.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await MobileAds.instance.initialize();
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),
@@ -62,6 +65,16 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const AuthWrapper(),
+      builder: (context, child) {
+        return Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: child,
+          bottomNavigationBar: const SafeArea(
+            top: false,
+            child: GlobalBannerAd(),
+          ),
+        );
+      },
     );
   }
 }
