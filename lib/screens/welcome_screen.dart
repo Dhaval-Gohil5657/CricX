@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../state/app_state.dart';
 import 'main_navigation_screen.dart';
 import 'login_screen.dart';
@@ -192,24 +191,18 @@ class WelcomeScreen extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16.0),
           onTap: () {
-            if (role == UserRole.guest || FirebaseAuth.instance.currentUser != null) {
+            if (role == UserRole.guest || AuthService.instance.currentUser != null) {
               appState.changeRole(role);
               
-              // If they are logged in and selecting a role, save it to Firestore!
-              if (FirebaseAuth.instance.currentUser != null && role != UserRole.guest) {
+              // If they are logged in and selecting a role, save it to backend!
+              if (AuthService.instance.currentUser != null && role != UserRole.guest) {
                 try {
-                  FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                      .set({
-                    'role': role.name,
-                  }, SetOptions(merge: true));
+                  AuthService.instance.updateRole(role.name);
                 } catch (e) {
-                  debugPrint('Failed to update user role to Firestore: $e');
+                  debugPrint('Failed to update user role: $e');
                 }
               }
-
-              Future.delayed(Duration.zero, () {
+            Future.delayed(Duration.zero, () {
                 if (context.mounted) {
                   Navigator.pushReplacement(
                     context,

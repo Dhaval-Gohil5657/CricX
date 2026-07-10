@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/app_state.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 import '../widgets/dotted_circular_loader.dart';
 import '../services/biometric_service.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final UserRole targetRole;
@@ -28,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  final _auth = FirebaseAuth.instance;
   final _biometricService = BiometricService();
   bool _isBiometricHardwareAvailable = false;
   bool _isBiometricEnabledForUser = false;
@@ -124,35 +122,26 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      UserCredential userCredential;
+      bool success;
       if (_isSignUp) {
-        // Sign Up
-        userCredential = await _auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
+        final name = email.split('@')[0];
+        success = await AuthService.instance.register(
+          name,
+          email,
+          password,
+          role: widget.targetRole.name,
         );
       } else {
-        // Log In
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        success = await AuthService.instance.login(email, password);
       }
 
-      if (userCredential.user != null) {
+      if (success && AuthService.instance.currentUser != null) {
         if (!mounted) return;
-        
-        // Save user role to Firestore
+
         try {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .set({
-            'role': widget.targetRole.name,
-            'email': userCredential.user!.email,
-          }, SetOptions(merge: true));
+          await AuthService.instance.updateRole(widget.targetRole.name);
         } catch (e) {
-          debugPrint('Failed to save user role to Firestore: $e');
+          debugPrint('Failed to save user role: $e');
         }
 
         if (!mounted) return;
@@ -190,16 +179,13 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           (route) => false,
         );
+      } else {
+        setState(() {
+          _isLoading = false;
+          _isBiometricAttempt = false;
+        });
+        _showError('Authentication failed. Please check your credentials.');
       }
-    } on FirebaseAuthException catch (e) {
-      if (_isBiometricAttempt) {
-        await _biometricService.disableBiometric();
-      }
-      setState(() {
-        _isLoading = false;
-        _isBiometricAttempt = false;
-      });
-      _showError(e.message ?? 'Authentication failed.');
     } catch (e) {
       if (_isBiometricAttempt) {
         await _biometricService.disableBiometric();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../models/match_model.dart';
 import '../models/tournament_model.dart';
 import 'scorecard_screen.dart';
@@ -27,7 +27,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    // Get current logged-in user
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
 
     final allVisibleMatches = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
@@ -298,7 +300,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
     AppState appState,
   ) {
     final searchQuery = appState.searchQuery;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     if (matchList.isEmpty) {
       final isSearching = searchQuery.isNotEmpty;
       if (isSearching) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../state/app_state.dart';
 import 'dashboard_screen.dart';
 import 'matches_screen.dart';
@@ -714,7 +713,7 @@ class _UserProfileAvatarState extends State<UserProfileAvatar> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.instance.currentUser;
     if (user == null) return const SizedBox.shrink();
 
     return GestureDetector(
@@ -729,24 +728,17 @@ class _UserProfileAvatarState extends State<UserProfileAvatar> with SingleTicker
       },
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
-          builder: (context, snapshot) {
-            String? userName;
-            if (snapshot.hasData && snapshot.data!.exists) {
-              final data = snapshot.data!.data() as Map<String, dynamic>?;
-              if (data != null) {
-                userName = data['name'] as String?;
-              }
-            }
-
+        child: ListenableBuilder(
+          listenable: AuthService.instance,
+          builder: (context, _) {
+            final String? userName = AuthService.instance.currentUser?.displayName;
             final String email = user.email ?? 'U';
             final String fallbackName = email.split('@')[0].replaceAll('.', ' ').toUpperCase();
             final String nameToUse = userName ?? fallbackName;
             final String initial = nameToUse.isNotEmpty ? nameToUse[0].toUpperCase() : 'U';
 
             // Premium gradient based on role (Same turf green brand colors for both)
-            final List<Color> gradientColors = [AppColors.primaryTurf, Color(0xFF339C4D)];
+            final List<Color> gradientColors = [AppColors.primaryTurf, const Color(0xFF339C4D)];
 
             // Outer border glow
             final Color borderColor = Colors.white;
@@ -760,7 +752,7 @@ class _UserProfileAvatarState extends State<UserProfileAvatar> with SingleTicker
 
             final Color badgeBgColor = Colors.white;
 
-            final Color badgeIconColor = Color(0xFF2E6B3E);
+            final Color badgeIconColor = const Color(0xFF2E6B3E);
 
             return Stack(
               clipBehavior: Clip.none,
@@ -770,7 +762,6 @@ class _UserProfileAvatarState extends State<UserProfileAvatar> with SingleTicker
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    // shape: BoxShape.circle,
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,

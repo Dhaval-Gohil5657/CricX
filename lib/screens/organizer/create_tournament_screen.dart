@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../../state/app_state.dart';
 import '../../models/tournament_model.dart';
 import '../../models/team_model.dart';
@@ -483,7 +483,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     final tourStartDate = DateTime(_selectedStartDate.year, _selectedStartDate.month, _selectedStartDate.day);
     final String initialStatus = tourStartDate.isAfter(today) ? 'Upcoming' : 'Ongoing';
 
-    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final String? currentUserId = AuthService.instance.currentUser?.uid;
     final newTour = Tournament(
       id: id,
       name: _nameController.text.trim(),

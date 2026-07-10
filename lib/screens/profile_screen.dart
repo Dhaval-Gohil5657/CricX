@@ -1,8 +1,7 @@
 import 'package:cricx/widgets/dotted_circular_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../state/app_state.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
@@ -32,21 +31,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.instance.currentUser;
     if (user != null) {
-      try {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-        if (doc.exists && doc.data() != null) {
-          final data = doc.data()!;
-          if (mounted) {
-            setState(() {
-              _userName = data['name'] as String?;
-            });
-          }
-        }
-      } catch (e) {
-        debugPrint('Failed to load user profile: $e');
-      }
+      setState(() {
+        _userName = user.displayName;
+      });
     }
   }
 
@@ -75,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } else {
-      final user = FirebaseAuth.instance.currentUser;
+      final user = AuthService.instance.currentUser;
       if (user == null || user.email == null) return;
 
       final passwordController = TextEditingController();
@@ -179,14 +168,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
 
                         try {
-                          final credential = EmailAuthProvider.credential(
-                            email: user.email!,
-                            password: pw,
-                          );
-                          await user.reauthenticateWithCredential(credential);
-                          
-                          if (context.mounted) {
-                            Navigator.pop(context, pw);
+                          final success = await AuthService.instance.login(user.email!, pw);
+                          if (success) {
+                            if (context.mounted) {
+                              Navigator.pop(context, pw);
+                            }
+                          } else {
+                            throw Exception('Incorrect password');
                           }
                         } catch (e) {
                           setDialogState(() {
@@ -297,14 +285,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (newName != null) {
-      final user = FirebaseAuth.instance.currentUser;
+      final user = AuthService.instance.currentUser;
       if (user != null) {
         setState(() => _isLoading = true);
         try {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({'name': newName}, SetOptions(merge: true));
+          // Update profile name locally
           setState(() {
             _userName = newName.isEmpty ? null : newName;
           });
@@ -331,17 +316,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updateRoleInFirestore(UserRole role) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.instance.currentUser;
     if (user != null) {
       try {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .set({
-          'role': role.name,
-        }, SetOptions(merge: true));
+        await AuthService.instance.updateRole(role.name);
       } catch (e) {
-        debugPrint('Failed to update role in Firestore: $e');
+        debugPrint('Failed to update role: $e');
       }
     }
   }
@@ -423,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        await FirebaseAuth.instance.signOut();
+        await AuthService.instance.logout();
         appState.changeRole(UserRole.guest);
         if (context.mounted) {
           CustomSnackBar.show(
@@ -454,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.instance.currentUser;
     final currentRole = appState.currentRole;
 
     final String fallbackName = _capitalize((user?.email != null) ? user!.email!.split('@')[0].replaceAll('.', ' ') : 'Registered User');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../../state/app_state.dart';
 import '../../models/team_model.dart';
 import '../../models/player_model.dart';
@@ -543,7 +543,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
       return;
     }
 
-    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final String? currentUserId = AuthService.instance.currentUser?.uid;
     final teamId = 't_new_${DateTime.now().millisecondsSinceEpoch}';
     final newTeam = Team(
       id: teamId,

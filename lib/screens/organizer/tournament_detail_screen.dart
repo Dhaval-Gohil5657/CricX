@@ -11,7 +11,7 @@ import '../main_navigation_screen.dart';
 import 'fixture_draft_screen.dart';
 import '../scorer/toss_setup_screen.dart';
 import '../scorer/live_scoring_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 
 class TournamentDetailScreen extends StatelessWidget {
   final Tournament tournament;
@@ -277,9 +277,10 @@ class TournamentDetailScreen extends StatelessWidget {
 
   Widget _buildFixturesTab(BuildContext context, Tournament tour, AppState appState) {
     final matches = tour.matches;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    final isTourCreator = tour.creatorId == null || tour.creatorId == currentUserId;
-    final canDeclarePOT = (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isTourCreator;
+    final role = appState.currentRole;
+    final currentUserId = AuthService.instance.currentUser?.uid;
+    final isCreator = tour.creatorId == null || tour.creatorId == currentUserId;
+    final canDeclarePOT = (appState.currentRole == UserRole.scorer || appState.currentRole == UserRole.organizer) && isCreator;
 
     if (matches.isEmpty) {
       return Center(
@@ -320,8 +321,8 @@ class TournamentDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-               if (appState.currentRole == UserRole.organizer &&
-                  (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid))
+               if ((role == UserRole.organizer || role == UserRole.scorer) &&
+                (tour.creatorId == null || tour.creatorId == AuthService.instance.currentUser?.uid))
                  ElevatedButton.icon(
                    style: ElevatedButton.styleFrom(
                      backgroundColor: AppColors.primaryTurf,
@@ -623,7 +624,7 @@ class TournamentDetailScreen extends StatelessWidget {
               // Playoff Actions & Status
                if (allLeagueCompleted && !hasPlayoffs) ...[
                 if (appState.currentRole == UserRole.organizer &&
-                    (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid)) ...[
+                    (tour.creatorId == null || tour.creatorId == AuthService.instance.currentUser?.uid)) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -683,7 +684,7 @@ class TournamentDetailScreen extends StatelessWidget {
                 ],
                ] else if (hasPlayoffs && sfCompleted && !finalGenerated && tour.playoffType == 'Semifinals & Final') ...[
                 if (appState.currentRole == UserRole.organizer &&
-                    (tour.creatorId == null || tour.creatorId == FirebaseAuth.instance.currentUser?.uid)) ...[
+                    (tour.creatorId == null || tour.creatorId == AuthService.instance.currentUser?.uid)) ...[
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -788,7 +789,7 @@ class TournamentDetailScreen extends StatelessWidget {
    Widget _buildMatchCard(BuildContext context, CricketMatch match) {
     final appState = Provider.of<AppState>(context, listen: false);
     final role = appState.currentRole;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
 
     // Format match date and time
     final date = match.matchDate;

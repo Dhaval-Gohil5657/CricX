@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import '../state/app_state.dart';
 import '../models/player_model.dart';
 import '../constants/app_colors.dart';
@@ -23,7 +23,7 @@ class _PlayersScreenState extends State<PlayersScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final players = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
         ? (() {
             final myTeamPlayerIds = appState.teams

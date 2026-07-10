@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../models/match_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import 'scorecard_screen.dart';
 import 'scorer/live_scoring_screen.dart';
 import 'scorer/create_match_screen.dart';
@@ -20,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
 
     final allVisibleMatches = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
@@ -274,7 +274,7 @@ class DashboardScreen extends StatelessWidget {
 
 
   Widget _buildLiveMatchCard(BuildContext context, CricketMatch match, UserRole role, AppState appState, {bool isFullWidth = false}) {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final isSuperOver = match.currentInningsNum >= 3;
     final isFirstInnings = match.currentInningsNum == 1 || match.currentInningsNum == 3;
     final currentInnings = match.currentInnings;
@@ -1235,7 +1235,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildUpcomingMatchCard(BuildContext context, CricketMatch match, AppState appState) {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final isCreator = match.creatorId == null || match.creatorId == currentUserId;
 
     return Container(

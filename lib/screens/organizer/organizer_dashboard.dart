@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../state/app_state.dart';
 import '../../models/tournament_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import 'tournament_detail_screen.dart';
 import 'create_tournament_screen.dart';
 import '../../constants/custom_snackbar.dart';
@@ -15,7 +15,7 @@ class OrganizerDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final role = appState.currentRole;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final searchQuery = appState.searchQuery;
     final tournaments = appState.filterByCreator && (role == UserRole.scorer || role == UserRole.organizer)
         ? appState.tournaments.where((t) => t.creatorId == currentUserId).toList()

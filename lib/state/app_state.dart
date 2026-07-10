@@ -5,7 +5,7 @@ import '../models/team_model.dart';
 import '../models/match_model.dart';
 import '../models/tournament_model.dart';
 import '../services/database_service.dart';
-import '../services/firestore_service.dart';
+import '../services/api_database_service.dart';
 
 enum UserRole { guest, user, scorer, organizer }
 
@@ -29,12 +29,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  final DatabaseService _db = FirestoreService();
-  StreamSubscription? _playersSub;
-  StreamSubscription? _teamsSub;
-  StreamSubscription? _matchesSub;
-  StreamSubscription? _tournamentsSub;
-
+  final DatabaseService _db = ApiDatabaseService();
   UserRole get currentRole => _currentRole;
   List<Player> get players => _players;
   List<Team> get teams => _teams;
@@ -48,60 +43,60 @@ class AppState extends ChangeNotifier {
 
   Future<void> _initDatabase() async {
     try {
-      // 1. Seed database with mock data if it is empty
       await _db.checkAndSeedDatabase();
     } catch (e) {
       debugPrint('Database seeding skipped or blocked: $e');
     }
-
-    // 2. Start listening to Firestore changes in real-time
-    _playersSub = _db.streamPlayers().listen((playersList) {
-      _players = playersList;
-      notifyListeners();
-      _listenToTeams();
-    });
+    await fetchAllData();
   }
 
-  void _listenToTeams() {
-    _teamsSub?.cancel();
-    _teamsSub = _db.streamTeams(_players).listen((teamsList) {
-      _teams = teamsList;
+  Future<void> fetchPlayers() async {
+    try {
+      _players = await _db.getPlayers();
       notifyListeners();
-      _listenToMatches();
-    });
+    } catch (e) {
+      debugPrint('Error fetching players: $e');
+    }
   }
 
-  void _listenToMatches() {
-    _matchesSub?.cancel();
-    _matchesSub = _db.streamMatches(_teams, _players).listen((matchesList) {
-      _matches = matchesList;
+  Future<void> fetchTeams() async {
+    try {
+      _teams = await _db.getTeams(_players);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching teams: $e');
+    }
+  }
+
+  Future<void> fetchMatches() async {
+    try {
+      _matches = await _db.getMatches(_teams, _players);
       if (_activeScoringMatch != null) {
-        final updatedActive = _matches.firstWhere(
-          (m) => m.id == _activeScoringMatch!.id,
-          orElse: () => _activeScoringMatch!,
-        );
-        _activeScoringMatch = updatedActive;
+        final index = _matches.indexWhere((m) => m.id == _activeScoringMatch!.id);
+        if (index != -1) {
+          _activeScoringMatch = _matches[index];
+        }
       }
       notifyListeners();
-      _listenToTournaments();
-    });
+    } catch (e) {
+      debugPrint('Error fetching matches: $e');
+    }
   }
 
-  void _listenToTournaments() {
-    _tournamentsSub?.cancel();
-    _tournamentsSub = _db.streamTournaments(_teams, _matches).listen((tournamentsList) {
-      _tournaments = tournamentsList;
+  Future<void> fetchTournaments() async {
+    try {
+      _tournaments = await _db.getTournaments(_teams, _matches);
       notifyListeners();
-    });
+    } catch (e) {
+      debugPrint('Error fetching tournaments: $e');
+    }
   }
 
-  @override
-  void dispose() {
-    _playersSub?.cancel();
-    _teamsSub?.cancel();
-    _matchesSub?.cancel();
-    _tournamentsSub?.cancel();
-    super.dispose();
+  Future<void> fetchAllData() async {
+    await fetchPlayers();
+    await fetchTeams();
+    await fetchMatches();
+    await fetchTournaments();
   }
 
   void changeRole(UserRole role) {
@@ -140,19 +135,34 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addTeam(Team team) {
-    _db.addTeam(team);
+  Future<void> addTeam(Team team) async {
+    try {
+      await _db.addTeam(team);
+      await fetchTeams();
+    } catch (e) {
+      debugPrint('Error adding team: $e');
+    }
   }
 
-  void updateTeam(Team team) {
-    _db.updateTeamInfo(team);
+  Future<void> updateTeam(Team team) async {
+    try {
+      await _db.updateTeamInfo(team);
+      await fetchTeams();
+    } catch (e) {
+      debugPrint('Error updating team: $e');
+    }
   }
 
-  void addPlayerToTeam(String teamId, Player player) {
-    _db.addPlayerToTeam(teamId, player);
+  Future<void> addPlayerToTeam(String teamId, Player player) async {
+    try {
+      await _db.addPlayerToTeam(teamId, player);
+      await fetchTeams();
+    } catch (e) {
+      debugPrint('Error adding player to team: $e');
+    }
   }
 
-  void removePlayerFromTeam(String teamId, String playerId) {
+  Future<void> removePlayerFromTeam(String teamId, String playerId) async {
     final teamIndex = _teams.indexWhere((t) => t.id == teamId);
     if (teamIndex != -1) {
       final team = _teams[teamIndex];
@@ -160,24 +170,44 @@ class AppState extends ChangeNotifier {
       if (team.captainId == playerId) {
         team.captainId = null;
       }
-      _db.updateTeamInfo(team);
+      try {
+        await _db.updateTeamInfo(team);
+        await fetchTeams();
+      } catch (e) {
+        debugPrint('Error removing player from team: $e');
+      }
     }
   }
 
-  void updatePlayer(Player player) {
-    _db.updatePlayerStats(player);
+  Future<void> updatePlayer(Player player) async {
+    try {
+      await _db.updatePlayerStats(player);
+      await fetchPlayers();
+    } catch (e) {
+      debugPrint('Error updating player: $e');
+    }
   }
 
-  void createMatch(CricketMatch match) {
-    _db.createMatch(match);
+  Future<void> createMatch(CricketMatch match) async {
+    try {
+      await _db.createMatch(match);
+      await fetchMatches();
+    } catch (e) {
+      debugPrint('Error creating match: $e');
+    }
   }
 
-  void updateMatchStatus(String matchId, MatchStatus status) {
+  Future<void> updateMatchStatus(String matchId, MatchStatus status) async {
     final index = _matches.indexWhere((m) => m.id == matchId);
     if (index != -1) {
       final match = _matches[index];
       match.status = status;
-      _db.updateMatch(match);
+      try {
+        await _db.updateMatch(match);
+        await fetchMatches();
+      } catch (e) {
+        debugPrint('Error updating match status: $e');
+      }
     }
   }
 

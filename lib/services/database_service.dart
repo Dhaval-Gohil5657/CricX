@@ -4,11 +4,11 @@ import '../models/match_model.dart';
 import '../models/tournament_model.dart';
 
 abstract class DatabaseService {
-  // Streams for real-time syncing
-  Stream<List<Player>> streamPlayers();
-  Stream<List<Team>> streamTeams(List<Player> allPlayers);
-  Stream<List<CricketMatch>> streamMatches(List<Team> allTeams, List<Player> allPlayers);
-  Stream<List<Tournament>> streamTournaments(List<Team> allTeams, List<CricketMatch> allMatches);
+  // Futures for explicit fetching
+  Future<List<Player>> getPlayers();
+  Future<List<Team>> getTeams(List<Player> allPlayers);
+  Future<List<CricketMatch>> getMatches(List<Team> allTeams, List<Player> allPlayers);
+  Future<List<Tournament>> getTournaments(List<Team> allTeams, List<CricketMatch> allMatches);
 
   // Players
   Future<void> addPlayer(Player player);
@@ -27,6 +27,6 @@ abstract class DatabaseService {
   Future<void> createTournament(Tournament tournament);
   Future<void> updateTournament(Tournament tournament);
   
-  // Database setup / seeding (to add initial data if database is empty)
+  // Database setup / seeding
   Future<void> checkAndSeedDatabase();
 }

@@ -9,7 +9,7 @@ import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'main_navigation_screen.dart';
 import 'organizer/tournament_detail_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricx/services/auth_service.dart';
 import 'scorer/live_scoring_screen.dart';
 
 class ScorecardScreen extends StatefulWidget {
@@ -28,6 +28,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     // Find the latest state of the match from appState list
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final currentMatch = appState.matches.firstWhere((m) => m.id == widget.match.id, orElse: () => widget.match);
     
     // Determine the teams for Innings 1 and Innings 2
@@ -42,7 +43,6 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
             : currentMatch.teamB);
 
     final role = appState.currentRole;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     final isMatchCreator = currentMatch.creatorId == null || currentMatch.creatorId == currentUserId;
     final canEditMatch = (role == UserRole.scorer || role == UserRole.organizer) && 
         isMatchCreator && 
@@ -1598,7 +1598,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
   Widget _buildPlayerOfTheMatchCard(BuildContext context, CricketMatch match, AppState appState) {
     final role = appState.currentRole;
     final isPOMDeclared = match.playerOfTheMatchId != null;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserId = AuthService.instance.currentUser?.uid;
     final isCreator = match.creatorId == null || match.creatorId == currentUserId;
     final canDeclare = (role == UserRole.scorer || role == UserRole.organizer) && isCreator;
 

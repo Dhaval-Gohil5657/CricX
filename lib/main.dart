@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart' hide AppState;
 import 'state/app_state.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'constants/app_colors.dart';
 import 'widgets/global_banner_ad.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
   await MobileAds.instance.initialize();
+  
+  // Initialize API auth service
+  await AuthService.instance.initialize();
+  
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),
@@ -66,13 +67,16 @@ class MyApp extends StatelessWidget {
       ),
       home: const AuthWrapper(),
       builder: (context, child) {
+        final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
         return Scaffold(
           resizeToAvoidBottomInset: false,
           body: child,
-          bottomNavigationBar: const SafeArea(
-            top: false,
-            child: GlobalBannerAd(),
-          ),
+          // bottomNavigationBar: isKeyboardOpen
+          //     ? const SizedBox.shrink()
+          //     : const SafeArea(
+          //         top: false,
+          //         child: GlobalBannerAd(),
+          //       ),
         );
       },
     );
@@ -126,33 +130,13 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
   }
 
   Future<void> _checkAuth() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = AuthService.instance.currentUser;
     if (user != null) {
-      try {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        if (doc.exists && doc.data() != null) {
-          final data = doc.data()!;
-          final roleStr = data['role'] as String?;
-          if (roleStr != null) {
-            _role = UserRole.values.firstWhere(
-              (r) => r.name == roleStr,
-              orElse: () => UserRole.user,
-            );
-            _isLoggedIn = true;
-          }
-        } else {
-          // Default fallback if no doc/role exists
-          _role = UserRole.user;
-          _isLoggedIn = true;
-        }
-      } catch (e) {
-        debugPrint('Error fetching user role, defaulting to UserRole.user: $e');
-        _role = UserRole.user;
-        _isLoggedIn = true;
-      }
+      _role = UserRole.values.firstWhere(
+        (r) => r.name.toLowerCase() == user.role.toLowerCase(),
+        orElse: () => UserRole.user,
+      );
+      _isLoggedIn = true;
     }
 
     if (mounted) {
