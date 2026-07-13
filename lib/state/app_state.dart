@@ -20,6 +20,8 @@ class AppState extends ChangeNotifier {
   CricketMatch? _activeScoringMatch;
 
   bool _showGlobalAd = false;
+  bool _isLoadingMatches = true;
+  bool get isLoadingMatches => _isLoadingMatches;
   bool get showGlobalAd => _showGlobalAd;
 
   void setShowGlobalAd(bool value) {
@@ -69,6 +71,8 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> fetchMatches() async {
+    _isLoadingMatches = true;
+    notifyListeners();
     try {
       _matches = await _db.getMatches(_teams, _players);
       if (_activeScoringMatch != null) {
@@ -77,9 +81,11 @@ class AppState extends ChangeNotifier {
           _activeScoringMatch = _matches[index];
         }
       }
-      notifyListeners();
     } catch (e) {
       debugPrint('Error fetching matches: $e');
+    } finally {
+      _isLoadingMatches = false;
+      notifyListeners();
     }
   }
 
@@ -138,9 +144,11 @@ class AppState extends ChangeNotifier {
   Future<void> addTeam(Team team) async {
     try {
       await _db.addTeam(team);
+      await fetchPlayers();
       await fetchTeams();
     } catch (e) {
       debugPrint('Error adding team: $e');
+      rethrow;
     }
   }
 
@@ -148,34 +156,34 @@ class AppState extends ChangeNotifier {
     try {
       await _db.updateTeamInfo(team);
       await fetchTeams();
+      await fetchMatches();
+      await fetchTournaments();
     } catch (e) {
       debugPrint('Error updating team: $e');
+      rethrow;
     }
   }
 
   Future<void> addPlayerToTeam(String teamId, Player player) async {
     try {
       await _db.addPlayerToTeam(teamId, player);
+      await fetchPlayers();
       await fetchTeams();
     } catch (e) {
       debugPrint('Error adding player to team: $e');
+      rethrow;
     }
   }
 
   Future<void> removePlayerFromTeam(String teamId, String playerId) async {
-    final teamIndex = _teams.indexWhere((t) => t.id == teamId);
-    if (teamIndex != -1) {
-      final team = _teams[teamIndex];
-      team.players.removeWhere((p) => p.id == playerId);
-      if (team.captainId == playerId) {
-        team.captainId = null;
-      }
-      try {
-        await _db.updateTeamInfo(team);
-        await fetchTeams();
-      } catch (e) {
-        debugPrint('Error removing player from team: $e');
-      }
+    try {
+      await _db.removePlayerFromTeam(teamId, playerId);
+      await fetchTeams();
+      await fetchMatches();
+      await fetchTournaments();
+    } catch (e) {
+      debugPrint('Error removing player from team: $e');
+      rethrow;
     }
   }
 
@@ -183,8 +191,11 @@ class AppState extends ChangeNotifier {
     try {
       await _db.updatePlayerStats(player);
       await fetchPlayers();
+      await fetchTeams();
+      await fetchMatches();
     } catch (e) {
       debugPrint('Error updating player: $e');
+      rethrow;
     }
   }
 
@@ -194,6 +205,7 @@ class AppState extends ChangeNotifier {
       await fetchMatches();
     } catch (e) {
       debugPrint('Error creating match: $e');
+      rethrow;
     }
   }
 
@@ -258,6 +270,7 @@ class AppState extends ChangeNotifier {
       
       _activeScoringMatch = match;
       _db.updateMatch(match);
+      notifyListeners();
     }
   }
 
@@ -868,8 +881,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void createTournament(Tournament tournament) {
-    _db.createTournament(tournament);
+  Future<void> createTournament(Tournament tournament) async {
+    try {
+      await _db.createTournament(tournament);
+      await fetchTournaments();
+    } catch (e) {
+      debugPrint('Error creating tournament: $e');
+      rethrow;
+    }
   }
 
   void addTournamentMatch(String tournamentId, CricketMatch match) {

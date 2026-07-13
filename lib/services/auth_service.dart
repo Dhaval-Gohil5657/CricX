@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'logged_http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api_endpoints.dart';
@@ -25,6 +26,12 @@ class AuthService extends ChangeNotifier {
     return instance;
   }
 
+  void _notifyListenersSafe() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   AuthService._internal();
 
   final _storage = const FlutterSecureStorage();
@@ -36,48 +43,94 @@ class AuthService extends ChangeNotifier {
   String? get token => _token;
 
   Future<void> initialize() async {
+    final cachedUid = await _storage.read(key: 'user_uid');
+    final cachedEmail = await _storage.read(key: 'user_email');
+    final cachedName = await _storage.read(key: 'user_name');
+    final cachedRole = await _storage.read(key: 'user_role');
     _token = await _storage.read(key: 'accessToken');
-    if (_token != null) {
-      try {
-        final profile = await fetchProfile();
-        if (profile != null) {
-          _currentUser = profile;
-        } else {
-          await logout();
-        }
-      } catch (e) {
-        debugPrint('Auth initialization error: $e');
-      }
+    
+    if (cachedUid != null && _token != null) {
+      _currentUser = AppUser(
+        uid: cachedUid,
+        email: cachedEmail,
+        displayName: cachedName,
+        role: cachedRole ?? 'User',
+      );
+      _notifyListenersSafe();
+    } else {
+      await logout();
+      return;
     }
-    notifyListeners();
+
+    final refreshToken = await _storage.read(key: 'refreshToken');
+    if (refreshToken != null) {
+      // Trigger background session validation without awaiting it to keep app startup instant!
+      refreshSessionInBackground(refreshToken);
+    }
+  }
+
+  Future<void> refreshSessionInBackground(String refreshToken) async {
+    try {
+      final success = await refreshSession(refreshToken);
+      if (!success) {
+        await logout();
+      }
+    } catch (e) {
+      debugPrint('Background session refresh error: $e');
+    }
   }
 
   Future<AppUser?> fetchProfile() async {
-    if (_token == null) return null;
+    return _currentUser;
+  }
 
+  Future<bool> refreshSession(String refreshToken) async {
     try {
-      final response = await http.get(
-        Uri.parse(ApiEndpoints.profile),
-        headers: {
-          'Authorization': 'Bearer $_token',
-          'Content-Type': 'application/json',
-        },
-      );
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.refresh),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'token': refreshToken}),
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final userMap = data['user'] ?? data;
-        return AppUser(
-          uid: userMap['_id'] ?? userMap['id'] ?? '',
-          email: userMap['email'],
-          displayName: userMap['name'],
-          role: userMap['role'] ?? 'User',
-        );
+        _token = data['accessToken'] ?? data['token'];
+        final newRefreshToken = data['refreshToken'];
+        if (_token != null) {
+          await _storage.write(key: 'accessToken', value: _token);
+        }
+        if (newRefreshToken != null) {
+          await _storage.write(key: 'refreshToken', value: newRefreshToken);
+        }
+        
+        final userMap = data['user'];
+        if (userMap != null) {
+          final uid = userMap['_id'] ?? userMap['id'] ?? '';
+          final email = userMap['email'];
+          final name = userMap['name'];
+          final role = userMap['role'] ?? 'User';
+          
+          _currentUser = AppUser(
+            uid: uid,
+            email: email,
+            displayName: name,
+            role: role,
+          );
+
+          await _storage.write(key: 'user_uid', value: uid);
+          await _storage.write(key: 'user_email', value: email ?? '');
+          await _storage.write(key: 'user_name', value: name ?? '');
+          await _storage.write(key: 'user_role', value: role);
+        }
+        _notifyListenersSafe();
+        return true;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        return false;
       }
     } catch (e) {
-      debugPrint('Fetch profile error: $e');
+      debugPrint('Refresh session error: $e');
     }
-    return null;
+    return true; // Keep cached session on connection/server failures
   }
 
   Future<bool> login(String email, String password) async {
@@ -94,20 +147,34 @@ class AuthService extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _token = data['accessToken'] ?? data['token'];
+        final refreshToken = data['refreshToken'];
         if (_token != null) {
           await _storage.write(key: 'accessToken', value: _token);
+        }
+        if (refreshToken != null) {
+          await _storage.write(key: 'refreshToken', value: refreshToken);
         }
         
         final userMap = data['user'];
         if (userMap != null) {
+          final uid = userMap['_id'] ?? userMap['id'] ?? '';
+          final email = userMap['email'];
+          final name = userMap['name'];
+          final role = userMap['role'] ?? 'User';
+
           _currentUser = AppUser(
-            uid: userMap['_id'] ?? userMap['id'] ?? '',
-            email: userMap['email'],
-            displayName: userMap['name'],
-            role: userMap['role'] ?? 'User',
+            uid: uid,
+            email: email,
+            displayName: name,
+            role: role,
           );
+
+          await _storage.write(key: 'user_uid', value: uid);
+          await _storage.write(key: 'user_email', value: email ?? '');
+          await _storage.write(key: 'user_name', value: name ?? '');
+          await _storage.write(key: 'user_role', value: role);
         }
-        notifyListeners();
+        _notifyListenersSafe();
         return true;
       }
     } catch (e) {
@@ -125,27 +192,41 @@ class AuthService extends ChangeNotifier {
           'name': name,
           'email': email,
           'password': password,
-          'role': role,
+          'role': role.toLowerCase(),
         }),
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _token = data['accessToken'] ?? data['token'];
+        final refreshToken = data['refreshToken'];
         if (_token != null) {
           await _storage.write(key: 'accessToken', value: _token);
+        }
+        if (refreshToken != null) {
+          await _storage.write(key: 'refreshToken', value: refreshToken);
         }
         
         final userMap = data['user'];
         if (userMap != null) {
+          final uid = userMap['_id'] ?? userMap['id'] ?? '';
+          final email = userMap['email'];
+          final name = userMap['name'];
+          final role = userMap['role'] ?? 'User';
+
           _currentUser = AppUser(
-            uid: userMap['_id'] ?? userMap['id'] ?? '',
-            email: userMap['email'],
-            displayName: userMap['name'],
-            role: userMap['role'] ?? 'User',
+            uid: uid,
+            email: email,
+            displayName: name,
+            role: role,
           );
+
+          await _storage.write(key: 'user_uid', value: uid);
+          await _storage.write(key: 'user_email', value: email ?? '');
+          await _storage.write(key: 'user_name', value: name ?? '');
+          await _storage.write(key: 'user_role', value: role);
         }
-        notifyListeners();
+        _notifyListenersSafe();
         return true;
       }
     } catch (e) {
@@ -164,20 +245,34 @@ class AuthService extends ChangeNotifier {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _token = data['accessToken'] ?? data['token'];
+        final refreshToken = data['refreshToken'];
         if (_token != null) {
           await _storage.write(key: 'accessToken', value: _token);
+        }
+        if (refreshToken != null) {
+          await _storage.write(key: 'refreshToken', value: refreshToken);
         }
         
         final userMap = data['user'];
         if (userMap != null) {
+          final uid = userMap['_id'] ?? userMap['id'] ?? '';
+          final email = userMap['email'] ?? 'guest@cricx.com';
+          final name = userMap['name'] ?? 'Guest User';
+          final role = userMap['role'] ?? 'Guest';
+
           _currentUser = AppUser(
-            uid: userMap['_id'] ?? userMap['id'] ?? '',
-            email: userMap['email'] ?? 'guest@cricx.com',
-            displayName: userMap['name'] ?? 'Guest User',
-            role: userMap['role'] ?? 'Guest',
+            uid: uid,
+            email: email,
+            displayName: name,
+            role: role,
           );
+
+          await _storage.write(key: 'user_uid', value: uid);
+          await _storage.write(key: 'user_email', value: email);
+          await _storage.write(key: 'user_name', value: name);
+          await _storage.write(key: 'user_role', value: role);
         }
-        notifyListeners();
+        _notifyListenersSafe();
         return true;
       }
     } catch (e) {
@@ -187,24 +282,15 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    try {
-      if (_token != null) {
-        await http.post(
-          Uri.parse(ApiEndpoints.logout),
-          headers: {
-            'Authorization': 'Bearer $_token',
-            'Content-Type': 'application/json',
-          },
-        );
-      }
-    } catch (e) {
-      debugPrint('Logout request error: $e');
-    } finally {
-      _token = null;
-      _currentUser = null;
-      await _storage.delete(key: 'accessToken');
-      notifyListeners();
-    }
+    _token = null;
+    _currentUser = null;
+    await _storage.delete(key: 'accessToken');
+    await _storage.delete(key: 'refreshToken');
+    await _storage.delete(key: 'user_uid');
+    await _storage.delete(key: 'user_email');
+    await _storage.delete(key: 'user_name');
+    await _storage.delete(key: 'user_role');
+    _notifyListenersSafe();
   }
 
   Future<bool> updateRole(String role) async {
@@ -216,7 +302,7 @@ class AuthService extends ChangeNotifier {
           'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'role': role}),
+        body: jsonEncode({'role': role.toLowerCase()}),
       );
 
       if (response.statusCode == 200) {
@@ -227,7 +313,8 @@ class AuthService extends ChangeNotifier {
             displayName: _currentUser!.displayName,
             role: role,
           );
-          notifyListeners();
+          await _storage.write(key: 'user_role', value: role);
+          _notifyListenersSafe();
         }
         return true;
       }
@@ -235,5 +322,14 @@ class AuthService extends ChangeNotifier {
       debugPrint('Update role error: $e');
     }
     return false;
+  }
+
+  void updateInMemoryToken(String token) {
+    _token = token;
+  }
+
+  void updateInMemoryUser(AppUser user) {
+    _currentUser = user;
+    _notifyListenersSafe();
   }
 }

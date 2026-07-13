@@ -140,11 +140,11 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     }
 
     if (mounted) {
-      if (_isLoggedIn) {
-        Provider.of<AppState>(context, listen: false).changeRole(_role);
-      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          if (_isLoggedIn) {
+            Provider.of<AppState>(context, listen: false).changeRole(_role);
+          }
           _startTransition();
         }
       });

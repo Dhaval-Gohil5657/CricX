@@ -12,6 +12,7 @@ import 'organizer/create_tournament_screen.dart';
 import 'welcome_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
+import '../widgets/dotted_circular_loader.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -95,7 +96,26 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 
-                if (liveMatches.isNotEmpty)
+                if (appState.isLoadingMatches)
+                  Container(
+                    width: double.infinity,
+                    height: (role == UserRole.scorer || role == UserRole.organizer) ? 190 : 140,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primaryTurf.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: const DottedCircularLoader(
+                      size: 32,
+                      color: AppColors.primaryTurf,
+                      center: true,
+                    ),
+                  )
+                else if (liveMatches.isNotEmpty)
                   ListView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,

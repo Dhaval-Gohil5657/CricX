@@ -8,6 +8,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import '../../widgets/dotted_circular_loader.dart';
 
 class CreateTeamScreen extends StatefulWidget {
   const CreateTeamScreen({super.key});
@@ -31,6 +32,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   String _selectedPlayerRole = 'Batsman';
   String _selectedBattingStyle = 'Right-hand bat';
   String _selectedBowlingStyle = 'Right-arm medium';
+  bool _isSaving = false;
 
   final List<String> _emojis = ['🔥', '⚡', '🌪️', '🦁', '🦅', '🦈', '⚔️', '🛡️', '👑', '⭐️'];
   final List<String> _flags = [
@@ -494,8 +496,10 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: _saveTeam,
-                  child: const Text('SAVE & CREATE TEAM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  onPressed: _isSaving ? () {} : _saveTeam,
+                  child: _isSaving
+                      ? const DottedCircularLoader(size: 24, color: Colors.white, center: false)
+                      : const Text('SAVE & CREATE TEAM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
             ],
@@ -531,7 +535,7 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
     });
   }
 
-  void _saveTeam() {
+  void _saveTeam() async {
     if (!_formKey.currentState!.validate()) return;
     
     if (_addedPlayers.isEmpty) {
@@ -543,28 +547,47 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
       return;
     }
 
-    final String? currentUserId = AuthService.instance.currentUser?.uid;
-    final teamId = 't_new_${DateTime.now().millisecondsSinceEpoch}';
-    final newTeam = Team(
-      id: teamId,
-      name: _teamNameController.text.trim(),
-      abbreviation: _abbController.text.trim().toUpperCase(),
-      logoEmoji: _selectedEmoji,
-      logoColorHex: _selectedColorHex,
-      players: _addedPlayers,
-      creatorId: currentUserId,
-      captainId: _selectedCaptainId,
-    );
+    setState(() {
+      _isSaving = true;
+    });
 
-    final appState = Provider.of<AppState>(context, listen: false);
-    appState.addTeam(newTeam);
+    try {
+      final String? currentUserId = AuthService.instance.currentUser?.uid;
+      final teamId = 't_new_${DateTime.now().millisecondsSinceEpoch}';
+      final newTeam = Team(
+        id: teamId,
+        name: _teamNameController.text.trim(),
+        abbreviation: _abbController.text.trim().toUpperCase(),
+        logoEmoji: _selectedEmoji,
+        logoColorHex: _selectedColorHex,
+        players: _addedPlayers,
+        creatorId: currentUserId,
+        captainId: _selectedCaptainId,
+      );
 
-    CustomSnackBar.show(
-      context,
-      message: 'Team "${newTeam.name}" created successfully!',
-      type: SnackBarType.success,
-    );
-    Navigator.pop(context);
+      final appState = Provider.of<AppState>(context, listen: false);
+      await appState.addTeam(newTeam);
+
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Team "${newTeam.name}" created successfully!',
+          type: SnackBarType.success,
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to create team: $e',
+          type: SnackBarType.error,
+        );
+      }
+    }
   }
 
   InputDecoration _buildInputDecoration(String hint) {

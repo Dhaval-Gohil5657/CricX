@@ -7,6 +7,7 @@ import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
+import '../../widgets/dotted_circular_loader.dart';
 
 class CreateMatchScreen extends StatefulWidget {
   const CreateMatchScreen({super.key});
@@ -29,6 +30,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 18, minute: 0);
+  bool _isSaving = false;
 
   Future<void> _selectDate(BuildContext context) async {
     final now = DateTime.now();
@@ -458,8 +460,10 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: _createMatch,
-                  child: const Text('SCHEDULE MATCH', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  onPressed: _isSaving ? () {} : _createMatch,
+                  child: _isSaving
+                      ? const DottedCircularLoader(size: 24, color: Colors.white, center: false)
+                      : const Text('SCHEDULE MATCH', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
             ],
@@ -476,7 +480,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     super.dispose();
   }
 
-  void _createMatch() {
+  void _createMatch() async {
     if (!_formKey.currentState!.validate()) return;
     
     if (_teamA == null || _teamB == null) {
@@ -488,37 +492,56 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       return;
     }
 
-    final combinedDateTime = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
+    setState(() {
+      _isSaving = true;
+    });
 
-    final finalOvers = _isManualOvers
-        ? (int.tryParse(_customOversController.text.trim()) ?? 10)
-        : _selectedOvers;
+    try {
+      final combinedDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
 
-    final String? currentUserId = AuthService.instance.currentUser?.uid;
-    final id = 'm_new_${DateTime.now().millisecondsSinceEpoch}';
-    final newMatch = CricketMatch(
-      id: id,
-      teamA: _teamA!,
-      teamB: _teamB!,
-      totalOvers: finalOvers,
-      venue: _venueController.text.trim(),
-      matchDate: combinedDateTime,
-      creatorId: currentUserId,
-    );
+      final finalOvers = _isManualOvers
+          ? (int.tryParse(_customOversController.text.trim()) ?? 10)
+          : _selectedOvers;
 
-    Provider.of<AppState>(context, listen: false).createMatch(newMatch);
+      final String? currentUserId = AuthService.instance.currentUser?.uid;
+      final id = 'm_new_${DateTime.now().millisecondsSinceEpoch}';
+      final newMatch = CricketMatch(
+        id: id,
+        teamA: _teamA!,
+        teamB: _teamB!,
+        totalOvers: finalOvers,
+        venue: _venueController.text.trim(),
+        matchDate: combinedDateTime,
+        creatorId: currentUserId,
+      );
 
-    CustomSnackBar.show(
-      context,
-      message: 'Match scheduled between ${_teamA!.name} and ${_teamB!.name}!',
-      type: SnackBarType.success,
-    );
-    Navigator.pop(context);
+      await Provider.of<AppState>(context, listen: false).createMatch(newMatch);
+
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Match scheduled between ${_teamA!.name} and ${_teamB!.name}!',
+          type: SnackBarType.success,
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to schedule match: $e',
+          type: SnackBarType.error,
+        );
+      }
+    }
   }
 }

@@ -7,6 +7,7 @@ import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
+import '../../widgets/dotted_circular_loader.dart';
 
 class CreateTournamentScreen extends StatefulWidget {
   const CreateTournamentScreen({super.key});
@@ -24,6 +25,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
   String _selectedPlayoffType = 'Direct Final'; // 'Direct Final' or 'Semifinals & Final'
   DateTime _selectedStartDate = DateTime.now();
   final List<Team> _selectedTeams = [];
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -386,8 +388,10 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: _saveTournament,
-                  child: const Text('CREATE TOURNAMENT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  onPressed: _isSaving ? () {} : _saveTournament,
+                  child: _isSaving
+                      ? const DottedCircularLoader(size: 24, color: Colors.white, center: false)
+                      : const Text('CREATE TOURNAMENT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
             ],
@@ -454,7 +458,7 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
     );
   }
 
-  void _saveTournament() {
+  void _saveTournament() async {
     if (!_formKey.currentState!.validate()) return;
 
     final playoffReqTeams = _selectedPlayoffType == 'Semifinals & Final' ? 4 : 2;
@@ -476,38 +480,57 @@ class _CreateTournamentScreenState extends State<CreateTournamentScreen> {
       return;
     }
 
-    final id = 'tour_new_${DateTime.now().millisecondsSinceEpoch}';
-    final overs = int.tryParse(_oversController.text.trim()) ?? 10;
+    setState(() {
+      _isSaving = true;
+    });
 
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final tourStartDate = DateTime(_selectedStartDate.year, _selectedStartDate.month, _selectedStartDate.day);
-    final String initialStatus = tourStartDate.isAfter(today) ? 'Upcoming' : 'Ongoing';
+    try {
+      final id = 'tour_new_${DateTime.now().millisecondsSinceEpoch}';
+      final overs = int.tryParse(_oversController.text.trim()) ?? 10;
 
-    final String? currentUserId = AuthService.instance.currentUser?.uid;
-    final newTour = Tournament(
-      id: id,
-      name: _nameController.text.trim(),
-      type: 'League',
-      teams: List.from(_selectedTeams),
-      matches: [],
-      status: initialStatus,
-      playoffType: _selectedPlayoffType,
-      defaultOvers: overs,
-      startDate: _selectedStartDate,
-      venue: _venueController.text.trim(),
-      creatorId: currentUserId,
-    );
+      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      final tourStartDate = DateTime(_selectedStartDate.year, _selectedStartDate.month, _selectedStartDate.day);
+      final String initialStatus = tourStartDate.isAfter(today) ? 'Upcoming' : 'Ongoing';
 
-    newTour.updatePointsTable();
+      final String? currentUserId = AuthService.instance.currentUser?.uid;
+      final newTour = Tournament(
+        id: id,
+        name: _nameController.text.trim(),
+        type: 'League',
+        teams: List.from(_selectedTeams),
+        matches: [],
+        status: initialStatus,
+        playoffType: _selectedPlayoffType,
+        defaultOvers: overs,
+        startDate: _selectedStartDate,
+        venue: _venueController.text.trim(),
+        creatorId: currentUserId,
+      );
 
-    final appState = Provider.of<AppState>(context, listen: false);
-    appState.createTournament(newTour);
+      newTour.updatePointsTable();
 
-    CustomSnackBar.show(
-      context,
-      message: 'Tournament "${newTour.name}" launched successfully!',
-      type: SnackBarType.success,
-    );
-    Navigator.pop(context);
+      final appState = Provider.of<AppState>(context, listen: false);
+      await appState.createTournament(newTour);
+
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Tournament "${newTour.name}" launched successfully!',
+          type: SnackBarType.success,
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to create tournament: $e',
+          type: SnackBarType.error,
+        );
+      }
+    }
   }
 }

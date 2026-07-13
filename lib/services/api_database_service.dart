@@ -19,6 +19,47 @@ class ApiDatabaseService implements DatabaseService {
   String _parseId(Map<String, dynamic> json) =>
       json['_id'] ?? json['id'] ?? '';
 
+  String? _parseIdOrString(dynamic val) {
+    if (val == null) return null;
+    if (val is Map) {
+      return _parseId(Map<String, dynamic>.from(val));
+    }
+    return val.toString();
+  }
+
+  String _getCleanErrorMessage(String action, http.Response response) {
+    final body = response.body.trim();
+    if (body.isEmpty) {
+      return '$action (Status Code: ${response.statusCode})';
+    }
+    
+    if (body.startsWith('<')) {
+      if (body.contains('Cannot PUT') || body.contains('Cannot POST') || body.contains('Cannot DELETE')) {
+        final match = RegExp(r'Cannot\s+(?:PUT|POST|DELETE|GET)\s+\S+').firstMatch(body);
+        if (match != null) {
+          return '$action: ${match.group(0)}';
+        }
+      }
+      return '$action: Server error (Status Code: ${response.statusCode})';
+    }
+    
+    try {
+      final Map<String, dynamic> data = jsonDecode(body);
+      if (data.containsKey('error')) {
+        return data['error'].toString();
+      }
+      if (data.containsKey('message')) {
+        return data['message'].toString();
+      }
+    } catch (_) {}
+    
+    if (body.length < 100) {
+      return '$action: $body';
+    }
+    
+    return '$action: Server error (Status Code: ${response.statusCode})';
+  }
+
   // Local caching variables to enable smooth offline support or list stubbing
   static final List<Player> _cachedPlayers = [];
   static final List<Team> _cachedTeams = [];
@@ -36,9 +77,16 @@ class ApiDatabaseService implements DatabaseService {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         final list = data.map((json) => _playerFromMap(json)).toList();
-        _cachedPlayers.clear();
-        _cachedPlayers.addAll(list);
-        return list;
+        
+        for (var p in list) {
+          final idx = _cachedPlayers.indexWhere((cp) => cp.id == p.id);
+          if (idx != -1) {
+            _cachedPlayers[idx] = p;
+          } else {
+            _cachedPlayers.add(p);
+          }
+        }
+        return [..._cachedPlayers];
       }
     } catch (e) {
       debugPrint('Error getting players: $e');
@@ -47,10 +95,14 @@ class ApiDatabaseService implements DatabaseService {
   }
 
   Player _playerFromMap(Map<String, dynamic> data) {
+    String roleVal = data['playingRole'] ?? data['role'] ?? 'Batsman';
+    if (roleVal == 'Wicket-Keeper') {
+      roleVal = 'Wicketkeeper';
+    }
     return Player(
       id: _parseId(data),
       name: data['name'] ?? '',
-      role: data['role'] ?? 'Batsman',
+      role: roleVal,
       battingStyle: data['battingStyle'] ?? 'Right-hand bat',
       bowlingStyle: data['bowlingStyle'] ?? 'Right-arm medium',
       matchesPlayed: data['matchesPlayed'] ?? 0,
@@ -65,11 +117,24 @@ class ApiDatabaseService implements DatabaseService {
   }
 
   Map<String, dynamic> _playerToMap(Player player) {
+    String roleVal = player.role;
+    if (roleVal == 'Wicketkeeper') {
+      roleVal = 'Wicket-Keeper';
+    }
+
+    final bStyle = (player.battingStyle == '-' || player.battingStyle == 'None')
+        ? 'Right-hand bat'
+        : player.battingStyle;
+    final bowlStyle = (player.bowlingStyle == '-' || player.bowlingStyle == 'None')
+        ? null
+        : player.bowlingStyle;
+
     return {
       'name': player.name,
-      'role': player.role,
-      'battingStyle': player.battingStyle,
-      'bowlingStyle': player.bowlingStyle,
+      'playingRole': roleVal,
+      'role': roleVal,
+      if (bStyle != null) 'battingStyle': bStyle,
+      if (bowlStyle != null) 'bowlingStyle': bowlStyle,
       'matchesPlayed': player.matchesPlayed,
       'runsScored': player.runsScored,
       'wicketsTaken': player.wicketsTaken,
@@ -89,7 +154,7 @@ class ApiDatabaseService implements DatabaseService {
       body: jsonEncode(_playerToMap(player)),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create player: ${response.body}');
+      throw Exception(_getCleanErrorMessage('Failed to create player', response));
     }
     final newPlayer = _playerFromMap(jsonDecode(response.body));
     _cachedPlayers.removeWhere((p) => p.id == player.id);
@@ -98,22 +163,14 @@ class ApiDatabaseService implements DatabaseService {
 
   @override
   Future<void> updatePlayerStats(Player player) async {
-    // Try primary update profile, fallback to stats endpoint if needed
-    var response = await http.put(
+    final response = await http.put(
       Uri.parse(ApiEndpoints.playerById(player.id)),
       headers: _headers,
       body: jsonEncode(_playerToMap(player)),
     );
     
     if (response.statusCode != 200) {
-      response = await http.put(
-        Uri.parse(ApiEndpoints.playerStats(player.id)),
-        headers: _headers,
-        body: jsonEncode(_playerToMap(player)),
-      );
-      if (response.statusCode != 200) {
-        throw Exception('Failed to update player: ${response.body}');
-      }
+      throw Exception(_getCleanErrorMessage('Failed to update player', response));
     }
     
     _cachedPlayers.removeWhere((p) => p.id == player.id);
@@ -145,31 +202,45 @@ class ApiDatabaseService implements DatabaseService {
     final List<dynamic> pIds = data['playerIds'] ?? [];
     final List<Player> teamPlayers = [];
     for (var pid in pIds) {
-      final found = allPlayers.firstWhere(
-        (p) => p.id == pid,
-        orElse: () => Player(id: pid, name: 'Player $pid', role: 'Batsman', battingStyle: 'Right-hand bat', bowlingStyle: '-'),
-      );
-      teamPlayers.add(found);
+      if (pid is Map) {
+        teamPlayers.add(_playerFromMap(Map<String, dynamic>.from(pid)));
+      } else {
+        final String idStr = pid.toString();
+        final found = allPlayers.firstWhere(
+          (p) => p.id == idStr,
+          orElse: () => Player(id: idStr, name: 'Player $idStr', role: 'Batsman', battingStyle: 'Right-hand bat', bowlingStyle: '-'),
+        );
+        teamPlayers.add(found);
+      }
     }
 
     String emoji = '🏏';
     int color = 0xFF4CAF50;
-    final logoStr = data['logo'] as String?;
-    if (logoStr != null && logoStr.contains('|')) {
-      final parts = logoStr.split('|');
-      if (parts.length >= 2) {
-        emoji = parts[0];
-        color = int.tryParse(parts[1]) ?? 0xFF4CAF50;
-      }
-    } else if (data['logoEmoji'] != null) {
+    if (data['logoEmoji'] != null) {
       emoji = data['logoEmoji'];
       color = data['logoColorHex'] ?? 0xFF4CAF50;
+    } else {
+      final logoVal = data['logo'];
+      if (logoVal is String && logoVal.contains('|')) {
+        final parts = logoVal.split('|');
+        if (parts.length >= 2) {
+          emoji = parts[0];
+          color = int.tryParse(parts[1]) ?? 0xFF4CAF50;
+        }
+      }
     }
+
+    final capId = data['captainId'] is Map 
+        ? _parseId(Map<String, dynamic>.from(data['captainId'] as Map)) 
+        : data['captainId']?.toString();
+    final creId = data['creatorId'] is Map 
+        ? _parseId(Map<String, dynamic>.from(data['creatorId'] as Map)) 
+        : data['creatorId']?.toString();
 
     return Team(
       id: _parseId(data),
       name: data['name'] ?? '',
-      abbreviation: data['shortName'] ?? data['abbreviation'] ?? '',
+      abbreviation: data['abbreviation'] ?? data['shortName'] ?? '',
       logoEmoji: emoji,
       logoColorHex: color,
       players: teamPlayers,
@@ -177,52 +248,84 @@ class ApiDatabaseService implements DatabaseService {
       matchesWon: data['matchesWon'] ?? 0,
       matchesLost: data['matchesLost'] ?? 0,
       netRunRate: (data['netRunRate'] as num?)?.toDouble() ?? 0.0,
-      creatorId: data['creatorId'],
-      captainId: data['captainId'],
+      creatorId: creId,
+      captainId: capId,
     );
   }
 
   Map<String, dynamic> _teamToMap(Team team) {
     return {
       'name': team.name,
-      'shortName': team.abbreviation,
-      'logo': '${team.logoEmoji}|${team.logoColorHex}',
+      'abbreviation': team.abbreviation,
+      'logoEmoji': team.logoEmoji,
+      'logoColorHex': team.logoColorHex,
       'playerIds': team.players.map((p) => p.id).toList(),
-      'matchesPlayed': team.matchesPlayed,
-      'matchesWon': team.matchesWon,
-      'matchesLost': team.matchesLost,
-      'netRunRate': team.netRunRate,
-      'creatorId': team.creatorId,
-      'captainId': team.captainId,
+      if (team.captainId != null) 'captainId': team.captainId,
     };
   }
 
   @override
   Future<void> addTeam(Team team) async {
+    final List<Player> updatedPlayers = [];
+    String? updatedCaptainId = team.captainId;
+
+    for (var player in team.players) {
+      if (player.id.startsWith('p_new_')) {
+        final response = await http.post(
+          Uri.parse(ApiEndpoints.players),
+          headers: _headers,
+          body: jsonEncode(_playerToMap(player)),
+        );
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          final newPlayer = _playerFromMap(jsonDecode(response.body));
+          updatedPlayers.add(newPlayer);
+          
+          if (team.captainId == player.id) {
+            updatedCaptainId = newPlayer.id;
+          }
+        } else {
+          throw Exception(_getCleanErrorMessage('Failed to create player "${player.name}"', response));
+        }
+      } else {
+        updatedPlayers.add(player);
+      }
+    }
+
+    final teamToSend = Team(
+      id: team.id,
+      name: team.name,
+      abbreviation: team.abbreviation,
+      logoEmoji: team.logoEmoji,
+      logoColorHex: team.logoColorHex,
+      players: updatedPlayers,
+      creatorId: team.creatorId,
+      captainId: updatedCaptainId,
+      matchesPlayed: team.matchesPlayed,
+      matchesWon: team.matchesWon,
+      matchesLost: team.matchesLost,
+      netRunRate: team.netRunRate,
+    );
+
     final response = await http.post(
       Uri.parse(ApiEndpoints.teams),
       headers: _headers,
-      body: jsonEncode(_teamToMap(team)),
+      body: jsonEncode(_teamToMap(teamToSend)),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create team: ${response.body}');
+      throw Exception(_getCleanErrorMessage('Failed to create team', response));
     }
     
     final createdTeamData = jsonDecode(response.body);
-    final teamId = _parseId(createdTeamData);
-
-    if (team.players.isNotEmpty) {
-      await http.post(
-        Uri.parse(ApiEndpoints.teamPlayers(teamId)),
-        headers: _headers,
-        body: jsonEncode({
-          'playerIds': team.players.map((p) => p.id).toList(),
-        }),
-      );
-    }
+    final newTeam = _teamFromMap(createdTeamData, updatedPlayers);
 
     _cachedTeams.removeWhere((t) => t.id == team.id);
-    _cachedTeams.add(team);
+    _cachedTeams.add(newTeam);
+
+    for (var p in updatedPlayers) {
+      if (!_cachedPlayers.any((cp) => cp.id == p.id)) {
+        _cachedPlayers.add(p);
+      }
+    }
   }
 
   @override
@@ -232,36 +335,95 @@ class ApiDatabaseService implements DatabaseService {
       headers: _headers,
       body: jsonEncode(_teamToMap(team)),
     );
+    
     if (response.statusCode != 200) {
-      debugPrint('Warning: PUT /teams/:id returned status ${response.statusCode}');
+      throw Exception(_getCleanErrorMessage('Failed to update team', response));
     }
+    
+    final updatedTeamData = jsonDecode(response.body);
+    final newTeam = _teamFromMap(updatedTeamData, team.players);
+    
     _cachedTeams.removeWhere((t) => t.id == team.id);
-    _cachedTeams.add(team);
+    _cachedTeams.add(newTeam);
   }
 
   @override
   Future<void> addPlayerToTeam(String teamId, Player player) async {
-    try {
-      await addPlayer(player);
-    } catch (_) {}
+    String actualPlayerId = player.id;
+    
+    // If it's a temporary ID, we must create the player first and capture its backend ObjectId!
+    if (player.id.startsWith('p_')) {
+      final response = await http.post(
+        Uri.parse(ApiEndpoints.players),
+        headers: _headers,
+        body: jsonEncode(_playerToMap(player)),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        actualPlayerId = _parseId(data);
+      } else {
+        throw Exception(_getCleanErrorMessage('Failed to create player profile', response));
+      }
+    }
 
     final response = await http.post(
       Uri.parse(ApiEndpoints.teamPlayers(teamId)),
       headers: _headers,
       body: jsonEncode({
-        'playerIds': [player.id],
+        'playerId': actualPlayerId,
       }),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to add player to team: ${response.body}');
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(_getCleanErrorMessage('Failed to add player to team', response));
+    }
+
+    final newPlayer = Player(
+      id: actualPlayerId,
+      name: player.name,
+      role: player.role,
+      battingStyle: player.battingStyle,
+      bowlingStyle: player.bowlingStyle,
+      matchesPlayed: player.matchesPlayed,
+      runsScored: player.runsScored,
+      wicketsTaken: player.wicketsTaken,
+      ballsFaced: player.ballsFaced,
+      ballsBowled: player.ballsBowled,
+      runsConceded: player.runsConceded,
+      highestScore: player.highestScore,
+      bestBowling: player.bestBowling,
+    );
+
+    if (!_cachedPlayers.any((p) => p.id == actualPlayerId)) {
+      _cachedPlayers.add(newPlayer);
     }
 
     final teamIndex = _cachedTeams.indexWhere((t) => t.id == teamId);
     if (teamIndex != -1) {
       final team = _cachedTeams[teamIndex];
-      if (!team.players.any((p) => p.id == player.id)) {
-        team.players.add(player);
+      if (!team.players.any((p) => p.id == actualPlayerId)) {
+        team.players.add(newPlayer);
+      }
+    }
+  }
+
+  @override
+  Future<void> removePlayerFromTeam(String teamId, String playerId) async {
+    final response = await http.delete(
+      Uri.parse(ApiEndpoints.removePlayerFromTeam(teamId, playerId)),
+      headers: _headers,
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception(_getCleanErrorMessage('Failed to remove player from team', response));
+    }
+
+    final teamIndex = _cachedTeams.indexWhere((t) => t.id == teamId);
+    if (teamIndex != -1) {
+      final team = _cachedTeams[teamIndex];
+      team.players.removeWhere((p) => p.id == playerId);
+      if (team.captainId == playerId) {
+        team.captainId = null;
       }
     }
   }
@@ -273,24 +435,14 @@ class ApiDatabaseService implements DatabaseService {
   @override
   Future<List<CricketMatch>> getMatches(List<Team> allTeams, List<Player> allPlayers) async {
     try {
-      var response = await http.get(Uri.parse(ApiEndpoints.matches), headers: _headers);
-      List<dynamic> data = [];
+      final response = await http.get(Uri.parse(ApiEndpoints.matches), headers: _headers);
       if (response.statusCode == 200) {
-        data = jsonDecode(response.body);
-      } else {
-        // Fallback to live discovery matches list
-        final discResponse = await http.get(Uri.parse(ApiEndpoints.liveMatches), headers: _headers);
-        if (discResponse.statusCode == 200) {
-          data = jsonDecode(discResponse.body);
-        } else {
-          throw Exception('Failed to fetch matches: ${response.statusCode}');
-        }
+        final List<dynamic> data = jsonDecode(response.body);
+        final list = data.map((json) => _matchFromMap(json, allTeams, allPlayers)).toList();
+        _cachedMatches.clear();
+        _cachedMatches.addAll(list);
+        return list;
       }
-
-      final list = data.map((json) => _matchFromMap(json, allTeams, allPlayers)).toList();
-      _cachedMatches.clear();
-      _cachedMatches.addAll(list);
-      return list;
     } catch (e) {
       debugPrint('Error getting matches: $e');
     }
@@ -302,8 +454,8 @@ class ApiDatabaseService implements DatabaseService {
     List<Team> allTeams,
     List<Player> allPlayers,
   ) {
-    final teamAId = data['teamA'] is Map ? _parseId(data['teamA']) : (data['teamAId'] ?? data['teamA'] ?? '');
-    final teamBId = data['teamB'] is Map ? _parseId(data['teamB']) : (data['teamBId'] ?? data['teamB'] ?? '');
+    final teamAId = _parseIdOrString(data['teamA'] ?? data['teamAId']) ?? '';
+    final teamBId = _parseIdOrString(data['teamB'] ?? data['teamBId']) ?? '';
 
     final baseTeamA = allTeams.firstWhere(
       (t) => t.id == teamAId,
@@ -314,8 +466,14 @@ class ApiDatabaseService implements DatabaseService {
       orElse: () => Team(id: teamBId, name: 'Team B', abbreviation: 'B', logoEmoji: '🏏', logoColorHex: 0xFF9E9E9E, players: []),
     );
 
-    final teamAPlayerIds = List<String>.from(data['teamAPlayerIds'] ?? []);
-    final teamBPlayerIds = List<String>.from(data['teamBPlayerIds'] ?? []);
+    final teamAPlayerIds = (data['teamAPlayerIds'] as List? ?? [])
+        .map((p) => _parseIdOrString(p) ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final teamBPlayerIds = (data['teamBPlayerIds'] as List? ?? [])
+        .map((p) => _parseIdOrString(p) ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
 
     final teamA = Team(
       id: baseTeamA.id,
@@ -369,20 +527,26 @@ class ApiDatabaseService implements DatabaseService {
       teamB: teamB,
       totalOvers: data['overs'] ?? data['totalOvers'] ?? 20,
       status: matchStatus,
-      tossWinnerId: data['tossWinnerId'] ?? data['toss']?['winner'],
-      tossDecision: data['tossDecision'] ?? data['toss']?['decision'],
+      tossWinnerId: _parseIdOrString(data['tossWinnerId'] ?? data['toss']?['winner']),
+      tossDecision: data['tossDecision'] is Map 
+          ? _parseIdOrString(data['tossDecision']) 
+          : data['tossDecision']?.toString(),
       currentInningsNum: data['currentInningsNum'] ?? 1,
       isSuperOverPlayed: data['isSuperOverPlayed'] ?? false,
       isOnBreak: data['isOnBreak'] ?? false,
       breakReason: data['breakReason'],
-      resultString: data['resultString'] ?? data['result'] ?? 'Match not started yet',
-      venue: data['venue'] ?? 'CricX Stadium',
+      resultString: data['resultString'] is Map 
+          ? (_parseIdOrString(data['resultString']) ?? 'Match not started yet')
+          : (data['resultString']?.toString() ?? data['result']?.toString() ?? 'Match not started yet'),
+      venue: data['venue'] is Map 
+          ? (_parseIdOrString(data['venue']) ?? 'CricX Stadium') 
+          : (data['venue']?.toString() ?? 'CricX Stadium'),
       matchDate: DateTime.tryParse(dateStr) ?? DateTime.now(),
-      tournamentId: data['tournamentId'],
-      tournamentName: data['tournamentName'],
-      creatorId: data['creatorId'],
-      playerOfTheMatchId: data['playerOfTheMatchId'],
-      playerOfTheMatchName: data['playerOfTheMatchName'],
+      tournamentId: _parseIdOrString(data['tournamentId']),
+      tournamentName: data['tournamentName']?.toString(),
+      creatorId: _parseIdOrString(data['creatorId']),
+      playerOfTheMatchId: _parseIdOrString(data['playerOfTheMatchId']),
+      playerOfTheMatchName: data['playerOfTheMatchName']?.toString(),
       teamAPlayerIds: teamAPlayerIds.isNotEmpty ? teamAPlayerIds : null,
       teamBPlayerIds: teamBPlayerIds.isNotEmpty ? teamBPlayerIds : null,
     );
@@ -400,15 +564,15 @@ class ApiDatabaseService implements DatabaseService {
       match.superOverInnings2 = _inningsFromMap(data['superOverInnings2']);
     }
 
-    final strikerId = data['strikerId'] ?? data['striker']?['_id'] ?? data['striker'];
+    final strikerId = _parseIdOrString(data['strikerId'] ?? data['striker']);
     if (strikerId != null) {
       match.striker = allPlayers.firstWhere((p) => p.id == strikerId, orElse: () => allPlayers.first);
     }
-    final nonStrikerId = data['nonStrikerId'] ?? data['nonStriker']?['_id'] ?? data['nonStriker'];
+    final nonStrikerId = _parseIdOrString(data['nonStrikerId'] ?? data['nonStriker']);
     if (nonStrikerId != null) {
       match.nonStriker = allPlayers.firstWhere((p) => p.id == nonStrikerId, orElse: () => allPlayers.first);
     }
-    final bowlerId = data['currentBowlerId'] ?? data['bowler']?['_id'] ?? data['bowler'];
+    final bowlerId = _parseIdOrString(data['currentBowlerId'] ?? data['bowler']);
     if (bowlerId != null) {
       match.currentBowler = allPlayers.firstWhere((p) => p.id == bowlerId, orElse: () => allPlayers.first);
     }
@@ -425,13 +589,16 @@ class ApiDatabaseService implements DatabaseService {
   MatchTeamInnings _inningsFromMap(Map<String, dynamic> data) {
     final List<dynamic> eventsRaw = data['events'] ?? [];
     final List<dynamic> battingOrderRaw = data['battingOrder'] ?? [];
+    
+    final tId = _parseIdOrString(data['teamId']) ?? '';
+
     return MatchTeamInnings(
-      teamId: data['teamId'] ?? '',
+      teamId: tId,
       runs: data['runs'] ?? 0,
       wickets: data['wickets'] ?? 0,
       ballsBowled: data['ballsBowled'] ?? 0,
-      events: eventsRaw.map((e) => _ballEventFromMap(e)).toList(),
-      battingOrder: List<String>.from(battingOrderRaw),
+      events: eventsRaw.map((e) => _ballEventFromMap(Map<String, dynamic>.from(e))).toList(),
+      battingOrder: battingOrderRaw.map((b) => _parseIdOrString(b) ?? '').toList(),
     );
   }
 
@@ -441,10 +608,10 @@ class ApiDatabaseService implements DatabaseService {
       isWide: data['isWide'] ?? false,
       isNoBall: data['isNoBall'] ?? false,
       isWicket: data['isWicket'] ?? false,
-      wicketType: data['wicketType'] ?? '',
-      bowlerName: data['bowlerName'] ?? '',
-      batsmanName: data['batsmanName'] ?? '',
-      description: data['description'] ?? '',
+      wicketType: data['wicketType']?.toString() ?? '',
+      bowlerName: data['bowlerName']?.toString() ?? '',
+      batsmanName: data['batsmanName']?.toString() ?? '',
+      description: data['description']?.toString() ?? '',
       isRunsOffBat: data['isRunsOffBat'] ?? true,
       isLegBye: data['isLegBye'] ?? false,
       isPenalty: data['isPenalty'] ?? false,
@@ -523,13 +690,13 @@ class ApiDatabaseService implements DatabaseService {
       Uri.parse(ApiEndpoints.matches),
       headers: _headers,
       body: jsonEncode({
-        'teamA': match.teamA.id,
-        'teamB': match.teamB.id,
-        'overs': match.totalOvers,
+        'teamAId': match.teamA.id,
+        'teamBId': match.teamB.id,
+        'totalOvers': match.totalOvers,
         'venue': match.venue,
         'matchDate': match.matchDate.toIso8601String(),
-        'tournamentId': match.tournamentId,
-        'tournamentName': match.tournamentName,
+        if (match.tournamentId != null) 'tournamentId': match.tournamentId,
+        if (match.tournamentName != null) 'tournamentName': match.tournamentName,
       }),
     );
 
@@ -538,103 +705,61 @@ class ApiDatabaseService implements DatabaseService {
     }
 
     final responseData = jsonDecode(response.body);
-    final matchId = _parseId(responseData);
-
-    if (match.tournamentId != null) {
-      final linkResponse = await http.post(
-        Uri.parse(ApiEndpoints.tournamentFixtures(match.tournamentId!)),
-        headers: _headers,
-        body: jsonEncode({
-          'matchId': matchId,
-          'stage': 'Group Stage',
-          'matchDate': match.matchDate.toIso8601String(),
-        }),
-      );
-      if (linkResponse.statusCode != 200) {
-        debugPrint('Failed to link match to tournament: ${linkResponse.body}');
-      }
-    }
-
+    final newMatch = _matchFromMap(responseData, _cachedTeams, _cachedPlayers);
     _cachedMatches.removeWhere((m) => m.id == match.id);
-    _cachedMatches.add(match);
+    _cachedMatches.add(newMatch);
   }
 
   @override
   Future<void> updateMatch(CricketMatch match) async {
-    // 1. Sync toss and start if match is live and has no ball events
-    if (match.status == MatchStatus.live && match.tossWinnerId != null && match.currentInnings.events.isEmpty) {
-      await http.put(
-        Uri.parse(ApiEndpoints.matchToss(match.id)),
-        headers: _headers,
-        body: jsonEncode({
-          'winner': match.tossWinnerId,
-          'decision': match.tossDecision ?? 'Batting',
-        }),
-      );
-
-      await http.put(
-        Uri.parse(ApiEndpoints.matchStart(match.id)),
-        headers: _headers,
-        body: jsonEncode({
-          'playingXI': {
-            'teamA': match.teamAPlayerIds ?? match.teamA.players.map((p) => p.id).toList(),
-            'teamB': match.teamBPlayerIds ?? match.teamB.players.map((p) => p.id).toList(),
-          }
-        }),
-      );
-    }
-
-    // 2. Score ball updates
-    final innings = match.currentInnings;
-    if (innings.events.isNotEmpty) {
-      final latestBall = innings.events.last;
-      await http.post(
-        Uri.parse(ApiEndpoints.matchScore(match.id)),
-        headers: _headers,
-        body: jsonEncode({
-          'striker': match.striker?.id,
-          'nonStriker': match.nonStriker?.id,
-          'bowler': match.currentBowler?.id,
-          'runs': latestBall.runs,
-          'extras': {
-            'type': latestBall.isWide ? 'Wide' : (latestBall.isNoBall ? 'NoBall' : (latestBall.isLegBye ? 'LegBye' : (latestBall.isBye ? 'Bye' : 'None'))),
-            'runs': latestBall.runsAddedToTeam - latestBall.runsAddedToBatsman
-          },
-          'isWicket': latestBall.isWicket,
-          'wicketType': latestBall.wicketType.isEmpty ? 'None' : latestBall.wicketType,
-        }),
-      );
-    }
-
-    // 3. Complete match if completed
-    if (match.status == MatchStatus.completed) {
-      await http.put(
-        Uri.parse(ApiEndpoints.matchComplete(match.id)),
-        headers: _headers,
-      );
-
-      if (match.playerOfTheMatchId != null) {
-        await http.patch(
-          Uri.parse(ApiEndpoints.matchPlayerOfTheMatch(match.id)),
+    try {
+      // 1. Start match if live and events are empty
+      if (match.status == MatchStatus.live && match.currentInnings.events.isEmpty) {
+        await http.put(
+          Uri.parse(ApiEndpoints.matchStart(match.id)),
           headers: _headers,
           body: jsonEncode({
-            'playerOfTheMatchId': match.playerOfTheMatchId,
-            'playerOfTheMatchName': match.playerOfTheMatchName,
+            'playingXI': {
+              'teamA': match.teamAPlayerIds ?? match.teamA.players.map((p) => p.id).toList(),
+              'teamB': match.teamBPlayerIds ?? match.teamB.players.map((p) => p.id).toList(),
+            },
+            'tossWinnerId': match.tossWinnerId,
+            'tossDecision': match.tossDecision,
+            'strikerId': match.striker?.id,
+            'nonStrikerId': match.nonStriker?.id,
+            'currentBowlerId': match.currentBowler?.id,
+            'currentInningsNum': match.currentInningsNum,
+            'innings1': match.innings1 != null ? _inningsToMap(match.innings1!) : null,
           }),
         );
       }
+
+      // 2. Score ball updates
+      final innings = match.currentInnings;
+      if (innings.events.isNotEmpty) {
+        final latestBall = innings.events.last;
+        await http.post(
+          Uri.parse(ApiEndpoints.matchScore(match.id)),
+          headers: _headers,
+          body: jsonEncode({
+            'striker': match.striker?.id,
+            'nonStriker': match.nonStriker?.id,
+            'bowler': match.currentBowler?.id,
+            'runs': latestBall.runs,
+            'extras': {
+              'type': latestBall.isWide ? 'Wide' : (latestBall.isNoBall ? 'NoBall' : (latestBall.isLegBye ? 'LegBye' : (latestBall.isBye ? 'Bye' : 'None'))),
+              'runs': latestBall.runsAddedToTeam - latestBall.runsAddedToBatsman
+            },
+            'isWicket': latestBall.isWicket,
+            'wicketType': latestBall.wicketType.isEmpty ? 'None' : latestBall.wicketType,
+          }),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating match on server: $e');
     }
 
-    // Fallback: update full state via general PUT
-    final response = await http.put(
-      Uri.parse(ApiEndpoints.matchById(match.id)),
-      headers: _headers,
-      body: jsonEncode(_matchToMap(match)),
-    );
-    if (response.statusCode != 200) {
-      debugPrint('Warning: PUT /matches/:id returned status ${response.statusCode}');
-    }
-
+    // Always update local cache
     _cachedMatches.removeWhere((m) => m.id == match.id);
     _cachedMatches.add(match);
   }
@@ -665,22 +790,34 @@ class ApiDatabaseService implements DatabaseService {
     List<Team> allTeams,
     List<CricketMatch> allMatches,
   ) {
-    final List<dynamic> teamIds = data['teamIds'] ?? [];
-    final List<dynamic> matchIds = data['matchIds'] ?? [];
+    final List<dynamic> rawTeamIds = data['teamIds'] ?? [];
+    final List<dynamic> rawMatchIds = data['matchIds'] ?? [];
 
     final List<Team> tTeams = [];
-    for (var tid in teamIds) {
-      final team = allTeams.firstWhere((t) => t.id == tid, orElse: () => allTeams.first);
+    for (var tid in rawTeamIds) {
+      final String idStr = tid is Map ? _parseId(Map<String, dynamic>.from(tid)) : tid.toString();
+      final team = allTeams.firstWhere((t) => t.id == idStr, orElse: () => allTeams.first);
       tTeams.add(team);
     }
 
     final List<CricketMatch> tMatches = [];
-    for (var mid in matchIds) {
-      final match = allMatches.firstWhere((m) => m.id == mid, orElse: () => allMatches.first);
+    for (var mid in rawMatchIds) {
+      final String idStr = mid is Map ? _parseId(Map<String, dynamic>.from(mid)) : mid.toString();
+      final match = allMatches.firstWhere((m) => m.id == idStr, orElse: () => allMatches.first);
       tMatches.add(match);
     }
 
     final startDateStr = data['startDate'] ?? DateTime.now().toIso8601String();
+
+    final winId = data['winnerTeamId'] is Map 
+        ? _parseId(Map<String, dynamic>.from(data['winnerTeamId'] as Map)) 
+        : data['winnerTeamId']?.toString();
+    final potId = data['playerOfTheTournamentId'] is Map 
+        ? _parseId(Map<String, dynamic>.from(data['playerOfTheTournamentId'] as Map)) 
+        : data['playerOfTheTournamentId']?.toString();
+    final creId = data['creatorId'] is Map 
+        ? _parseId(Map<String, dynamic>.from(data['creatorId'] as Map)) 
+        : data['creatorId']?.toString();
 
     final tournament = Tournament(
       id: _parseId(data),
@@ -689,20 +826,22 @@ class ApiDatabaseService implements DatabaseService {
       teams: tTeams,
       matches: tMatches,
       status: data['status'] ?? 'Upcoming',
-      winnerTeamId: data['winnerTeamId'],
-      playerOfTheTournamentId: data['playerOfTheTournamentId'],
+      winnerTeamId: winId,
+      playerOfTheTournamentId: potId,
       playerOfTheTournamentName: data['playerOfTheTournamentName'],
       playoffType: data['playoffType'] ?? 'Direct Final',
       defaultOvers: data['defaultOvers'] ?? 10,
       startDate: DateTime.tryParse(startDateStr) ?? DateTime.now(),
       venue: data['venue'] ?? 'CricX Turf Arena',
-      creatorId: data['creatorId'],
+      creatorId: creId,
     );
 
     final List<dynamic>? ptRaw = data['pointsTable'];
     if (ptRaw != null) {
       tournament.pointsTable = ptRaw.map((entry) {
-        final teamId = entry['teamId'] ?? '';
+        final teamId = entry['teamId'] is Map 
+            ? _parseId(Map<String, dynamic>.from(entry['teamId'] as Map)) 
+            : entry['teamId']?.toString() ?? '';
         final team = tTeams.firstWhere((t) => t.id == teamId, orElse: () => tTeams.first);
         return PointsTableEntry(
           team: team,
@@ -741,7 +880,15 @@ class ApiDatabaseService implements DatabaseService {
     final response = await http.post(
       Uri.parse(ApiEndpoints.tournaments),
       headers: _headers,
-      body: jsonEncode(_tournamentToMap(tournament)),
+      body: jsonEncode({
+        'name': tournament.name,
+        'type': tournament.type,
+        'playoffType': tournament.playoffType,
+        'defaultOvers': tournament.defaultOvers,
+        'venue': tournament.venue,
+        'startDate': tournament.startDate.toIso8601String(),
+        'endDate': tournament.startDate.add(const Duration(days: 30)).toIso8601String(),
+      }),
     );
 
     if (response.statusCode != 201 && response.statusCode != 200) {
@@ -767,25 +914,21 @@ class ApiDatabaseService implements DatabaseService {
 
   @override
   Future<void> updateTournament(Tournament tournament) async {
-    if (tournament.playerOfTheTournamentId != null) {
-      await http.patch(
-        Uri.parse(ApiEndpoints.tournamentPlayerOfTheTournament(tournament.id)),
+    try {
+      final response = await http.put(
+        Uri.parse(ApiEndpoints.tournamentById(tournament.id)),
         headers: _headers,
         body: jsonEncode({
-          'playerOfTheTournamentId': tournament.playerOfTheTournamentId,
-          'playerOfTheTournamentName': tournament.playerOfTheTournamentName,
+          'status': tournament.status,
+          if (tournament.winnerTeamId != null) 'winnerTeamId': tournament.winnerTeamId,
         }),
       );
-    }
 
-    final response = await http.put(
-      Uri.parse(ApiEndpoints.tournamentById(tournament.id)),
-      headers: _headers,
-      body: jsonEncode(_tournamentToMap(tournament)),
-    );
-
-    if (response.statusCode != 200) {
-      debugPrint('Warning: PUT /tournaments/:id returned ${response.statusCode}');
+      if (response.statusCode != 200) {
+        debugPrint('Warning: PUT /tournaments/:id returned ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error updating tournament on server: $e');
     }
 
     _cachedTournaments.removeWhere((t) => t.id == tournament.id);

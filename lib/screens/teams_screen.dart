@@ -8,6 +8,7 @@ import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
 import 'scorer/create_team_screen.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import '../widgets/dotted_circular_loader.dart';
 
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({super.key});
@@ -386,6 +387,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
     String selectedRole = 'Batsman';
     String selectedBatting = 'Right-hand bat';
     String selectedBowling = 'Right-arm medium';
+    bool isSaving = false;
 
     showDialog(
       context: context,
@@ -539,9 +541,8 @@ class _TeamsScreenState extends State<TeamsScreen> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
+                ),                 ElevatedButton(
+                  onPressed: isSaving ? () {} : () async {
                     final name = nameController.text.trim();
                     if (name.isEmpty) {
                       CustomSnackBar.show(
@@ -552,6 +553,10 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       return;
                     }
                     
+                    setDialogState(() {
+                      isSaving = true;
+                    });
+                    
                     final player = Player(
                       id: 'p_${DateTime.now().millisecondsSinceEpoch}',
                       name: name,
@@ -560,14 +565,28 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       bowlingStyle: selectedBowling == 'None' ? '-' : selectedBowling,
                     );
                     
-                    appState.addPlayerToTeam(team.id, player);
-                    Navigator.pop(context);
-                    
-                    CustomSnackBar.show(
-                      context,
-                      message: '$name added to ${team.name}!',
-                      type: SnackBarType.success,
-                    );
+                    try {
+                      await appState.addPlayerToTeam(team.id, player);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        CustomSnackBar.show(
+                          context,
+                          message: '$name added to ${team.name}!',
+                          type: SnackBarType.success,
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        setDialogState(() {
+                          isSaving = false;
+                        });
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Failed to add player: $e',
+                          type: SnackBarType.error,
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryTurf,
@@ -576,7 +595,9 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Add'),
+                  child: isSaving
+                      ? const DottedCircularLoader(size: 20, color: Colors.white, center: false)
+                      : const Text('Add'),
                 ),
               ],
             );
@@ -592,6 +613,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
     String selectedEmoji = team.logoEmoji;
     int selectedColorHex = team.logoColorHex;
     String? selectedCaptainId = team.captainId;
+    bool isSaving = false;
 
     final List<String> emojis = ['🔥', '⚡', '🌪️', '🦁', '🦅', '🦈', '⚔️', '🛡️', '👑', '⭐️'];
     final List<String> flags = [
@@ -635,27 +657,30 @@ class _TeamsScreenState extends State<TeamsScreen> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: abbController,
+                      maxLength: 5,
                       decoration: InputDecoration(
                         labelText: 'Abbreviation',
                         labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        counterText: '',
                       ),
                       style: const TextStyle(color: AppColors.textDark),
-                      maxLength: 5,
                     ),
                     const SizedBox(height: 16),
+                    const Text('Select Captain', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
+                      dropdownColor: AppColors.cardBg,
                       value: selectedCaptainId,
                       decoration: InputDecoration(
-                        labelText: 'Team Captain',
-                        labelStyle: const TextStyle(color: AppColors.textDarkSecondary),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      dropdownColor: AppColors.cardBg,
+                      hint: const Text('Select Captain', style: TextStyle(color: AppColors.textDarkSecondary)),
                       items: [
                         const DropdownMenuItem<String>(
                           value: null,
-                          child: Text('No Captain Selected', style: TextStyle(color: AppColors.textDarkMuted)),
+                          child: Text('No Captain', style: TextStyle(color: AppColors.textDarkMuted)),
                         ),
                         ...team.players.map((p) => DropdownMenuItem<String>(
                           value: p.id,
@@ -663,9 +688,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                         )),
                       ],
                       onChanged: (val) {
-                        setDialogState(() {
-                          selectedCaptainId = val;
-                        });
+                        setDialogState(() => selectedCaptainId = val);
                       },
                     ),
                     const SizedBox(height: 16),
@@ -673,54 +696,9 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Select Logo Emoji', style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => setDialogState(() => showFlags = false),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: !showFlags ? Color(selectedColorHex).withOpacity(0.12) : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: !showFlags ? Color(selectedColorHex) : AppColors.borderGreen.withOpacity(0.5),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  'Symbols',
-                                  style: TextStyle(
-                                    color: !showFlags ? Color(selectedColorHex) : AppColors.textDarkSecondary,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () => setDialogState(() => showFlags = true),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: showFlags ? Color(selectedColorHex).withOpacity(0.12) : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: showFlags ? Color(selectedColorHex) : AppColors.borderGreen.withOpacity(0.5),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  'ICC Flags',
-                                  style: TextStyle(
-                                    color: showFlags ? Color(selectedColorHex) : AppColors.textDarkSecondary,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        TextButton(
+                          onPressed: () => setDialogState(() => showFlags = !showFlags),
+                          child: Text(showFlags ? 'Show Symbols' : 'Show Flags', style: const TextStyle(color: AppColors.primaryTurf)),
                         ),
                       ],
                     ),
@@ -839,11 +817,15 @@ class _TeamsScreenState extends State<TeamsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    if (isSaving) return;
+                    Navigator.pop(context);
+                  },
                   child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    if (isSaving) return;
                     final name = nameController.text.trim();
                     final abb = abbController.text.trim().toUpperCase();
                     if (name.isEmpty || abb.isEmpty) {
@@ -870,21 +852,49 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       captainId: selectedCaptainId,
                     );
 
-                    appState.updateTeam(updatedTeam);
-                    Navigator.pop(context);
+                    setDialogState(() {
+                      isSaving = true;
+                    });
 
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Team details updated successfully!',
-                      type: SnackBarType.success,
-                    );
+                    try {
+                      await appState.updateTeam(updatedTeam);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Team details updated successfully!',
+                          type: SnackBarType.success,
+                        );
+                      }
+                    } catch (e) {
+                      setDialogState(() {
+                        isSaving = false;
+                      });
+                      if (context.mounted) {
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Failed to update team: ${e.toString().replaceAll('Exception: ', '')}',
+                          type: SnackBarType.error,
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryTurf,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Save'),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: DottedCircularLoader(
+                            size: 20,
+                            color: Colors.white,
+                            center: false,
+                          ),
+                        )
+                      : const Text('Save'),
                 ),
               ],
             );
@@ -899,6 +909,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
     String selectedRole = player.role;
     String selectedBatting = player.battingStyle == '-' ? 'None' : player.battingStyle;
     String selectedBowling = player.bowlingStyle == '-' ? 'None' : player.bowlingStyle;
+    bool isSaving = false;
 
     showDialog(
       context: context,
@@ -1006,11 +1017,15 @@ class _TeamsScreenState extends State<TeamsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    if (isSaving) return;
+                    Navigator.pop(context);
+                  },
                   child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    if (isSaving) return;
                     final name = nameController.text.trim();
                     if (name.isEmpty) {
                       CustomSnackBar.show(
@@ -1037,21 +1052,49 @@ class _TeamsScreenState extends State<TeamsScreen> {
                       bestBowling: player.bestBowling,
                     );
 
-                    appState.updatePlayer(updatedPlayer);
-                    Navigator.pop(context);
+                    setDialogState(() {
+                      isSaving = true;
+                    });
 
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Player info updated successfully!',
-                      type: SnackBarType.success,
-                    );
+                    try {
+                      await appState.updatePlayer(updatedPlayer);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Player info updated successfully!',
+                          type: SnackBarType.success,
+                        );
+                      }
+                    } catch (e) {
+                      setDialogState(() {
+                        isSaving = false;
+                      });
+                      if (context.mounted) {
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Failed to update player: ${e.toString().replaceAll('Exception: ', '')}',
+                          type: SnackBarType.error,
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryTurf,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Save'),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: DottedCircularLoader(
+                            size: 20,
+                            color: Colors.white,
+                            center: false,
+                          ),
+                        )
+                      : const Text('Save'),
                 ),
               ],
             );
@@ -1062,47 +1105,83 @@ class _TeamsScreenState extends State<TeamsScreen> {
   }
 
   void _showRemovePlayerConfirm(BuildContext context, Team team, Player player, AppState appState) {
+    bool isRemoving = false;
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.cardBg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: AppColors.borderWood, width: 1),
-          ),
-          title: const Text(
-            'Confirm Removal',
-            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          content: Text(
-            'Are you sure you want to remove ${player.name} from ${team.name}?',
-            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                appState.removePlayerFromTeam(team.id, player.id);
-                Navigator.pop(context);
-
-                CustomSnackBar.show(
-                  context,
-                  message: '${player.name} removed from ${team.name}.',
-                  type: SnackBarType.success,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cardBg,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: AppColors.borderWood, width: 1),
               ),
-              child: const Text('Remove'),
-            ),
-          ],
+              title: const Text(
+                'Confirm Removal',
+                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: Text(
+                'Are you sure you want to remove ${player.name} from ${team.name}?',
+                style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 14),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    if (isRemoving) return;
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textDarkSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (isRemoving) return;
+                    setDialogState(() {
+                      isRemoving = true;
+                    });
+                    try {
+                      await appState.removePlayerFromTeam(team.id, player.id);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        CustomSnackBar.show(
+                          context,
+                          message: '${player.name} removed from ${team.name}.',
+                          type: SnackBarType.success,
+                        );
+                      }
+                    } catch (e) {
+                      setDialogState(() {
+                        isRemoving = false;
+                      });
+                      if (context.mounted) {
+                        CustomSnackBar.show(
+                          context,
+                          message: 'Failed to remove player: ${e.toString().replaceAll('Exception: ', '')}',
+                          type: SnackBarType.error,
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isRemoving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: DottedCircularLoader(
+                            size: 20,
+                            color: Colors.white,
+                            center: false,
+                          ),
+                        )
+                      : const Text('Remove'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

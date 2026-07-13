@@ -18,6 +18,7 @@ abstract class DatabaseService {
   Future<void> addTeam(Team team);
   Future<void> updateTeamInfo(Team team);
   Future<void> addPlayerToTeam(String teamId, Player player);
+  Future<void> removePlayerFromTeam(String teamId, String playerId);
 
   // Matches
   Future<void> createMatch(CricketMatch match);

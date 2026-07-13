@@ -7,12 +7,15 @@ class DottedCircularLoader extends StatefulWidget {
   final Duration duration;
   final int dotCount;
 
+  final bool center;
+
   const DottedCircularLoader({
     super.key,
     this.size = 24.0,
     this.color = Colors.white,
     this.duration = const Duration(milliseconds: 1000),
     this.dotCount = 8,
+    this.center = true,
   });
 
   @override
@@ -40,24 +43,27 @@ class _DottedCircularLoaderState extends State<DottedCircularLoader>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: widget.size,
-        height: widget.size,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return CustomPaint(
-              painter: DottedCircularPainter(
-                animationValue: _controller.value,
-                color: widget.color,
-                dotCount: widget.dotCount,
-              ),
-            );
-          },
-        ),
+    final loader = SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return CustomPaint(
+            painter: DottedCircularPainter(
+              animationValue: _controller.value,
+              color: widget.color,
+              dotCount: widget.dotCount,
+            ),
+          );
+        },
       ),
     );
+
+    if (widget.center) {
+      return Center(child: loader);
+    }
+    return loader;
   }
 }
 
