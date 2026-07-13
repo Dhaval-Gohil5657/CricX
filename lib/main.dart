@@ -6,6 +6,10 @@ import 'screens/welcome_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'constants/app_colors.dart';
 import 'widgets/global_banner_ad.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'services/auth_service.dart';
 
 void main() async {
@@ -129,7 +133,172 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     super.dispose();
   }
 
+  bool _isVersionLessThan(String current, String target) {
+    try {
+      final currentParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      final targetParts = target.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      
+      for (int i = 0; i < targetParts.length; i++) {
+        if (i >= currentParts.length) {
+          return true;
+        }
+        if (currentParts[i] < targetParts[i]) {
+          return true;
+        } else if (currentParts[i] > targetParts[i]) {
+          return false;
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error comparing versions: $e');
+      return false;
+    }
+  }
+
+  void _showUpdateDialog(String latestVersion) {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents dismissal by clicking outside
+      builder: (BuildContext context) {
+        return WillPopScope(
+          onWillPop: () async => false, // Prevents dismissal by back button
+          child: Dialog(
+            backgroundColor: AppColors.background,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: const BorderSide(color: AppColors.borderGreen, width: 1.5),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Icon badge
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryTurf.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.system_update_rounded,
+                      color: AppColors.primaryTurf,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Title
+                  const Text(
+                    'Update Required',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Description
+                  Text(
+                    'A newer and more stable version of CricX is available on Google Play. Please update the app to version $latestVersion to continue scoring and playing.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textDarkSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  
+                  // Update Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTurf,
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final Uri url = Uri.parse('https://play.google.com/store/apps/details?id=karma.cricx');
+                        try {
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else {
+                            await launchUrl(url);
+                          }
+                        } catch (e) {
+                          debugPrint('Error launching Play Store url: $e');
+                        }
+                      },
+                      icon: const Icon(Icons.shop_two_rounded, size: 18),
+                      label: const Text(
+                        'UPDATE NOW',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _checkVersion() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final String currentVersion = packageInfo.version;
+      debugPrint('CricX Installed Version: $currentVersion');
+
+      final response = await http.get(
+        Uri.parse('https://play.google.com/store/apps/details?id=karma.cricx&hl=en'),
+      ).timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200) {
+        final versionRegex = RegExp(r',\[\[\["([0-9,\.]*)"]]],');
+        final match = versionRegex.firstMatch(response.body);
+        String? playStoreVersion;
+        
+        if (match != null) {
+          playStoreVersion = match.group(1);
+        } else {
+          final fallbackRegex = RegExp(r'\["([0-9]+\.[0-9]+\.[0-9]+)"\]');
+          final match2 = fallbackRegex.firstMatch(response.body);
+          if (match2 != null) {
+            playStoreVersion = match2.group(1);
+          }
+        }
+
+        if (playStoreVersion != null && playStoreVersion.isNotEmpty) {
+          debugPrint('CricX Play Store Version: $playStoreVersion');
+          if (_isVersionLessThan(currentVersion, playStoreVersion)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showUpdateDialog(playStoreVersion!);
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to check Play Store app version: $e');
+    }
+  }
+
   Future<void> _checkAuth() async {
+    _checkVersion();
     final user = AuthService.instance.currentUser;
     if (user != null) {
       _role = UserRole.values.firstWhere(
