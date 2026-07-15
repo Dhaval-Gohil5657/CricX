@@ -331,7 +331,8 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
             ],
           ],
         ),
-        bottomNavigationBar: ((currentMatch.status == MatchStatus.completed || currentMatch.resultString == "Match Tied") &&
+        bottomNavigationBar: (currentMatch.status != MatchStatus.completed &&
+                currentMatch.resultString == "Match Tied" &&
                 !currentMatch.isSuperOverPlayed &&
                 (role == UserRole.scorer || role == UserRole.organizer) &&
                 isMatchCreator)

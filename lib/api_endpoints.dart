@@ -3,30 +3,30 @@ class ApiEndpoints {
   static const String baseV1 = '$baseUrl/v1';
 
   // Auth / Users Endpoints
-  static const String register = '$baseV1/users/register';
-  static const String login = '$baseV1/users/login';
-  static const String guest = '$baseV1/users/guest';
+  static const String register = '$baseV1/users/register'; //Working
+  static const String login = '$baseV1/users/login'; //Working
+  static const String guest = '$baseV1/users/guest'; //Working
   static const String refresh = '$baseV1/users/refresh';
-  static const String updateRole = '$baseV1/users/role';
+  static const String updateRole = '$baseV1/users/role'; //Working
 
   // Players Endpoints
-  static const String players = '$baseV1/players';
-  static String playerById(String id) => '$baseV1/players/$id';
+  static const String players = '$baseV1/players'; //Working
+  static String playerById(String id) => '$baseV1/players/$id'; //Working
 
   // Teams Endpoints
-  static const String teams = '$baseV1/teams';
-  static String teamById(String id) => '$baseV1/teams/$id';
-  static String teamPlayers(String teamId) => '$baseV1/teams/$teamId/players';
-  static String removePlayerFromTeam(String teamId, String playerId) => '$baseV1/teams/$teamId/players/$playerId';
+  static const String teams = '$baseV1/teams'; //Working
+  static String teamById(String id) => '$baseV1/teams/$id'; //Working
+  static String teamPlayers(String teamId) => '$baseV1/teams/$teamId/players'; //Working
+  static String removePlayerFromTeam(String teamId, String playerId) => '$baseV1/teams/$teamId/players/$playerId'; //Working
 
   // Matches Endpoints
-  static const String matches = '$baseV1/matches';
-  static String matchById(String id) => '$baseV1/matches/$id';
-  static String matchStart(String id) => '$baseV1/matches/$id/start';
-  static String matchScore(String id) => '$baseV1/matches/$id/score';
+  static const String matches = '$baseV1/matches'; //Working
+  static String matchById(String id) => '$baseV1/matches/$id'; //Working
+  static String matchStart(String id) => '$baseV1/matches/$id/start'; //Working
+  static String matchScore(String id) => '$baseV1/matches/$id/score'; // -- cannot Post//
 
   // Tournaments Endpoints
-  static const String tournaments = '$baseV1/tournaments';
+  static const String tournaments = '$baseV1/tournaments'; //Working
   static String tournamentById(String id) => '$baseV1/tournaments/$id';
   static String tournamentTeams(String id) => '$baseV1/tournaments/$id/teams';
 
@@ -41,17 +41,4 @@ Placeholder/Proposed Endpoints (Commented out until implemented by backend team)
 
   =========================================================================
   REMAINING/NOT WORKING BACKEND APIS (Currently returning 404 from server)
-
-  1. UPDATE PLAYER DETAILS: PUT /api/v1/players/:playerId
-     - Returns: 404 Not Found (Cannot PUT /api/v1/players/:playerId)
-     - Used in: ApiDatabaseService.updatePlayerStats
-  2. UPDATE TEAM DETAILS: PUT /api/v1/teams/:teamId
-     - Returns: 404 Not Found (Cannot PUT /api/v1/teams/:teamId)
-     - Used in: ApiDatabaseService.updateTeamInfo
-  3. REMOVE PLAYER FROM TEAM: DELETE /api/v1/teams/:teamId/players/:playerId
-     - Returns: 404 Not Found (Cannot DELETE /api/v1/teams/:teamId/players/:playerId)
-     - Used in: AppState.removePlayerFromTeam
-  4. START MATCH / CHOOSE PLAYING XI: PUT /api/v1/matches/:matchId/start
-     - Returns: 404 Not Found (Cannot PUT /api/v1/matches/:matchId/start)
-     - Used in: ApiDatabaseService.updateMatch (initializes toss, playing XI, and live status)
  */

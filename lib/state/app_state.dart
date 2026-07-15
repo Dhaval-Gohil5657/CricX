@@ -296,6 +296,7 @@ class AppState extends ChangeNotifier {
       match.innings1 = MatchTeamInnings(teamId: match.battingTeam.id);
       _activeScoringMatch = match;
       _db.updateMatch(match);
+      notifyListeners();
     }
   }
 
@@ -464,6 +465,7 @@ class AppState extends ChangeNotifier {
     }
 
     _db.updateMatch(match);
+    notifyListeners();
   }
 
   void undoLastBall(String matchId) {
@@ -687,7 +689,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void completeMatch(String matchId, {String? customResult, bool forceComplete = false}) {
+  Future<void> completeMatch(String matchId, {String? customResult, bool forceComplete = false}) async {
     final index = _matches.indexWhere((m) => m.id == matchId);
     if (index != -1) {
       final match = _matches[index];
@@ -774,7 +776,7 @@ class AppState extends ChangeNotifier {
           final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
           
           if (allLeagueCompleted && playoffMatches.isEmpty) {
-            _autoGeneratePlayoffs(tournament);
+            await _autoGeneratePlayoffs(tournament);
           }
           // 2. Check if Semifinals are completed, and Final is not generated yet
           else if (playoffMatches.isNotEmpty && tournament.playoffType == 'Semifinals & Final') {
@@ -783,7 +785,7 @@ class AppState extends ChangeNotifier {
             final sfCompleted = sfMatches.length == 2 && sfMatches.every((m) => m.status == MatchStatus.completed);
             
             if (sfCompleted && !finalGenerated) {
-              _autoGenerateFinalFromSemis(tournament);
+              await _autoGenerateFinalFromSemis(tournament);
             }
           }
           
@@ -891,39 +893,50 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void addTournamentMatch(String tournamentId, CricketMatch match) {
+  Future<void> addTournamentMatch(String tournamentId, CricketMatch match) async {
     final t = _tournaments.firstWhere((t) => t.id == tournamentId);
-    final index = t.matches.indexWhere((m) => m.id == match.id);
-    if (index != -1) {
-      t.matches[index] = match;
-    } else {
-      t.matches.add(match);
-    }
-    t.updatePointsTable();
-    
-    _db.createMatch(match);
-    _db.updateTournament(t);
-  }
-
-  void addTournamentMatches(String tournamentId, List<CricketMatch> newMatches) {
-    final t = _tournaments.firstWhere((t) => t.id == tournamentId);
-    for (var newMatch in newMatches) {
-      final index = t.matches.indexWhere((m) => m.id == newMatch.id);
+    try {
+      final createdMatch = await _db.createMatch(match);
+      final index = t.matches.indexWhere((m) => m.id == match.id || m.id == createdMatch.id);
       if (index != -1) {
-        t.matches[index] = newMatch;
+        t.matches[index] = createdMatch;
       } else {
-        t.matches.add(newMatch);
+        t.matches.add(createdMatch);
       }
+      t.updatePointsTable();
+      await _db.updateTournament(t);
+      await fetchMatches();
+      await fetchTournaments();
+    } catch (e) {
+      debugPrint('Error adding tournament match: $e');
     }
-    t.updatePointsTable();
-    
-    for (var match in newMatches) {
-      _db.createMatch(match);
-    }
-    _db.updateTournament(t);
   }
 
-  void _autoGeneratePlayoffs(Tournament tour) {
+  Future<void> addTournamentMatches(String tournamentId, List<CricketMatch> newMatches) async {
+    final t = _tournaments.firstWhere((t) => t.id == tournamentId);
+    try {
+      final List<CricketMatch> createdMatches = [];
+      for (var match in newMatches) {
+        final createdMatch = await _db.createMatch(match);
+        createdMatches.add(createdMatch);
+        
+        final index = t.matches.indexWhere((m) => m.id == match.id || m.id == createdMatch.id);
+        if (index != -1) {
+          t.matches[index] = createdMatch;
+        } else {
+          t.matches.add(createdMatch);
+        }
+      }
+      t.updatePointsTable();
+      await _db.updateTournament(t);
+      await fetchMatches();
+      await fetchTournaments();
+    } catch (e) {
+      debugPrint('Error adding tournament matches: $e');
+    }
+  }
+
+  Future<void> _autoGeneratePlayoffs(Tournament tour) async {
     tour.updatePointsTable();
     final standings = tour.pointsTable;
     if (standings.length < 2) return;
@@ -945,10 +958,14 @@ class AppState extends ChangeNotifier {
         tournamentName: tour.name,
         creatorId: tour.creatorId,
       );
-      playoffMatches.add(match);
       
-      tour.matches.add(match);
-      _db.createMatch(match);
+      try {
+        final createdMatch = await _db.createMatch(match);
+        playoffMatches.add(createdMatch);
+        tour.matches.add(createdMatch);
+      } catch (e) {
+        debugPrint('Error generating final match: $e');
+      }
     } else if (tour.playoffType == 'Semifinals & Final') {
       if (standings.length < 4) return;
       final top1 = standings[0].team;
@@ -982,19 +999,23 @@ class AppState extends ChangeNotifier {
         creatorId: tour.creatorId,
       );
 
-      playoffMatches.addAll([sf1, sf2]);
-      
-      tour.matches.addAll([sf1, sf2]);
-      for (var match in playoffMatches) {
-        _db.createMatch(match);
+      try {
+        final createdSf1 = await _db.createMatch(sf1);
+        final createdSf2 = await _db.createMatch(sf2);
+        playoffMatches.addAll([createdSf1, createdSf2]);
+        tour.matches.addAll([createdSf1, createdSf2]);
+      } catch (e) {
+        debugPrint('Error generating semifinal matches: $e');
       }
     }
     
     tour.updatePointsTable();
-    _db.updateTournament(tour);
+    await _db.updateTournament(tour);
+    await fetchMatches();
+    await fetchTournaments();
   }
 
-  void _autoGenerateFinalFromSemis(Tournament tour) {
+  Future<void> _autoGenerateFinalFromSemis(Tournament tour) async {
     CricketMatch? sf1;
     CricketMatch? sf2;
     try {
@@ -1033,10 +1054,16 @@ class AppState extends ChangeNotifier {
       creatorId: tour.creatorId,
     );
     
-    tour.matches.add(finalMatch);
-    _db.createMatch(finalMatch);
-    tour.updatePointsTable();
-    _db.updateTournament(tour);
+    try {
+      final createdFinal = await _db.createMatch(finalMatch);
+      tour.matches.add(createdFinal);
+      tour.updatePointsTable();
+      await _db.updateTournament(tour);
+      await fetchMatches();
+      await fetchTournaments();
+    } catch (e) {
+      debugPrint('Error generating final from semis: $e');
+    }
   }
 
   void declarePlayerOfTheMatch(String matchId, String playerId, String playerName) {

@@ -7,6 +7,7 @@ import '../../models/team_model.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
+import '../../widgets/dotted_circular_loader.dart';
 
 class FixtureDraftScreen extends StatefulWidget {
   final Tournament tournament;
@@ -25,6 +26,7 @@ class FixtureDraftScreen extends StatefulWidget {
 class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
   late List<DateTime> _matchDates;
   late List<TextEditingController> _venueControllers;
+  bool _isPublishing = false;
 
   @override
   void initState() {
@@ -163,7 +165,8 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
     }
   }
 
-  void _confirmAndPublish() {
+  void _confirmAndPublish() async {
+    if (_isPublishing) return;
     final appState = Provider.of<AppState>(context, listen: false);
 
     // 1. Assign selected dates and venues to matches
@@ -206,17 +209,32 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
       );
     }
 
-    // 4. Save to DB
-    appState.addTournamentMatches(widget.tournament.id, finalizedMatches);
+    setState(() {
+      _isPublishing = true;
+    });
 
-    CustomSnackBar.show(
-      context,
-      message: 'Successfully confirmed ${finalizedMatches.length} fixtures!',
-      type: SnackBarType.success,
-    );
-
-    // Pop draft screen and return
-    Navigator.pop(context);
+    try {
+      await appState.addTournamentMatches(widget.tournament.id, finalizedMatches);
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Successfully confirmed ${finalizedMatches.length} fixtures!',
+          type: SnackBarType.success,
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() {
+        _isPublishing = false;
+      });
+      if (mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to confirm fixtures: ${e.toString().replaceAll('Exception: ', '')}',
+          type: SnackBarType.error,
+        );
+      }
+    }
   }
 
   @override
@@ -510,20 +528,35 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
             child: SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryTurf,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 2,
-                ),
-                onPressed: _confirmAndPublish,
-                icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                label: const Text(
-                  'CONFIRM & PUBLISH FIXTURES',
-                  style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                ),
-              ),
+              child: _isPublishing
+                  ? ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTurf,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 2,
+                      ),
+                      onPressed: () {},
+                      child: const DottedCircularLoader(
+                        size: 20,
+                        color: Colors.white,
+                        center: true,
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTurf,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 2,
+                      ),
+                      onPressed: _confirmAndPublish,
+                      icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                      label: const Text(
+                        'CONFIRM & PUBLISH FIXTURES',
+                        style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      ),
+                    ),
             ),
           ),
         ],
