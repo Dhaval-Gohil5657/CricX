@@ -39,6 +39,13 @@ class AppState extends ChangeNotifier {
   List<Tournament> get tournaments => _tournaments;
   CricketMatch? get activeScoringMatch => _activeScoringMatch;
 
+  String? _lastError;
+  String? get lastError => _lastError;
+
+  void clearError() {
+    _lastError = null;
+  }
+
   AppState() {
     _initDatabase();
   }
@@ -475,7 +482,16 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    _db.updateMatch(match);
+    _db.updateMatch(match).then((_) {
+      if (_lastError != null) {
+        _lastError = null;
+        notifyListeners();
+      }
+    }).catchError((e) {
+      _lastError = e.toString();
+      notifyListeners();
+    });
+
     notifyListeners();
   }
 
@@ -643,7 +659,16 @@ class AppState extends ChangeNotifier {
     }
 
     _activeScoringMatch = match;
-    _db.updateMatch(match);
+    _db.updateMatch(match).then((_) {
+      if (_lastError != null) {
+        _lastError = null;
+        notifyListeners();
+      }
+    }).catchError((e) {
+      _lastError = e.toString();
+      notifyListeners();
+    });
+
     notifyListeners();
   }
 
@@ -652,7 +677,15 @@ class AppState extends ChangeNotifier {
       final temp = _activeScoringMatch!.striker;
       _activeScoringMatch!.striker = _activeScoringMatch!.nonStriker;
       _activeScoringMatch!.nonStriker = temp;
-      _db.updateMatch(_activeScoringMatch!);
+      _db.updateMatch(_activeScoringMatch!).then((_) {
+        if (_lastError != null) {
+          _lastError = null;
+          notifyListeners();
+        }
+      }).catchError((e) {
+        _lastError = e.toString();
+        notifyListeners();
+      });
       notifyListeners();
     }
   }
@@ -665,7 +698,15 @@ class AppState extends ChangeNotifier {
         _activeScoringMatch!.bowlerWickets[newBowler.id] ??= 0;
         _activeScoringMatch!.bowlerBallsBowled[newBowler.id] ??= 0;
       }
-      _db.updateMatch(_activeScoringMatch!);
+      _db.updateMatch(_activeScoringMatch!).then((_) {
+        if (_lastError != null) {
+          _lastError = null;
+          notifyListeners();
+        }
+      }).catchError((e) {
+        _lastError = e.toString();
+        notifyListeners();
+      });
       notifyListeners();
     }
   }

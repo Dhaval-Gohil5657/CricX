@@ -16,6 +16,20 @@ class LiveScoringScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+
+    // Check if there was an error updating score on server
+    if (appState.lastError != null) {
+      final errorMsg = appState.lastError;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to save score on server: $errorMsg',
+          type: SnackBarType.error,
+        );
+        appState.clearError();
+      });
+    }
+    
     // Find the latest state of the match from appState list
     final currentMatch = appState.matches.firstWhere((m) => m.id == match.id, orElse: () => match);
     

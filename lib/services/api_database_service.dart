@@ -756,7 +756,7 @@ class ApiDatabaseService implements DatabaseService {
       // 1. Start match if live and events are empty
       if (match.status == MatchStatus.live && match.currentInnings.events.isEmpty) {
         // First call start match API to register playingXI and transition status
-        await http.put(
+        final startResponse = await http.put(
           Uri.parse(ApiEndpoints.matchStart(match.id)),
           headers: _headers,
           body: jsonEncode({
@@ -767,6 +767,10 @@ class ApiDatabaseService implements DatabaseService {
           }),
         );
 
+        if (startResponse.statusCode != 200) {
+          throw Exception('[HTTP PUT] Response (${ApiEndpoints.matchStart(match.id)}): Status ${startResponse.statusCode}');
+        }
+
         // Then call the PUT match API to set striker, non-striker, bowler, toss details, etc.
         final putResponse = await http.put(
           Uri.parse(ApiEndpoints.matchById(match.id)),
@@ -775,12 +779,12 @@ class ApiDatabaseService implements DatabaseService {
         );
 
         if (putResponse.statusCode != 200) {
-          debugPrint('Failed to update match details via PUT: ${putResponse.body}');
+          throw Exception('[HTTP PUT] Response (${ApiEndpoints.matchById(match.id)}): Status ${putResponse.statusCode}');
         }
       } else if (newEventCount > oldEventCount) {
         // 2. Score ball updates (only if a new event is added)
         final latestBall = match.currentInnings.events.last;
-        await http.post(
+        final scoreResponse = await http.post(
           Uri.parse(ApiEndpoints.matchScore(match.id)),
           headers: _headers,
           body: jsonEncode({
@@ -802,12 +806,20 @@ class ApiDatabaseService implements DatabaseService {
           }),
         );
 
+        if (scoreResponse.statusCode != 200 && scoreResponse.statusCode != 201) {
+          throw Exception('[HTTP POST] Response (${ApiEndpoints.matchScore(match.id)}): Status ${scoreResponse.statusCode}');
+        }
+
         // Also call PUT match to sync all other fields like strikerId, nonStrikerId, currentBowlerId, scores, batsman/bowler stats, etc.
-        await http.put(
+        final putResponse = await http.put(
           Uri.parse(ApiEndpoints.matchById(match.id)),
           headers: _headers,
           body: jsonEncode(_matchToMap(match)),
         );
+
+        if (putResponse.statusCode != 200) {
+          throw Exception('[HTTP PUT] Response (${ApiEndpoints.matchById(match.id)}): Status ${putResponse.statusCode}');
+        }
       } else {
         // 3. General updates (strike rotated, bowler changed, match completed, undo ball, etc.)
         final putResponse = await http.put(
@@ -817,18 +829,19 @@ class ApiDatabaseService implements DatabaseService {
         );
 
         if (putResponse.statusCode != 200) {
-          debugPrint('Failed to update match details via PUT: ${putResponse.body}');
+          throw Exception('[HTTP PUT] Response (${ApiEndpoints.matchById(match.id)}): Status ${putResponse.statusCode}');
         }
       }
+
+      // Always update local cache and event counts on success
+      _cachedMatches.removeWhere((m) => m.id == match.id);
+      _cachedMatches.add(match);
+      _lastSentEventCounts[match.id] = match.currentInnings.events.length;
+      _lastSentInningsNums[match.id] = match.currentInningsNum;
     } catch (e) {
       debugPrint('Error updating match on server: $e');
+      rethrow;
     }
-
-    // Always update local cache and event counts
-    _cachedMatches.removeWhere((m) => m.id == match.id);
-    _cachedMatches.add(match);
-    _lastSentEventCounts[match.id] = match.currentInnings.events.length;
-    _lastSentInningsNums[match.id] = match.currentInningsNum;
   }
 
   // ==========================================

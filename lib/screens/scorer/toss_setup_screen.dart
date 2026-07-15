@@ -8,6 +8,7 @@ import 'live_scoring_screen.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/custom_snackbar.dart';
 import '../main_navigation_screen.dart';
+import '../../widgets/dotted_circular_loader.dart';
 
 class TossSetupScreen extends StatefulWidget {
   final CricketMatch match;
@@ -28,6 +29,7 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
 
   bool _isTossConducted = false;
   bool _isXISelected = false;
+  bool _isLoading = false;
 
   List<Player> _teamAPlayingXI = [];
   List<Player> _teamBPlayingXI = [];
@@ -480,8 +482,14 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: _startMatchScoring,
-                      child: const Text('START SCORING', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: _isLoading ? null : _startMatchScoring,
+                      child: _isLoading
+                          ? const DottedCircularLoader(
+                              size: 20,
+                              color: Colors.white,
+                              center: false,
+                            )
+                          : const Text('START SCORING', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -565,7 +573,7 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
     );
   }
 
-  void _startMatchScoring() {
+  Future<void> _startMatchScoring() async {
     if (_striker == null || _nonStriker == null || _bowler == null) {
       CustomSnackBar.show(
         context,
@@ -575,33 +583,51 @@ class _TossSetupScreenState extends State<TossSetupScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     final appState = Provider.of<AppState>(context, listen: false);
     
-    // Conduct toss and setup opening players atomically
-    appState.startMatch(
-      matchId: widget.match.id,
-      tossWinnerId: _tossWinner!.id,
-      decision: _tossDecision,
-      striker: _striker!,
-      nonStriker: _nonStriker!,
-      bowler: _bowler!,
-      teamAPlayingXI: _teamAPlayingXI,
-      teamBPlayingXI: _teamBPlayingXI,
-    );
-    
-    CustomSnackBar.show(
-      context,
-      message: 'Match started successfully!',
-      type: SnackBarType.success,
-    );
+    try {
+      // Conduct toss and setup opening players atomically
+      await appState.startMatch(
+        matchId: widget.match.id,
+        tossWinnerId: _tossWinner!.id,
+        decision: _tossDecision,
+        striker: _striker!,
+        nonStriker: _nonStriker!,
+        bowler: _bowler!,
+        teamAPlayingXI: _teamAPlayingXI,
+        teamBPlayingXI: _teamBPlayingXI,
+      );
+      
+      if (!mounted) return;
 
-    // Navigate directly to Live Scoring Screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LiveScoringScreen(match: widget.match),
-      ),
-    );
+      CustomSnackBar.show(
+        context,
+        message: 'Match started successfully!',
+        type: SnackBarType.success,
+      );
+
+      // Navigate directly to Live Scoring Screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LiveScoringScreen(match: widget.match),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      CustomSnackBar.show(
+        context,
+        message: 'Failed to start match: ${e.toString()}',
+        type: SnackBarType.error,
+      );
+    }
   }
 
   Widget _buildPlayingXIRow(Team team, List<Player> playingList, bool isTeamA) {
