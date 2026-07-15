@@ -196,10 +196,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.background,
-        image: role != UserRole.guest? const DecorationImage(
+        image: const DecorationImage(
           image: AssetImage('assets/cricx_back.png'),
           fit: BoxFit.cover,
-        ) : null,
+        ),
       ),
       child: Scaffold(
         extendBody: true,

@@ -593,21 +593,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 6),
-                                      GestureDetector(
-                                        onTap: () => _showEditNameDialog(context, displayName),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primaryTurf.withOpacity(0.08),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.edit_rounded,
-                                            color: AppColors.primaryTurf,
-                                            size: 14,
-                                          ),
-                                        ),
-                                      ),
+                                      // GestureDetector(
+                                      //   onTap: () => _showEditNameDialog(context, displayName),
+                                      //   child: Container(
+                                      //     padding: const EdgeInsets.all(4),
+                                      //     decoration: BoxDecoration(
+                                      //       color: AppColors.primaryTurf.withOpacity(0.08),
+                                      //       shape: BoxShape.circle,
+                                      //     ),
+                                      //     child: const Icon(
+                                      //       Icons.edit_rounded,
+                                      //       color: AppColors.primaryTurf,
+                                      //       size: 14,
+                                      //     ),
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                   Text(

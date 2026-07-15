@@ -18,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -88,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -110,6 +112,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (_isSignUp) {
+      final name = _nameController.text.trim();
+      if (name.isEmpty) {
+        _showError('Please enter your name.');
+        return;
+      }
       final confirmPassword = _confirmPasswordController.text.trim();
       if (password != confirmPassword) {
         _showError('Passwords do not match.');
@@ -124,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       bool success;
       if (_isSignUp) {
-        final name = email.split('@')[0];
+        final name = _nameController.text.trim();
         success = await AuthService.instance.register(
           name,
           email,
@@ -346,6 +353,34 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
+
+                  if (_isSignUp) ...[
+                    // Name Text Field
+                    TextField(
+                      controller: _nameController,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textDark,
+                      ),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryTurf),
+                        hintText: 'Enter your full name',
+                        hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: AppColors.borderWood, width: 1.2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: AppColors.primaryTurf, width: 2.0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   // Email Text Field
                   TextField(
