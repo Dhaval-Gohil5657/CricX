@@ -7,10 +7,11 @@ import 'matches_screen.dart';
 import 'directory_screen.dart';
 import 'scorer/scorer_dashboard.dart';
 import 'organizer/organizer_dashboard.dart';
-import 'welcome_screen.dart';
 import 'profile_screen.dart';
 import '../constants/app_colors.dart';
 import '../constants/custom_snackbar.dart';
+import '../widgets/interactive_tour.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 
 class MainNavigationScreen extends StatefulWidget {
@@ -27,82 +28,149 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
+  // Feature Tour Keys
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _filterKey = GlobalKey();
+  final GlobalKey _avatarKey = GlobalKey();
+  final Map<String, GlobalKey> _tabKeys = {
+    'Home': GlobalKey(),
+    'Matches': GlobalKey(),
+    'Tournaments': GlobalKey(),
+    'Manage': GlobalKey(),
+    'Directory': GlobalKey(),
+  };
 
+  bool _showTour = false;
+  List<TourStep> _tourSteps = [];
 
-  Future<bool?> _showLogoutConfirmationDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.borderGreen, width: 1.5),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.borderGreen.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(15)
-              ),
-              child: const Icon(
-                Icons.logout_rounded,
-                color: AppColors.primaryTurf,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Sign Out',
-              style: TextStyle(
-                color: AppColors.textDark,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Are you sure you want to sign out of CricX?',
-          style: TextStyle(
-            color: AppColors.textDarkSecondary,
-            fontSize: 14.5,
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: AppColors.textDarkSecondary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTurf,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Sign Out',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _checkTourStatus();
   }
+
+  Future<void> _checkTourStatus() async {
+    const storage = FlutterSecureStorage();
+    final tourCompleted = await storage.read(key: 'feature_tour_completed');
+    final restartTour = await storage.read(key: 'restart_feature_tour');
+
+    if (tourCompleted != 'true' || restartTour == 'true') {
+      await storage.delete(key: 'restart_feature_tour');
+      
+      // Wait for UI layout to settle so keys have contexts
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          final appState = Provider.of<AppState>(context, listen: false);
+          _initializeTourSteps(appState.currentRole, _getNavItems(appState.currentRole));
+          setState(() {
+            _showTour = true;
+          });
+        }
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _getNavItems(UserRole role) {
+    final List<Map<String, dynamic>> navItems = [];
+    
+    navItems.add({
+      'icon': Icons.dashboard_rounded,
+      'label': 'Home',
+    });
+    navItems.add({
+      'icon': Icons.sports_cricket_rounded,
+      'label': 'Matches',
+    });
+    navItems.add({
+      'icon': Icons.emoji_events_rounded,
+      'label': 'Tournaments',
+    });
+
+    if (role == UserRole.scorer || role == UserRole.organizer) {
+      navItems.add({
+        'icon': Icons.scoreboard_rounded,
+        'label': 'Manage',
+      });
+    }
+
+    if (role != UserRole.guest) {
+      navItems.add({
+        'icon': Icons.people_alt_rounded,
+        'label': 'Directory',
+      });
+    }
+    
+    return navItems;
+  }
+
+  void _initializeTourSteps(UserRole role, List<Map<String, dynamic>> navItems) {
+    _tourSteps = [];
+    
+    // 1. Bottom Nav Tabs
+    for (final item in navItems) {
+      final label = item['label'] as String;
+      final key = _tabKeys[label];
+      if (key == null) continue;
+      
+      if (label == 'Home') {
+        _tourSteps.add(TourStep(
+          targetKey: key,
+          title: 'Home Dashboard',
+          description: 'Explore active live matches, today\'s upcoming match schedules, and recent match results.',
+        ));
+      } else if (label == 'Matches') {
+        _tourSteps.add(TourStep(
+          targetKey: key,
+          title: 'Match Center',
+          description: 'Browse matches or tournament fixtures. View categorized lists of live, upcoming, and completed matches.',
+        ));
+      } else if (label == 'Tournaments') {
+        _tourSteps.add(TourStep(
+          targetKey: key,
+          title: 'Tournaments',
+          description: 'Explore tournaments, group standings, fixtures, points tables, and detailed tournament brackets.',
+        ));
+      } else if (label == 'Manage') {
+        _tourSteps.add(TourStep(
+          targetKey: key,
+          title: 'Manage Console',
+          description: 'Access scorer tools to create teams, schedule matches, set up toss rules, and score matches ball-by-ball.',
+        ));
+      } else if (label == 'Directory') {
+        _tourSteps.add(TourStep(
+          targetKey: key,
+          title: 'Rosters & Stats',
+          description: 'Explore registered teams and player profiles. View squad rosters and individual player career statistics.',
+        ));
+      }
+    }
+    
+    // 2. Profile Avatar (if not guest)
+    if (role != UserRole.guest) {
+      _tourSteps.add(TourStep(
+        targetKey: _avatarKey,
+        title: 'User Profile & Roles',
+        description: 'Manage user details, toggle biometric settings, and switch active roles dynamically.',
+      ));
+    }
+
+    // 3. Search Icon
+    _tourSteps.add(TourStep(
+      targetKey: _searchKey,
+      title: 'Smart Search',
+      description: 'Quickly find matches, tournaments, teams, or players based on your active tab.',
+    ));
+
+    // 4. Filter Icon (if scorer/organizer)
+    if (role == UserRole.scorer || role == UserRole.organizer) {
+      _tourSteps.add(TourStep(
+        targetKey: _filterKey,
+        title: 'My Creations Filter',
+        description: 'Toggle to filter lists to display only the matches, teams, or tournaments created by you.',
+      ));
+    }
+  }
+
 
   @override
   void dispose() {
@@ -123,47 +191,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     // Define items and screens based on role
+    final List<Map<String, dynamic>> navItems = _getNavItems(role);
     final List<Widget> screens = [];
-    final List<Map<String, dynamic>> navItems = [];
 
-    // Add Home tab
-    screens.add(const DashboardScreen());
-    navItems.add({
-      'icon': Icons.dashboard_rounded,
-      'label': 'Home',
-    });
-
-    // Add Matches tab
-    screens.add(const MatchesScreen());
-    navItems.add({
-      'icon': Icons.sports_cricket_rounded,
-      'label': 'Matches',
-    });
-
-    // Add Tournaments tab
-    screens.add(const OrganizerDashboard());
-    navItems.add({
-      'icon': Icons.emoji_events_rounded,
-      'label': 'Tournaments',
-    });
-
-    // Manage tab for unified role (Tournaments tab removed as it is mixed with Matches tab)
-    if (role == UserRole.scorer || role == UserRole.organizer) {
-      // Manage Tab
-      screens.add(const ScorerDashboard());
-      navItems.add({
-        'icon': Icons.scoreboard_rounded,
-        'label': 'Manage',
-      });
-    }
-
-    // Directory Tab (Combined Teams & Players)
-    if (role != UserRole.guest) {
-      screens.add(const DirectoryScreen());
-      navItems.add({
-        'icon': Icons.people_alt_rounded,
-        'label': 'Directory',
-      });
+    for (final item in navItems) {
+      final label = item['label'] as String;
+      if (label == 'Home') {
+        screens.add(const DashboardScreen());
+      } else if (label == 'Matches') {
+        screens.add(const MatchesScreen());
+      } else if (label == 'Tournaments') {
+        screens.add(const OrganizerDashboard());
+      } else if (label == 'Manage') {
+        screens.add(const ScorerDashboard());
+      } else if (label == 'Directory') {
+        screens.add(const DirectoryScreen());
+      }
     }
 
     // Safeguard index out of bounds and update activated tabs
@@ -201,9 +244,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           fit: BoxFit.cover,
         ),
       ),
-      child: Scaffold(
-        extendBody: true,
-        backgroundColor: Colors.transparent,
+      child: Stack(
+        children: [
+          Scaffold(
+            extendBody: true,
+            backgroundColor: Colors.transparent,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(50.0),
           child: AppBar(
@@ -289,8 +334,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               : Row(
                   children: [
                     role != UserRole.guest
-                        ? UserProfileAvatar(role: role)
+                        ? UserProfileAvatar(
+                            key: _avatarKey,
+                            role: role,
+                            onProfileReturned: _checkTourStatus,
+                          )
                         : Container(
+                            key: _avatarKey,
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
@@ -342,22 +392,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ))
                     : Padding(
                   padding: const EdgeInsets.only(right: 12),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isSearching = true;
-                      });
-                    },
-                    child: const Icon(
-                      Icons.search_rounded, color: Colors.white, size: 22,),
-
-                  ),
+                    child: GestureDetector(
+                      key: _searchKey,
+                      onTap: () {
+                        setState(() {
+                          _isSearching = true;
+                        });
+                      },
+                      child: const Icon(
+                        Icons.search_rounded, color: Colors.white, size: 22,),
+                    ),
                 ),
               if ((label == 'Home' || label == 'Matches' || label == 'Tournaments' || label == 'Directory') &&
                   (role == UserRole.scorer || role == UserRole.organizer) && !_isSearching)
                  Padding(
                    padding: const EdgeInsets.only(right: 15),
                    child: GestureDetector(
+                      key: _filterKey,
                       onTap: () {
                         appState.toggleFilterByCreator();
 
@@ -433,6 +484,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       final item = navItems[index];
                       final isSelected = _selectedIndex == index;
                       return GestureDetector(
+                        key: _tabKeys[item['label']],
                         onTap: () {
                           setState(() {
                             _selectedIndex = index;
@@ -489,10 +541,54 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ),
       ),
-    );
+      if (_showTour && _tourSteps.isNotEmpty)
+        InteractiveTourOverlay(
+          steps: _tourSteps,
+          onComplete: () async {
+            const storage = FlutterSecureStorage();
+            await storage.write(key: 'feature_tour_completed', value: 'true');
+            if (mounted) {
+              setState(() {
+                _showTour = false;
+              });
+              CustomSnackBar.show(
+                context,
+                message: 'Tour completed! Enjoy using CricX!',
+                type: SnackBarType.success,
+              );
+            }
+          },
+          onSkip: () async {
+            const storage = FlutterSecureStorage();
+            await storage.write(key: 'feature_tour_completed', value: 'true');
+            if (mounted) {
+              setState(() {
+                _showTour = false;
+              });
+            }
+          },
+          onStepChanged: (stepIndex) {
+            final step = _tourSteps[stepIndex];
+            for (final entry in _tabKeys.entries) {
+              if (entry.value == step.targetKey) {
+                final targetIndex = navItems.indexWhere((item) => item['label'] == entry.key);
+                if (targetIndex != -1) {
+                  setState(() {
+                    _selectedIndex = targetIndex;
+                    _isSearching = false;
+                  });
+                  appState.clearSearchQuery();
+                  _searchController.clear();
+                }
+                break;
+              }
+            }
+          },
+        ),
+    ],
+  ),
+);
   }
-
-
 }
 
 class BatPainter extends CustomPainter {
@@ -683,7 +779,8 @@ class PitchCreasePainter extends CustomPainter {
 
 class UserProfileAvatar extends StatefulWidget {
   final UserRole role;
-  const UserProfileAvatar({super.key, required this.role});
+  final VoidCallback? onProfileReturned;
+  const UserProfileAvatar({super.key, required this.role, this.onProfileReturned});
 
   @override
   State<UserProfileAvatar> createState() => _UserProfileAvatarState();
@@ -720,11 +817,14 @@ class _UserProfileAvatarState extends State<UserProfileAvatar> with SingleTicker
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) => _controller.reverse(),
       onTapCancel: () => _controller.reverse(),
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfileScreen()),
         );
+        if (widget.onProfileReturned != null) {
+          widget.onProfileReturned!();
+        }
       },
       child: ScaleTransition(
         scale: _scaleAnimation,

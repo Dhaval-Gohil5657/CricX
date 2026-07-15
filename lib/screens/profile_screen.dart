@@ -8,6 +8,7 @@ import '../constants/custom_snackbar.dart';
 import 'welcome_screen.dart';
 import 'main_navigation_screen.dart';
 import '../services/biometric_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -497,7 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.primaryTurf))
+            ? const Center(child: DottedCircularLoader(color: AppColors.primaryTurf))
             : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(16.0),
@@ -833,7 +834,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 16),
+                    const Text(
+                      'HELP & TUTORIALS',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      color: AppColors.cardBg,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: AppColors.borderGreen.withOpacity(0.3), width: 1.2),
+                      ),
+                      child: InkWell(
+                        onTap: () async {
+                          const storage = FlutterSecureStorage();
+                          await storage.write(key: 'restart_feature_tour', value: 'true');
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.pitchGold.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.help_outline_rounded,
+                                  color: AppColors.woodMahogany,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text(
+                                      'Take Feature Tour',
+                                      style: TextStyle(
+                                        color: AppColors.textDark,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    SizedBox(height: 3),
+                                    Text(
+                                      'Let CricX guide you through its main tabs and tools',
+                                      style: TextStyle(
+                                        color: AppColors.textDarkSecondary,
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: AppColors.textDarkSecondary,
+                                size: 14,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

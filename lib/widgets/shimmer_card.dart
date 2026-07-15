@@ -107,33 +107,7 @@ class LiveMatchSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Header Placeholder Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const ShimmerCard(height: 11, width: 120),
-                Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            const ShimmerCard(height: 11, width: 120),
             const SizedBox(height: 14),
 
             // Team A Row Placeholder
