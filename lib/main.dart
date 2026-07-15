@@ -11,6 +11,8 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'services/auth_service.dart';
+import 'screens/onboarding_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,6 +100,7 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
   bool _isLoggedIn = false;
   UserRole _role = UserRole.guest;
   bool _animationCompleted = false;
+  bool _showWalkthrough = false;
 
   late AnimationController _controller;
   late Animation<double> _heightAnimation;
@@ -122,7 +125,7 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1200),
     );
     _checkAuth();
   }
@@ -298,26 +301,148 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
   }
 
   Future<void> _checkAuth() async {
-    _checkVersion();
-    final user = AuthService.instance.currentUser;
-    if (user != null) {
-      _role = UserRole.values.firstWhere(
-        (r) => r.name.toLowerCase() == user.role.toLowerCase(),
-        orElse: () => UserRole.user,
-      );
-      _isLoggedIn = true;
-    }
+    try {
+      _checkVersion();
+      
+      // Check if walkthrough has been shown
+      final storage = const FlutterSecureStorage();
+      final walkthroughShown = await storage.read(key: 'walkthrough_shown');
+      _showWalkthrough = walkthroughShown != 'true';
 
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          if (_isLoggedIn) {
-            Provider.of<AppState>(context, listen: false).changeRole(_role);
+      final user = AuthService.instance.currentUser;
+      if (user != null) {
+        _role = UserRole.values.firstWhere(
+          (r) => r.name.toLowerCase() == user.role.toLowerCase(),
+          orElse: () => UserRole.user,
+        );
+        _isLoggedIn = true;
+      }
+    } catch (e, stack) {
+      debugPrint('Error in checkAuth: $e\n$stack');
+      _showWalkthrough = false;
+    } finally {
+      if (mounted) {
+        Future.delayed(Duration.zero, () {
+          if (mounted) {
+            if (_isLoggedIn) {
+              Provider.of<AppState>(context, listen: false).changeRole(_role);
+            }
+            _startTransition();
           }
-          _startTransition();
-        }
-      });
+        });
+      }
     }
+  }
+
+  void _transitionFromWalkthroughToWelcome() {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final topPadding = mediaQuery.padding.top;
+
+    final isDashboard = _isLoggedIn &&
+        (_role == UserRole.user ||
+            _role == UserRole.organizer ||
+            _role == UserRole.scorer);
+
+    final targetHeight = isDashboard ? (50.0 + topPadding) : 240.0;
+    final targetRadius = isDashboard ? 20.0 : 28.0;
+
+    setState(() {
+      _showWalkthrough = false;
+      _animationCompleted = false;
+    });
+
+    _controller.reset();
+
+    // Height slides down from 0.0 to 240.0 (or dashboard height)
+    _heightAnimation = Tween<double>(begin: 0.0, end: targetHeight).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    // Radius transitions from 36.0 to targetRadius
+    _radiusAnimation = Tween<double>(begin: 36.0, end: targetRadius).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.2, curve: Curves.easeOut),
+      ),
+    );
+
+    // Logo size, radius, padding, position tweens
+    final double logoSizeEnd = isDashboard ? 38.0 : 72.0;
+    final double logoRadiusEnd = isDashboard ? 12.0 : 20.0;
+
+    final double logoLeftEnd = isDashboard ? 16.0 : (screenWidth - logoSizeEnd) / 2;
+    final double logoTopEnd = isDashboard 
+        ? (topPadding + (50.0 - logoSizeEnd) / 2) 
+        : (topPadding + (240.0 - topPadding - logoSizeEnd - 70.0) / 2);
+
+    _logoSizeAnimation = Tween<double>(begin: 72.0, end: logoSizeEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _logoRadiusAnimation = Tween<double>(begin: 20.0, end: logoRadiusEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _logoPaddingAnimation = ConstantTween<double>(0.0).animate(_controller);
+    _logoLeftAnimation = Tween<double>(begin: logoLeftEnd, end: logoLeftEnd).animate(_controller);
+    _logoTopAnimation = Tween<double>(begin: -100.0, end: logoTopEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+
+    // Title Size, Position, Opacity Tweens
+    final double titleSizeEnd = isDashboard ? 40.0 : 32.0;
+    final double titleTopEnd = isDashboard 
+        ? (logoTopEnd + 20.0) 
+        : (logoTopEnd + logoSizeEnd + 12.0);
+
+    _titleSizeAnimation = Tween<double>(begin: 32.0, end: titleSizeEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _titleTopAnimation = Tween<double>(begin: -150.0, end: titleTopEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _titleOpacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: isDashboard ? 0.0 : 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    // Tagline Size, Position, Opacity Tweens
+    final double taglineSizeEnd = isDashboard ? 16.0 : 14.0;
+    final double titleHeightEnd = isDashboard ? 52.0 : 42.0;
+    final double taglineTopEnd = isDashboard 
+        ? (titleTopEnd + 24.0) 
+        : (titleTopEnd + titleHeightEnd + 2.0);
+
+    _taglineSizeAnimation = Tween<double>(begin: 14.0, end: taglineSizeEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _taglineTopAnimation = Tween<double>(begin: -200.0, end: taglineTopEnd).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _taglineOpacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: isDashboard ? 0.0 : 0.85,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    _controller.forward().then((_) {
+      if (mounted) {
+        setState(() {
+          _animationCompleted = true;
+        });
+      }
+    });
   }
 
   void _startTransition() {
@@ -329,10 +454,20 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final isDashboard = _isLoggedIn &&
         (_role == UserRole.user ||
             _role == UserRole.organizer ||
-            _role == UserRole.scorer);
+            _role == UserRole.scorer) && !_showWalkthrough;
 
-    final targetHeight = isDashboard ? (50.0 + topPadding) : 240.0;
-    final targetRadius = isDashboard ? 20.0 : 28.0;
+    final double targetHeight;
+    final double targetRadius;
+    if (_showWalkthrough) {
+      targetHeight = 0.0;
+      targetRadius = 36.0; // Maintain rounded corners during slide up
+    } else if (isDashboard) {
+      targetHeight = 50.0 + topPadding;
+      targetRadius = 20.0;
+    } else {
+      targetHeight = 240.0;
+      targetRadius = 28.0;
+    }
 
     _heightAnimation = Tween<double>(begin: screenHeight, end: targetHeight).animate(
       CurvedAnimation(
@@ -360,9 +495,11 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final double logoTopStart = (screenHeight - logoSizeStart - 80.0) / 2;
 
     final double logoLeftEnd = isDashboard ? 16.0 : (screenWidth - logoSizeEnd) / 2;
-    final double logoTopEnd = isDashboard 
-        ? (topPadding + (50.0 - logoSizeEnd) / 2) 
-        : (topPadding + (240.0 - topPadding - logoSizeEnd - 70.0) / 2);
+    final double logoTopEnd = _showWalkthrough
+        ? -100.0
+        : (isDashboard 
+            ? (topPadding + (50.0 - logoSizeEnd) / 2) 
+            : (topPadding + (240.0 - topPadding - logoSizeEnd - 70.0) / 2));
 
     _logoSizeAnimation = Tween<double>(begin: logoSizeStart, end: logoSizeEnd).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
@@ -384,9 +521,11 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final double titleSizeStart = 40.0;
     final double titleSizeEnd = isDashboard ? 40.0 : 32.0;
     final double titleTopStart = logoTopStart + logoSizeStart + 20.0;
-    final double titleTopEnd = isDashboard 
-        ? titleTopStart - 20.0 
-        : (logoTopEnd + logoSizeEnd + 12.0);
+    final double titleTopEnd = _showWalkthrough
+        ? -150.0
+        : (isDashboard 
+            ? titleTopStart - 20.0 
+            : (logoTopEnd + logoSizeEnd + 12.0));
 
     _titleSizeAnimation = Tween<double>(begin: titleSizeStart, end: titleSizeEnd).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
@@ -396,11 +535,11 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     );
     _titleOpacityAnimation = Tween<double>(
       begin: 1.0,
-      end: isDashboard ? 0.0 : 1.0,
+      end: (isDashboard || _showWalkthrough) ? 0.0 : 1.0,
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: isDashboard 
+        curve: (isDashboard || _showWalkthrough) 
             ? const Interval(0.0, 0.4, curve: Curves.easeOut) 
             : const Interval(0.0, 1.0),
       ),
@@ -412,9 +551,11 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final double titleHeightStart = 52.0;
     final double titleHeightEnd = isDashboard ? 52.0 : 42.0;
     final double taglineTopStart = titleTopStart + titleHeightStart + 4.0;
-    final double taglineTopEnd = isDashboard 
-        ? taglineTopStart - 20.0 
-        : (titleTopEnd + titleHeightEnd + 2.0);
+    final double taglineTopEnd = _showWalkthrough
+        ? -200.0
+        : (isDashboard 
+            ? taglineTopStart - 20.0 
+            : (titleTopEnd + titleHeightEnd + 2.0));
 
     _taglineSizeAnimation = Tween<double>(begin: taglineSizeStart, end: taglineSizeEnd).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic),
@@ -424,11 +565,11 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     );
     _taglineOpacityAnimation = Tween<double>(
       begin: 1.0,
-      end: isDashboard ? 0.0 : 0.85,
+      end: (isDashboard || _showWalkthrough) ? 0.0 : 0.85,
     ).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: isDashboard 
+        curve: (isDashboard || _showWalkthrough) 
             ? const Interval(0.0, 0.4, curve: Curves.easeOut) 
             : const Interval(0.0, 1.0),
       ),
@@ -542,102 +683,118 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
 
     if (!_animationCompleted) {
       return Scaffold(
-        body: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Stack(
-              children: [
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: _heightAnimation.value,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(_radiusAnimation.value),
-                    ),
-                    child: CustomPaint(
-                      painter: PitchWelcomePainter(
-                        groundColorLight: const Color(0xFF2E6B3E),
-                        groundColorDark: const Color(0xFF1F4D28),
-                      ),
+        body: Stack(
+          children: [
+            if (_showWalkthrough)
+              Positioned.fill(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.background,
+                    image: DecorationImage(
+                      image: AssetImage('assets/cricx_back.png'),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-                Positioned(
-                  left: _logoLeftAnimation.value,
-                  top: _logoTopAnimation.value,
-                  width: _logoSizeAnimation.value,
-                  height: _logoSizeAnimation.value,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(_logoRadiusAnimation.value),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.15 * _titleOpacityAnimation.value),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
+              ),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Stack(
+                  children: [
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: _heightAnimation.value,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(_radiusAnimation.value),
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(_logoRadiusAnimation.value),
-                      child: Padding(
-                        padding: EdgeInsets.all(_logoPaddingAnimation.value),
-                        child: Image.asset(
-                          'assets/CricX_logo.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.sports_cricket_rounded,
-                            color: const Color(0xFF2E6B3E),
-                            size: _logoSizeAnimation.value * 0.5,
+                        child: CustomPaint(
+                          painter: PitchWelcomePainter(
+                            groundColorLight: const Color(0xFF2E6B3E),
+                            groundColorDark: const Color(0xFF1F4D28),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: _titleTopAnimation.value,
-                  child: Opacity(
-                    opacity: _titleOpacityAnimation.value,
-                    child: Center(
-                      child: Text(
-                        'CricX',
-                        style: TextStyle(
-                          fontSize: _titleSizeAnimation.value,
-                          fontWeight: FontWeight.bold,
+                    Positioned(
+                      left: _logoLeftAnimation.value,
+                      top: _logoTopAnimation.value,
+                      width: _logoSizeAnimation.value,
+                      height: _logoSizeAnimation.value,
+                      child: Container(
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                          letterSpacing: 1.5,
+                          borderRadius: BorderRadius.circular(_logoRadiusAnimation.value),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15 * _titleOpacityAnimation.value),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(_logoRadiusAnimation.value),
+                          child: Padding(
+                            padding: EdgeInsets.all(_logoPaddingAnimation.value),
+                            child: Image.asset(
+                              'assets/CricX_logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.sports_cricket_rounded,
+                                color: const Color(0xFF2E6B3E),
+                                size: _logoSizeAnimation.value * 0.5,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: _taglineTopAnimation.value,
-                  child: Opacity(
-                    opacity: _taglineOpacityAnimation.value,
-                    child: Center(
-                      child: Text(
-                        'Live Cricket. Simplified.',
-                        style: TextStyle(
-                          fontSize: _taglineSizeAnimation.value,
-                          color: Colors.white.withOpacity(0.85),
-                          letterSpacing: 0.8,
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: _titleTopAnimation.value,
+                      child: Opacity(
+                        opacity: _titleOpacityAnimation.value,
+                        child: Center(
+                          child: Text(
+                            'CricX',
+                            style: TextStyle(
+                              fontSize: _titleSizeAnimation.value,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          },
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: _taglineTopAnimation.value,
+                      child: Opacity(
+                        opacity: _taglineOpacityAnimation.value,
+                        child: Center(
+                          child: Text(
+                            'Live Cricket. Simplified.',
+                            style: TextStyle(
+                              fontSize: _taglineSizeAnimation.value,
+                              color: Colors.white.withOpacity(0.85),
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
         ),
       );
     }
@@ -645,7 +802,21 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final isDashboard = _isLoggedIn &&
         (_role == UserRole.user ||
             _role == UserRole.organizer ||
-            _role == UserRole.scorer);
+            _role == UserRole.scorer) && !_showWalkthrough;
+
+    if (_showWalkthrough) {
+      return OnboardingScreen(
+        onComplete: () async {
+          try {
+            const storage = FlutterSecureStorage();
+            await storage.write(key: 'walkthrough_shown', value: 'true');
+          } catch (e) {
+            debugPrint('Error saving walkthrough status: $e');
+          }
+          _transitionFromWalkthroughToWelcome();
+        },
+      );
+    }
 
     if (isDashboard) {
       return const MainNavigationScreen();
