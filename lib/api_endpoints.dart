@@ -23,12 +23,12 @@ class ApiEndpoints {
   static const String matches = '$baseV1/matches'; //Working
   static String matchById(String id) => '$baseV1/matches/$id'; //Working
   static String matchStart(String id) => '$baseV1/matches/$id/start'; //Working
-  static String matchScore(String id) => '$baseV1/matches/$id/score'; // -- cannot Post//
+  static String matchScore(String id) => '$baseV1/matches/$id/score'; // working
 
   // Tournaments Endpoints
   static const String tournaments = '$baseV1/tournaments'; //Working
-  static String tournamentById(String id) => '$baseV1/tournaments/$id';
-  static String tournamentTeams(String id) => '$baseV1/tournaments/$id/teams';
+  static String tournamentById(String id) => '$baseV1/tournaments/$id'; // working
+  static String tournamentTeams(String id) => '$baseV1/tournaments/$id/teams'; // working
 
   // Stats
   static const String playerLeaderboard = '$baseV1/stats/players';

@@ -223,7 +223,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void startMatch({
+  Future<void> startMatch({
     required String matchId,
     required String tossWinnerId,
     required String decision,
@@ -232,7 +232,7 @@ class AppState extends ChangeNotifier {
     required Player bowler,
     List<Player>? teamAPlayingXI,
     List<Player>? teamBPlayingXI,
-  }) {
+  }) async {
     final index = _matches.indexWhere((m) => m.id == matchId);
     if (index != -1) {
       final match = _matches[index];
@@ -269,7 +269,18 @@ class AppState extends ChangeNotifier {
       match.bowlerBallsBowled[bowler.id] ??= 0;
       
       _activeScoringMatch = match;
-      _db.updateMatch(match);
+      await _db.updateMatch(match);
+
+      // If this match is part of a tournament, update tournament status/pointsTable on backend!
+      if (match.tournamentId != null && match.tournamentId!.isNotEmpty) {
+        final tIndex = _tournaments.indexWhere((t) => t.id == match.tournamentId);
+        if (tIndex != -1) {
+          final tour = _tournaments[tIndex];
+          tour.refreshStatus();
+          await _db.updateTournament(tour);
+        }
+      }
+
       notifyListeners();
     }
   }
@@ -771,8 +782,8 @@ class AppState extends ChangeNotifier {
           tournament.updatePointsTable();
 
           // 1. Check if all league matches are completed, and no playoffs have been generated yet
-          final leagueMatches = tournament.matches.where((m) => m.id.contains('_league_')).toList();
-          final playoffMatches = tournament.matches.where((m) => m.id.contains('_sf') || m.id.contains('_final')).toList();
+          final leagueMatches = tournament.matches.where((m) => (m.stage?.toLowerCase().contains('league') ?? false) || m.id.contains('_league_')).toList();
+          final playoffMatches = tournament.matches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || (m.stage?.toLowerCase().contains('final') ?? false) || m.id.contains('_sf') || m.id.contains('_final')).toList();
           final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
           
           if (allLeagueCompleted && playoffMatches.isEmpty) {
@@ -780,8 +791,8 @@ class AppState extends ChangeNotifier {
           }
           // 2. Check if Semifinals are completed, and Final is not generated yet
           else if (playoffMatches.isNotEmpty && tournament.playoffType == 'Semifinals & Final') {
-            final sfMatches = playoffMatches.where((m) => m.id.contains('_sf')).toList();
-            final finalGenerated = playoffMatches.any((m) => m.id.contains('_final'));
+            final sfMatches = playoffMatches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || m.id.contains('_sf')).toList();
+            final finalGenerated = playoffMatches.any((m) => (m.stage?.toLowerCase().contains('final') ?? false) || m.id.contains('_final'));
             final sfCompleted = sfMatches.length == 2 && sfMatches.every((m) => m.status == MatchStatus.completed);
             
             if (sfCompleted && !finalGenerated) {
@@ -1019,9 +1030,17 @@ class AppState extends ChangeNotifier {
     CricketMatch? sf1;
     CricketMatch? sf2;
     try {
-      sf1 = tour.matches.firstWhere((m) => m.id.endsWith('_sf1'));
-      sf2 = tour.matches.firstWhere((m) => m.id.endsWith('_sf2'));
-    } catch (_) {}
+      sf1 = tour.matches.firstWhere((m) => m.id.endsWith('_sf1') || m.id.contains('_sf1'));
+      sf2 = tour.matches.firstWhere((m) => m.id.endsWith('_sf2') || m.id.contains('_sf2'));
+    } catch (_) {
+      final sfMatches = tour.matches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || m.id.contains('_sf')).toList();
+      if (sfMatches.isNotEmpty) {
+        sf1 = sfMatches[0];
+        if (sfMatches.length > 1) {
+          sf2 = sfMatches[1];
+        }
+      }
+    }
 
     if (sf1 == null || sf2 == null) return;
     if (sf1.status != MatchStatus.completed || sf2.status != MatchStatus.completed) return;

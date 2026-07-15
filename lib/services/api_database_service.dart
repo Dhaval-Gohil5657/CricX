@@ -873,12 +873,28 @@ class ApiDatabaseService implements DatabaseService {
 
     final List<CricketMatch> tMatches = [];
     for (var mid in rawMatchIds) {
-      final String idStr = mid is Map ? _parseId(Map<String, dynamic>.from(mid)) : mid.toString();
+      String idStr;
+      String? matchStage;
+      if (mid is Map) {
+        final Map<String, dynamic> map = Map<String, dynamic>.from(mid);
+        if (map.containsKey('matchId')) {
+          idStr = _parseIdOrString(map['matchId']) ?? '';
+        } else {
+          idStr = _parseId(map);
+        }
+        if (map.containsKey('stage')) {
+          matchStage = map['stage']?.toString();
+        }
+      } else {
+        idStr = mid.toString();
+      }
       final matchIndex = allMatches.indexWhere((m) => m.id == idStr);
       if (matchIndex != -1) {
-        tMatches.add(allMatches[matchIndex]);
-      } else if (allMatches.isNotEmpty) {
-        tMatches.add(allMatches.first);
+        final match = allMatches[matchIndex];
+        if (matchStage != null) {
+          match.stage = matchStage;
+        }
+        tMatches.add(match);
       }
     }
 

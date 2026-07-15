@@ -112,6 +112,7 @@ class CricketMatch {
   String? playerOfTheMatchName;
   List<String>? teamAPlayerIds;
   List<String>? teamBPlayerIds;
+  String? stage; // 'League', 'Semifinal', 'Final'
 
   CricketMatch({
     required this.id,
@@ -137,6 +138,7 @@ class CricketMatch {
     this.playerOfTheMatchName,
     this.teamAPlayerIds,
     this.teamBPlayerIds,
+    this.stage,
   });
 
   Team get battingTeam {

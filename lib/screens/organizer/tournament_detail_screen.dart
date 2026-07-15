@@ -340,23 +340,32 @@ class TournamentDetailScreen extends StatelessWidget {
       );
     }
 
-    final leagueMatches = matches.where((m) => m.id.contains('_league_')).toList();
-    final playoffMatches = matches.where((m) => m.id.contains('_sf') || m.id.contains('_final')).toList();
+    final leagueMatches = matches.where((m) => (m.stage?.toLowerCase().contains('league') ?? false) || m.id.contains('_league_')).toList();
+    final playoffMatches = matches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || (m.stage?.toLowerCase().contains('final') ?? false) || m.id.contains('_sf') || m.id.contains('_final')).toList();
 
     final allLeagueCompleted = leagueMatches.isNotEmpty && leagueMatches.every((m) => m.status == MatchStatus.completed);
     final hasPlayoffs = playoffMatches.isNotEmpty;
     
     // Check if both Semifinals are completed but Final is not yet generated
-    final sfMatches = playoffMatches.where((m) => m.id.contains('_sf')).toList();
-    final finalGenerated = playoffMatches.any((m) => m.id.contains('_final'));
+    final sfMatches = playoffMatches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || m.id.contains('_sf')).toList();
+    final finalGenerated = playoffMatches.any((m) => (m.stage?.toLowerCase().contains('final') ?? false) || m.id.contains('_final'));
     final sfCompleted = sfMatches.length == 2 && sfMatches.every((m) => m.status == MatchStatus.completed);
 
     // Check if Final is completed to show Champion banner
     CricketMatch? finalMatch;
     try {
-      finalMatch = playoffMatches.firstWhere((m) => m.id.contains('_final'));
+      finalMatch = playoffMatches.firstWhere((m) => (m.stage?.toLowerCase().contains('final') ?? false) || m.id.contains('_final'));
     } catch (_) {}
     final tournamentCompleted = finalMatch != null && finalMatch.status == MatchStatus.completed;
+
+    CricketMatch? sf1Match;
+    CricketMatch? sf2Match;
+    if (sfMatches.isNotEmpty) {
+      sf1Match = sfMatches[0];
+      if (sfMatches.length > 1) {
+        sf2Match = sfMatches[1];
+      }
+    }
 
     // Build the Playoff widgets list (Actual matches or placeholders)
     final List<Widget> semifinalWidgets = [];
@@ -366,11 +375,17 @@ class TournamentDetailScreen extends StatelessWidget {
         CricketMatch? sf1Match;
         CricketMatch? sf2Match;
         CricketMatch? finalMatchObject;
-        for (var m in playoffMatches) {
-          if (m.id.endsWith('_sf1')) sf1Match = m;
-          if (m.id.endsWith('_sf2')) sf2Match = m;
-          if (m.id.endsWith('_final')) finalMatchObject = m;
+        
+        final localSfMatches = playoffMatches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || m.id.contains('_sf')).toList();
+        if (localSfMatches.isNotEmpty) {
+          sf1Match = localSfMatches[0];
+          if (localSfMatches.length > 1) {
+            sf2Match = localSfMatches[1];
+          }
         }
+        try {
+          finalMatchObject = playoffMatches.firstWhere((m) => (m.stage?.toLowerCase().contains('final') ?? false) || m.id.contains('_final'));
+        } catch (_) {}
 
         if (tour.playoffType == 'Semifinals & Final') {
           if (sf1Match != null) semifinalWidgets.add(_buildMatchCard(context, sf1Match));
@@ -1314,9 +1329,17 @@ class TournamentDetailScreen extends StatelessWidget {
     CricketMatch? sf1;
     CricketMatch? sf2;
     try {
-      sf1 = tour.matches.firstWhere((m) => m.id.endsWith('_sf1'));
-      sf2 = tour.matches.firstWhere((m) => m.id.endsWith('_sf2'));
-    } catch (_) {}
+      sf1 = tour.matches.firstWhere((m) => m.id.endsWith('_sf1') || m.id.contains('_sf1'));
+      sf2 = tour.matches.firstWhere((m) => m.id.endsWith('_sf2') || m.id.contains('_sf2'));
+    } catch (_) {
+      final sfMatches = tour.matches.where((m) => (m.stage?.toLowerCase().contains('semi') ?? false) || m.id.contains('_sf')).toList();
+      if (sfMatches.isNotEmpty) {
+        sf1 = sfMatches[0];
+        if (sfMatches.length > 1) {
+          sf2 = sfMatches[1];
+        }
+      }
+    }
 
     if (sf1 == null || sf2 == null) return;
     if (sf1.status != MatchStatus.completed || sf2.status != MatchStatus.completed) return;

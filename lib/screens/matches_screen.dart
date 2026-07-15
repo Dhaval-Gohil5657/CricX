@@ -673,7 +673,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              if (match.status == MatchStatus.completed && match.playerOfTheMatchName != null) ...[
+                              if (match.status == MatchStatus.completed && match.playerOfTheMatchName != null && match.playerOfTheMatchName!.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [

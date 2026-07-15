@@ -1598,7 +1598,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
 
   Widget _buildPlayerOfTheMatchCard(BuildContext context, CricketMatch match, AppState appState) {
     final role = appState.currentRole;
-    final isPOMDeclared = match.playerOfTheMatchId != null;
+    final isPOMDeclared = match.playerOfTheMatchId != null && match.playerOfTheMatchId!.isNotEmpty;
     final currentUserId = AuthService.instance.currentUser?.uid;
     final isCreator = match.creatorId == null || match.creatorId == currentUserId;
     final canDeclare = (role == UserRole.scorer || role == UserRole.organizer) && isCreator;
