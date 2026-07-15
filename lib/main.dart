@@ -311,8 +311,10 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
 
       final user = AuthService.instance.currentUser;
       if (user != null) {
+        final activeRoleStr = await storage.read(key: 'active_user_role');
+        final roleToUse = activeRoleStr ?? user.role;
         _role = UserRole.values.firstWhere(
-          (r) => r.name.toLowerCase() == user.role.toLowerCase(),
+          (r) => r.name.toLowerCase() == roleToUse.toLowerCase(),
           orElse: () => UserRole.user,
         );
         _isLoggedIn = true;

@@ -78,7 +78,7 @@ class LiveMatchSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: showScoringSection ? 190.0 : 140.0,
+      height: showScoringSection ? 190.0 : 160.0,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(

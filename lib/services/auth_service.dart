@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'logged_http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -173,6 +172,7 @@ class AuthService extends ChangeNotifier {
           await _storage.write(key: 'user_email', value: email ?? '');
           await _storage.write(key: 'user_name', value: name ?? '');
           await _storage.write(key: 'user_role', value: role);
+          await _storage.write(key: 'active_user_role', value: role);
         }
         _notifyListenersSafe();
         return true;
@@ -225,6 +225,7 @@ class AuthService extends ChangeNotifier {
           await _storage.write(key: 'user_email', value: email ?? '');
           await _storage.write(key: 'user_name', value: name ?? '');
           await _storage.write(key: 'user_role', value: role);
+          await _storage.write(key: 'active_user_role', value: role);
         }
         _notifyListenersSafe();
         return true;
@@ -271,6 +272,7 @@ class AuthService extends ChangeNotifier {
           await _storage.write(key: 'user_email', value: email);
           await _storage.write(key: 'user_name', value: name);
           await _storage.write(key: 'user_role', value: role);
+          await _storage.write(key: 'active_user_role', value: role);
         }
         _notifyListenersSafe();
         return true;
@@ -290,10 +292,14 @@ class AuthService extends ChangeNotifier {
     await _storage.delete(key: 'user_email');
     await _storage.delete(key: 'user_name');
     await _storage.delete(key: 'user_role');
+    await _storage.delete(key: 'active_user_role');
     _notifyListenersSafe();
   }
 
   Future<bool> updateRole(String role) async {
+    // Write locally first so user selection is stored instantly
+    await _storage.write(key: 'active_user_role', value: role);
+    
     if (_token == null) return false;
     try {
       final response = await http.patch(
