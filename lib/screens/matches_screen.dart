@@ -581,7 +581,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              match.teamAInnings != null ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}' : '-',
+                              (match.status != MatchStatus.upcoming && match.teamAInnings != null)
+                                  ? '${match.teamAInnings!.runs}/${match.teamAInnings!.wickets}'
+                                  : '-',
                               style: const TextStyle(
                                 color: AppColors.textDark,
                                 fontWeight: FontWeight.bold,
@@ -636,7 +638,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              match.teamBInnings != null ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}' : '-',
+                              (match.status != MatchStatus.upcoming && match.teamBInnings != null)
+                                  ? '${match.teamBInnings!.runs}/${match.teamBInnings!.wickets}'
+                                  : '-',
                               style: const TextStyle(
                                 color: AppColors.textDark,
                                 fontWeight: FontWeight.bold,

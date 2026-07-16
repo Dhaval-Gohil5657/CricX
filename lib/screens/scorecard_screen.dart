@@ -687,7 +687,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
       innings = match.superOverInnings2;
     }
 
-    if (innings == null) {
+    if (innings == null || match.status == MatchStatus.upcoming) {
       final team1 = match.innings1 != null 
           ? appState.teams.firstWhere((t) => t.id == match.innings1!.teamId) 
           : match.teamA;
@@ -760,15 +760,15 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
   }
 
   Widget _buildMatchOverviewCard(BuildContext context, CricketMatch match, AppState appState) {
-    final runsA = match.teamAInnings?.runs;
-    final wicketsA = match.teamAInnings?.wickets;
-    final oversA = match.teamAInnings?.oversCompleted;
+    final runsA = match.status != MatchStatus.upcoming ? match.teamAInnings?.runs : null;
+    final wicketsA = match.status != MatchStatus.upcoming ? match.teamAInnings?.wickets : null;
+    final oversA = match.status != MatchStatus.upcoming ? match.teamAInnings?.oversCompleted : null;
     final scoreAStr = runsA != null ? '$runsA/$wicketsA' : 'Yet to Bat';
     final oversAStr = oversA != null ? '($oversA/${match.totalOvers})' : '';
 
-    final runsB = match.teamBInnings?.runs;
-    final wicketsB = match.teamBInnings?.wickets;
-    final oversB = match.teamBInnings?.oversCompleted;
+    final runsB = match.status != MatchStatus.upcoming ? match.teamBInnings?.runs : null;
+    final wicketsB = match.status != MatchStatus.upcoming ? match.teamBInnings?.wickets : null;
+    final oversB = match.status != MatchStatus.upcoming ? match.teamBInnings?.oversCompleted : null;
     final scoreBStr = runsB != null ? '$runsB/$wicketsB' : 'Yet to Bat';
     final oversBStr = oversB != null ? '($oversB/${match.totalOvers})' : '';
 
@@ -1001,11 +1001,11 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                 (player.id == match.currentBowler?.id);
             return innings.events.any((e) => e.bowlerName == player.name) || isCurrentBowler;
           }).toList()
-        : oppTeam.players.take(2).toList();
+        : const <Player>[];
 
     // Separate batted players (in batting order) from yet-to-bat players
     final battedPlayers = team.players.where((player) {
-      if (!hasStarted) return true;
+      if (!hasStarted) return false;
       final isCurrentBatsman = (match.status == MatchStatus.live && match.currentInnings == innings) &&
           (player.id == match.striker?.id || player.id == match.nonStriker?.id);
       return innings.battingOrder.contains(player.id) || 
@@ -1027,7 +1027,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
 
     final yetToBatPlayers = hasStarted
         ? team.players.where((player) => !battedPlayers.contains(player)).toList()
-        : <Player>[];
+        : team.players.toList();
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1087,17 +1087,17 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                   
                   int runs = hasStarted
                       ? innings.events.where((e) => e.batsmanName == player.name).fold(0, (sum, e) => sum + e.runsAddedToBatsman)
-                      : (index == 0 ? 34 : (index == 1 ? 21 : 5));
+                      : 0;
                   int balls = hasStarted
                       ? innings.events.where((e) => e.batsmanName == player.name && e.countsAsBall).length
-                      : (index == 0 ? 22 : (index == 1 ? 16 : 8));
+                      : 0;
                   
                   int fours = hasStarted 
                       ? innings.events.where((e) => e.batsmanName == player.name && e.runs == 4 && !e.isWide && (e.isNoBall ? e.isRunsOffBat : true)).length
-                      : ((runs * 0.4).toInt() ~/ 4);
+                      : 0;
                   int sixes = hasStarted 
                       ? innings.events.where((e) => e.batsmanName == player.name && e.runs == 6 && !e.isWide && (e.isNoBall ? e.isRunsOffBat : true)).length
-                      : ((runs * 0.2).toInt() ~/ 6);
+                      : 0;
                   double sr = balls > 0 ? (runs / balls) * 100 : 0.0;
 
                   final isOut = hasStarted && innings.events.any((e) => e.isWicket && e.batsmanName == player.name);
@@ -1106,7 +1106,7 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
 
                   String statusStr = 'yet to bat';
                   if (!hasStarted) {
-                    statusStr = index < 2 ? 'not out' : 'c. sub b. bowler';
+                    statusStr = 'yet to bat';
                   } else if (isOut) {
                     final wicketEvent = innings.events.firstWhere((e) => e.isWicket && e.batsmanName == player.name);
                     statusStr = wicketEvent.wicketType.isNotEmpty
@@ -1351,13 +1351,13 @@ class _ScorecardScreenState extends State<ScorecardScreen> {
                   
                   int balls = hasStarted
                       ? innings.events.where((e) => e.bowlerName == player.name && e.countsAsBall).length
-                      : (index == 0 ? 12 : 6);
+                      : 0;
                   int runs = hasStarted
                       ? innings.events.where((e) => e.bowlerName == player.name).fold(0, (sum, e) => sum + e.runsAddedToTeam)
-                      : (index == 0 ? 14 : 9);
+                      : 0;
                   int wickets = hasStarted
                       ? innings.events.where((e) => e.bowlerName == player.name && e.isWicket && e.wicketType != 'Run Out').length
-                      : (index == 0 ? 2 : 0);
+                      : 0;
                   
                   double overs = (balls ~/ 6) + (balls % 6) / 10;
                   double econ = balls > 0 ? (runs / balls) * 6 : 0.0;
