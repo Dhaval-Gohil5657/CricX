@@ -34,7 +34,7 @@ class AuthService extends ChangeNotifier {
   AuthService._internal();
 
   final _storage = const FlutterSecureStorage();
-  
+
   AppUser? _currentUser;
   String? _token;
 
@@ -47,7 +47,7 @@ class AuthService extends ChangeNotifier {
     final cachedName = await _storage.read(key: 'user_name');
     final cachedRole = await _storage.read(key: 'user_role');
     _token = await _storage.read(key: 'accessToken');
-    
+
     if (cachedUid != null && _token != null) {
       _currentUser = AppUser(
         uid: cachedUid,
@@ -62,7 +62,7 @@ class AuthService extends ChangeNotifier {
     }
 
     final refreshToken = await _storage.read(key: 'refreshToken');
-    if (refreshToken != null) {
+    if (refreshToken != null && cachedRole?.toLowerCase() != 'guest') {
       // Trigger background session validation without awaiting it to keep app startup instant!
       refreshSessionInBackground(refreshToken);
     }
@@ -101,14 +101,14 @@ class AuthService extends ChangeNotifier {
         if (newRefreshToken != null) {
           await _storage.write(key: 'refreshToken', value: newRefreshToken);
         }
-        
+
         final userMap = data['user'];
         if (userMap != null) {
           final uid = userMap['_id'] ?? userMap['id'] ?? '';
           final email = userMap['email'];
           final name = userMap['name'];
           final role = userMap['role'] ?? 'User';
-          
+
           _currentUser = AppUser(
             uid: uid,
             email: email,
@@ -153,7 +153,7 @@ class AuthService extends ChangeNotifier {
         if (refreshToken != null) {
           await _storage.write(key: 'refreshToken', value: refreshToken);
         }
-        
+
         final userMap = data['user'];
         if (userMap != null) {
           final uid = userMap['_id'] ?? userMap['id'] ?? '';
@@ -206,7 +206,7 @@ class AuthService extends ChangeNotifier {
         if (refreshToken != null) {
           await _storage.write(key: 'refreshToken', value: refreshToken);
         }
-        
+
         final userMap = data['user'];
         if (userMap != null) {
           final uid = userMap['_id'] ?? userMap['id'] ?? '';
@@ -253,27 +253,25 @@ class AuthService extends ChangeNotifier {
         if (refreshToken != null) {
           await _storage.write(key: 'refreshToken', value: refreshToken);
         }
-        
+
         final userMap = data['user'];
-        if (userMap != null) {
-          final uid = userMap['_id'] ?? userMap['id'] ?? '';
-          final email = userMap['email'] ?? 'guest@cricx.com';
-          final name = userMap['name'] ?? 'Guest User';
-          final role = userMap['role'] ?? 'Guest';
+        final uid = userMap?['_id'] ?? userMap?['id'] ?? 'guest_${DateTime.now().millisecondsSinceEpoch}';
+        final email = userMap?['email'] ?? 'guest@cricx.com';
+        final name = userMap?['name'] ?? 'Guest User';
+        final role = userMap?['role'] ?? 'guest';
 
-          _currentUser = AppUser(
-            uid: uid,
-            email: email,
-            displayName: name,
-            role: role,
-          );
+        _currentUser = AppUser(
+          uid: uid,
+          email: email,
+          displayName: name,
+          role: role,
+        );
 
-          await _storage.write(key: 'user_uid', value: uid);
-          await _storage.write(key: 'user_email', value: email);
-          await _storage.write(key: 'user_name', value: name);
-          await _storage.write(key: 'user_role', value: role);
-          await _storage.write(key: 'active_user_role', value: role);
-        }
+        await _storage.write(key: 'user_uid', value: uid);
+        await _storage.write(key: 'user_email', value: email);
+        await _storage.write(key: 'user_name', value: name);
+        await _storage.write(key: 'user_role', value: role);
+        await _storage.write(key: 'active_user_role', value: role);
         _notifyListenersSafe();
         return true;
       }

@@ -350,3 +350,24 @@
   "__v": 2
 }
  */
+
+/* gust user data
+
+{
+  "_id": {
+    "$oid": "6a58b272a559b62df9030540"
+  },
+  "name": "Guest_8d73h",
+  "role": "guest",
+  "isGuest": true,
+  "isActive": true,
+  "createdAt": {
+    "$date": "2026-07-16T10:29:06.981Z"
+  },
+  "updatedAt": {
+    "$date": "2026-07-16T10:29:07.226Z"
+  },
+  "__v": 0,
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNThiMjcyYTU1OWI2MmRmOTAzMDU0MCIsImlhdCI6MTc4NDE5Nzc0NywiZXhwIjoxNzg0ODAyNTQ3fQ.FzXHso3WVXqPBr-spqGVEr6Q1T5Axwy62igopAD_1Zs"
+}
+ */

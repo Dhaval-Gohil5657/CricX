@@ -5,6 +5,7 @@ import '../state/app_state.dart';
 import 'main_navigation_screen.dart';
 import 'login_screen.dart';
 import '../constants/app_colors.dart';
+import '../widgets/dotted_circular_loader.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -200,27 +201,65 @@ class WelcomeScreen extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16.0),
           onTap: () {
-            if (role == UserRole.guest || AuthService.instance.currentUser != null) {
-              appState.changeRole(role);
-              
-              // If they are logged in and selecting a role, save it to backend!
-              if (AuthService.instance.currentUser != null && role != UserRole.guest) {
-                try {
-                  AuthService.instance.updateRole(role.name);
-                } catch (e) {
-                  debugPrint('Failed to update user role: $e');
-                }
-              }
-            Future.delayed(Duration.zero, () {
-                if (context.mounted) {
+            final currentUser = AuthService.instance.currentUser;
+            final isRealUser = currentUser != null && currentUser.role.toLowerCase() != 'guest';
+
+            if (role == UserRole.guest || isRealUser) {
+              if (role == UserRole.guest) {
+                // If already logged in as guest, just navigate directly
+                if (currentUser != null && currentUser.role.toLowerCase() == 'guest') {
+                  appState.changeRole(role);
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const MainNavigationScreen(),
                     ),
                   );
+                  return;
                 }
-              });
+
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const DottedCircularLoader(
+                    size: 40.0,
+                    color: AppColors.primaryTurf,
+                  ),
+                );
+
+                AuthService.instance.loginGuest().then((success) {
+                  Navigator.pop(context); // Dismiss spinner
+                  if (success) {
+                    appState.changeRole(role);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MainNavigationScreen(),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to enter as guest. Please check connection.')),
+                    );
+                  }
+                });
+              } else {
+                appState.changeRole(role);
+                // If they are logged in and selecting a role, save it to backend!
+                if (currentUser != null) {
+                  try {
+                    AuthService.instance.updateRole(role.name);
+                  } catch (e) {
+                    debugPrint('Failed to update user role: $e');
+                  }
+                }
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MainNavigationScreen(),
+                  ),
+                );
+              }
             } else {
               Navigator.push(
                 context,

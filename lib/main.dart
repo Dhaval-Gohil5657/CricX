@@ -344,7 +344,8 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final isDashboard = _isLoggedIn &&
         (_role == UserRole.user ||
             _role == UserRole.organizer ||
-            _role == UserRole.scorer);
+            _role == UserRole.scorer ||
+            _role == UserRole.guest);
 
     final targetHeight = isDashboard ? (50.0 + topPadding) : 240.0;
     final targetRadius = isDashboard ? 20.0 : 28.0;
@@ -456,7 +457,8 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final isDashboard = _isLoggedIn &&
         (_role == UserRole.user ||
             _role == UserRole.organizer ||
-            _role == UserRole.scorer) && !_showWalkthrough;
+            _role == UserRole.scorer ||
+            _role == UserRole.guest) && !_showWalkthrough;
 
     final double targetHeight;
     final double targetRadius;
@@ -804,7 +806,8 @@ class _AuthWrapperState extends State<AuthWrapper> with SingleTickerProviderStat
     final isDashboard = _isLoggedIn &&
         (_role == UserRole.user ||
             _role == UserRole.organizer ||
-            _role == UserRole.scorer) && !_showWalkthrough;
+            _role == UserRole.scorer ||
+            _role == UserRole.guest) && !_showWalkthrough;
 
     if (_showWalkthrough) {
       return OnboardingScreen(
