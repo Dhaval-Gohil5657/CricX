@@ -57,17 +57,28 @@ class Tournament {
   }
 
   void refreshStatus() {
-    if (status == 'Completed') return;
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tourStartDate = DateTime(startDate.year, startDate.month, startDate.day);
 
     final hasStartedMatches = matches.any((m) => m.status == MatchStatus.live || m.status == MatchStatus.completed);
     final allCompleted = matches.isNotEmpty && matches.every((m) => m.status == MatchStatus.completed);
-    final finalMatchCompleted = matches.any((m) => m.id.endsWith('_final') && m.status == MatchStatus.completed);
+    
+    final hasFinalMatch = matches.any((m) => m.id.endsWith('_final') || (m.stage?.toLowerCase() == 'final'));
+    final finalMatchCompleted = matches.any((m) => (m.id.endsWith('_final') || m.stage?.toLowerCase() == 'final') && m.status == MatchStatus.completed);
 
-    if (finalMatchCompleted || (matches.isNotEmpty && allCompleted)) {
+    bool isCompleted = false;
+    if (hasFinalMatch) {
+      isCompleted = finalMatchCompleted;
+    } else {
+      if (playoffType == 'None' || playoffType.isEmpty) {
+        isCompleted = matches.isNotEmpty && allCompleted;
+      } else {
+        isCompleted = false;
+      }
+    }
+
+    if (isCompleted) {
       status = 'Completed';
     } else if (hasStartedMatches) {
       status = 'Ongoing';

@@ -575,6 +575,7 @@ class ApiDatabaseService implements DatabaseService {
       playerOfTheMatchName: data['playerOfTheMatchName']?.toString(),
       teamAPlayerIds: teamAPlayerIds.isNotEmpty ? teamAPlayerIds : null,
       teamBPlayerIds: teamBPlayerIds.isNotEmpty ? teamBPlayerIds : null,
+      stage: data['stage']?.toString(),
     );
 
     if (data['innings1'] != null) {
@@ -682,6 +683,7 @@ class ApiDatabaseService implements DatabaseService {
       'creatorId': match.creatorId,
       'playerOfTheMatchId': match.playerOfTheMatchId,
       'playerOfTheMatchName': match.playerOfTheMatchName,
+      'stage': match.stage,
     };
   }
 
@@ -724,6 +726,7 @@ class ApiDatabaseService implements DatabaseService {
         'totalOvers': match.totalOvers,
         'venue': match.venue,
         'matchDate': match.matchDate.toIso8601String(),
+        if (match.stage != null) 'stage': match.stage,
         if (match.tournamentId != null) 'tournamentId': match.tournamentId,
         if (match.tournamentName != null) 'tournamentName': match.tournamentName,
       }),
@@ -1055,8 +1058,14 @@ class ApiDatabaseService implements DatabaseService {
         headers: _headers,
         body: jsonEncode({
           'status': tournament.status,
-          'fixtures': tournament.matches.map((m) => m.id).toList(),
-          'matchIds': tournament.matches.map((m) => m.id).toList(),
+          'fixtures': tournament.matches.map((m) => {
+            'matchId': m.id,
+            'stage': m.stage ?? (m.id.endsWith('_final') || m.id.contains('_final') ? 'Final' : (m.id.contains('_sf') ? 'Semifinal' : 'League')),
+          }).toList(),
+          'matchIds': tournament.matches.map((m) => {
+            'matchId': m.id,
+            'stage': m.stage ?? (m.id.endsWith('_final') || m.id.contains('_final') ? 'Final' : (m.id.contains('_sf') ? 'Semifinal' : 'League')),
+          }).toList(),
           if (tournament.winnerTeamId != null) 'winnerTeamId': tournament.winnerTeamId,
         }),
       );

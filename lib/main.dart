@@ -77,12 +77,12 @@ class MyApp extends StatelessWidget {
         return Scaffold(
           resizeToAvoidBottomInset: false,
           body: child,
-          // bottomNavigationBar: isKeyboardOpen
-          //     ? const SizedBox.shrink()
-          //     : const SafeArea(
-          //         top: false,
-          //         child: GlobalBannerAd(),
-          //       ),
+          bottomNavigationBar: isKeyboardOpen
+              ? const SizedBox.shrink()
+              : const SafeArea(
+                  top: false,
+                  child: GlobalBannerAd(),
+                ),
         );
       },
     );

@@ -194,7 +194,7 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
         finalId = 'tour_m_${widget.tournament.id}_league_${matchIdCounter}';
         matchIdCounter++;
       }
-      finalizedMatches.add(
+    finalizedMatches.add(
         CricketMatch(
           id: finalId,
           teamA: match.teamA,
@@ -205,6 +205,7 @@ class _FixtureDraftScreenState extends State<FixtureDraftScreen> {
           tournamentId: match.tournamentId,
           tournamentName: match.tournamentName,
           creatorId: match.creatorId ?? widget.tournament.creatorId,
+          stage: match.stage,
         ),
       );
     }

@@ -842,7 +842,7 @@ class AppState extends ChangeNotifier {
           }
           
           // 3. Auto-detect tournament winner if Final match is completed
-          if (matchId.endsWith('_final')) {
+          if (matchId.endsWith('_final') || match.stage?.toLowerCase() == 'final') {
             if (match.resultString.contains(match.teamA.name)) {
               tournament.winnerTeamId = match.teamA.id;
               tournament.status = 'Completed';
@@ -1009,6 +1009,7 @@ class AppState extends ChangeNotifier {
         tournamentId: tour.id,
         tournamentName: tour.name,
         creatorId: tour.creatorId,
+        stage: 'Final',
       );
       
       try {
@@ -1036,6 +1037,7 @@ class AppState extends ChangeNotifier {
         tournamentId: tour.id,
         tournamentName: tour.name,
         creatorId: tour.creatorId,
+        stage: 'Semifinal',
       );
 
       // SF2: Top 3 vs Top 4
@@ -1049,6 +1051,7 @@ class AppState extends ChangeNotifier {
         tournamentId: tour.id,
         tournamentName: tour.name,
         creatorId: tour.creatorId,
+        stage: 'Semifinal',
       );
 
       try {
@@ -1112,6 +1115,7 @@ class AppState extends ChangeNotifier {
       tournamentId: tour.id,
       tournamentName: tour.name,
       creatorId: tour.creatorId,
+      stage: 'Final',
     );
     
     try {

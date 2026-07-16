@@ -13,141 +13,150 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context, listen: false);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top ground design
-            Container(
-              height: 240,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(28),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        image: DecorationImage(
+          image: AssetImage('assets/cricx_back.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top ground design
+              Container(
+                height: 240,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(28),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: PitchWelcomePainter(
-                          groundColorLight: const Color(0xFF2E6B3E),
-                          groundColorDark: const Color(0xFF1F4D28),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: PitchWelcomePainter(
+                            groundColorLight: const Color(0xFF2E6B3E),
+                            groundColorDark: const Color(0xFF1F4D28),
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned.fill(
-                      child: SafeArea(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.12),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Image.asset(
-                                  'assets/CricX_logo.png',
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(
-                                    Icons.sports_cricket_rounded,
-                                    color: Color(0xFF2E6B3E),
-                                    size: 38,
+                      Positioned.fill(
+                        child: SafeArea(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 72,
+                                height: 72,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.12),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Image.asset(
+                                    'assets/CricX_logo.png',
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(
+                                      Icons.sports_cricket_rounded,
+                                      color: Color(0xFF2E6B3E),
+                                      size: 38,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'CricX',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
+                              const SizedBox(height: 12),
+                              const Text(
+                                'CricX',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 1.2,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Live Cricket. Simplified.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withOpacity(0.85),
-                                letterSpacing: 0.5,
+                              const SizedBox(height: 2),
+                              Text(
+                                'Live Cricket. Simplified.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.85),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Selection Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Select a role to preview the app experience:',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildRoleCard(
+                      context,
+                      title: 'Guest Viewer',
+                      description: 'Browse live match scores, detailed scorecards, and schedules.',
+                      emoji: '👀',
+                      role: UserRole.guest,
+                      appState: appState,
+                      accentColor: Colors.blue,
+                    ),
+                    _buildRoleCard(
+                      context,
+                      title: 'Registered User',
+                      description: 'Follow teams, view player profiles, career statistics, and history.',
+                      emoji: '👤',
+                      role: UserRole.user,
+                      appState: appState,
+                      accentColor: AppColors.accentCrease,
+                    ),
+                    _buildRoleCard(
+                      context,
+                      title: 'Organizer & Scorer',
+                      description: 'Create tournaments, teams & matches, conduct toss, and score matches live ball-by-ball.',
+                      emoji: '🏆',
+                      role: UserRole.organizer,
+                      appState: appState,
+                      accentColor: Colors.amber,
                     ),
                   ],
                 ),
               ),
-            ),
-            
-            // Selection Section
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 24.0, 20.0, 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Select a role to preview the app experience:',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRoleCard(
-                    context,
-                    title: 'Guest Viewer',
-                    description: 'Browse live match scores, detailed scorecards, and schedules.',
-                    emoji: '👀',
-                    role: UserRole.guest,
-                    appState: appState,
-                    accentColor: Colors.blue,
-                  ),
-                  _buildRoleCard(
-                    context,
-                    title: 'Registered User',
-                    description: 'Follow teams, view player profiles, career statistics, and history.',
-                    emoji: '👤',
-                    role: UserRole.user,
-                    appState: appState,
-                    accentColor: AppColors.accentCrease,
-                  ),
-                  _buildRoleCard(
-                    context,
-                    title: 'Organizer & Scorer',
-                    description: 'Create tournaments, teams & matches, conduct toss, and score matches live ball-by-ball.',
-                    emoji: '🏆',
-                    role: UserRole.organizer,
-                    appState: appState,
-                    accentColor: Colors.amber,
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -216,155 +216,191 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top ground design (matching WelcomeScreen)
-            Container(
-              height: 240,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(28),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        image: DecorationImage(
+          image: AssetImage('assets/cricx_back.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top ground design (matching WelcomeScreen)
+              Container(
+                height: 240,
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(28),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: PitchLoginPainter(
-                          groundColorLight: const Color(0xFF2E6B3E),
-                          groundColorDark: const Color(0xFF1F4D28),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: PitchLoginPainter(
+                            groundColorLight: const Color(0xFF2E6B3E),
+                            groundColorDark: const Color(0xFF1F4D28),
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned.fill(
-                      child: SafeArea(
-                        child: Stack(
-                          children: [
-                            // Back Button
-                            Positioned(
-                              left: 8,
-                              top: 8,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  color: Colors.white,
-                                  size: 20,
+                      Positioned.fill(
+                        child: SafeArea(
+                          child: Stack(
+                            children: [
+                              // Back Button
+                              Positioned(
+                                left: 8,
+                                top: 8,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => Navigator.pop(context),
                                 ),
-                                onPressed: () => Navigator.pop(context),
                               ),
-                            ),
-                            // Logo and Title Branding
-                            Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 72,
-                                    height: 72,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.12),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Image.asset(
-                                        'assets/CricX_logo.png',
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (context, error, stackTrace) => const Icon(
-                                          Icons.sports_cricket_rounded,
-                                          color: Color(0xFF2E6B3E),
-                                          size: 38,
+                              // Logo and Title Branding
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 72,
+                                      height: 72,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.12),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Image.asset(
+                                          'assets/CricX_logo.png',
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) => const Icon(
+                                            Icons.sports_cricket_rounded,
+                                            color: Color(0xFF2E6B3E),
+                                            size: 38,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    'CricX',
-                                    style: TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 1.2,
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      'CricX',
+                                      style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 1.2,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Live Cricket. Simplified.',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.white.withOpacity(0.85),
-                                      letterSpacing: 0.5,
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Live Cricket. Simplified.',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white.withOpacity(0.85),
+                                        letterSpacing: 0.5,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            
-            // Input Form Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    _isSignUp ? 'Create Account' : 'Welcome Back',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
-                      letterSpacing: 0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isSignUp
-                        ? 'Sign up to start organizing matches and tracking players.'
-                        : 'Log in to continue managing matches and viewing stats.',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textDarkSecondary,
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
 
-                  if (_isSignUp) ...[
-                    // Name Text Field
+              // Input Form Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _isSignUp ? 'Create Account' : 'Welcome Back',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                        letterSpacing: 0.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _isSignUp
+                          ? 'Sign up to start organizing matches and tracking players.'
+                          : 'Log in to continue managing matches and viewing stats.',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textDarkSecondary,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+
+                    if (_isSignUp) ...[
+                      // Name Text Field
+                      TextField(
+                        controller: _nameController,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textDark,
+                        ),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryTurf),
+                          hintText: 'Enter your full name',
+                          hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          filled: true,
+                          fillColor: Colors.white,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppColors.borderWood, width: 1.2),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppColors.primaryTurf, width: 2.0),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Email Text Field
                     TextField(
-                      controller: _nameController,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(
                         fontSize: 15,
                         color: AppColors.textDark,
                       ),
                       decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryTurf),
-                        hintText: 'Enter your full name',
+                        prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryTurf),
+                        hintText: 'Enter your email',
                         hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
                         contentPadding: const EdgeInsets.symmetric(vertical: 16),
                         filled: true,
@@ -380,77 +416,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                  ],
 
-                  // Email Text Field
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textDark,
-                    ),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryTurf),
-                      hintText: 'Enter your email',
-                      hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.borderWood, width: 1.2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.primaryTurf, width: 2.0),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Password Text Field
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textDark,
-                    ),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryTurf),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          color: AppColors.textDarkSecondary,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                      hintText: 'Enter password (min 6 chars)',
-                      hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.borderWood, width: 1.2),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: AppColors.primaryTurf, width: 2.0),
-                      ),
-                    ),
-                  ),
-                  if (_isSignUp) ...[
-                    const SizedBox(height: 20),
-                    // Confirm Password Text Field
+                    // Password Text Field
                     TextField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
                       style: const TextStyle(
                         fontSize: 15,
                         color: AppColors.textDark,
@@ -459,16 +429,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryTurf),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                             color: AppColors.textDarkSecondary,
                           ),
                           onPressed: () {
                             setState(() {
-                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                              _obscurePassword = !_obscurePassword;
                             });
                           },
                         ),
-                        hintText: 'Confirm password',
+                        hintText: 'Enter password (min 6 chars)',
                         hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
                         contentPadding: const EdgeInsets.symmetric(vertical: 16),
                         filled: true,
@@ -483,115 +453,154 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                  ],
-                  const SizedBox(height: 32),
-                  
-                  // Submit Button
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? () {} : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryTurf,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 2,
+                    if (_isSignUp) ...[
+                      const SizedBox(height: 20),
+                      // Confirm Password Text Field
+                      TextField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPassword,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textDark,
+                        ),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryTurf),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: AppColors.textDarkSecondary,
                             ),
-                            child: _isLoading
-                                ? const DottedCircularLoader()
-                                : Text(
-                                    _isSignUp ? 'Sign Up' : 'Log In',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                          hintText: 'Confirm password',
+                          hintStyle: const TextStyle(color: AppColors.textDarkDisabled),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                          filled: true,
+                          fillColor: Colors.white,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppColors.borderWood, width: 1.2),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppColors.primaryTurf, width: 2.0),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+
+                    // Submit Button
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? () {} : _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryTurf,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: _isLoading
+                                  ? const DottedCircularLoader()
+                                  : Text(
+                                      _isSignUp ? 'Sign Up' : 'Log In',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        if (!_isSignUp && _isBiometricHardwareAvailable) ...[
+                          const SizedBox(width: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryTurf.withOpacity(0.35),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: _isLoading ? null : _biometricLogin,
+                                splashColor: Colors.white.withOpacity(0.2),
+                                highlightColor: Colors.white.withOpacity(0.1),
+                                child: Ink(
+                                  height: 52,
+                                  width: 52,
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        AppColors.primaryTurf,
+                                        Color(0xFF2E6B3E),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.15),
+                                      width: 1,
                                     ),
                                   ),
-                          ),
-                        ),
-                      ),
-                      if (!_isSignUp && _isBiometricHardwareAvailable) ...[
-                        const SizedBox(width: 12),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryTurf.withOpacity(0.35),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: _isLoading ? null : _biometricLogin,
-                              splashColor: Colors.white.withOpacity(0.2),
-                              highlightColor: Colors.white.withOpacity(0.1),
-                              child: Ink(
-                                height: 52,
-                                width: 52,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      AppColors.primaryTurf,
-                                      Color(0xFF2E6B3E),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.15),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.fingerprint_rounded,
-                                    color: Colors.white,
-                                    size: 32,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.fingerprint_rounded,
+                                      color: Colors.white,
+                                      size: 32,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Switch between Login and Sign Up
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isSignUp = !_isSignUp;
-                      });
-                    },
-                    child: Text(
-                      _isSignUp
-                          ? 'Already have an account? Log In'
-                          : 'Don\'t have an account? Sign Up',
-                      style: const TextStyle(
-                        color: AppColors.primaryTurf,
-                        fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Switch between Login and Sign Up
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _isSignUp = !_isSignUp;
+                        });
+                      },
+                      child: Text(
+                        _isSignUp
+                            ? 'Already have an account? Log In'
+                            : 'Don\'t have an account? Sign Up',
+                        style: const TextStyle(
+                          color: AppColors.primaryTurf,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

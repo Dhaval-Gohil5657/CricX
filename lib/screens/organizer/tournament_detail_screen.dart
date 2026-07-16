@@ -557,12 +557,15 @@ class TournamentDetailScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.amber.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(15),
                     border: Border.all(color: Colors.amber, width: 1.5),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 48),
+                      const Text(
+                        '🏆',
+                        style: TextStyle(fontSize: 40),
+                      ),
                       const SizedBox(height: 8),
                       const Text(
                         '🏆 TOURNAMENT CHAMPION 🏆',
@@ -593,22 +596,40 @@ class TournamentDetailScreen extends StatelessWidget {
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Icon(Icons.stars_rounded, color: Colors.amber, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Player of the Tournament: ${tour.playerOfTheTournamentName}',
-                                style: const TextStyle(
-                                  color: AppColors.textDark,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                              const Icon(Icons.stars_rounded, color: Colors.amber, size: 22),
+                              const SizedBox(width: 10),
+                              Flexible(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Player of the Tournament',
+                                      style: TextStyle(
+                                        color: AppColors.textDarkSecondary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      tour.playerOfTheTournamentName ?? '',
+                                      style: const TextStyle(
+                                        color: AppColors.textDark,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               if (canDeclarePOT) ...[
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 12),
                                 GestureDetector(
                                   onTap: () => _showPlayerOfTheTournamentSelector(context, tour, appState),
-                                  child: const Icon(Icons.edit_rounded, color: AppColors.primaryTurf, size: 14),
+                                  child: const Icon(Icons.edit_rounded, color: AppColors.primaryTurf, size: 16),
                                 ),
                               ],
                             ],
@@ -1231,6 +1252,7 @@ class TournamentDetailScreen extends StatelessWidget {
           tournamentId: tour.id,
           tournamentName: tour.name,
           creatorId: tour.creatorId,
+          stage: 'League',
         );
         newMatches.add(match);
       }
@@ -1272,6 +1294,7 @@ class TournamentDetailScreen extends StatelessWidget {
         tournamentId: tour.id,
         tournamentName: tour.name,
         creatorId: tour.creatorId,
+        stage: 'Final',
       );
       playoffMatches.add(match);
     } else if (tour.playoffType == 'Semifinals & Final') {
@@ -1299,6 +1322,7 @@ class TournamentDetailScreen extends StatelessWidget {
         tournamentId: tour.id,
         tournamentName: tour.name,
         creatorId: tour.creatorId,
+        stage: 'Semifinal',
       );
 
       // SF2: Top 3 vs Top 4
@@ -1312,6 +1336,7 @@ class TournamentDetailScreen extends StatelessWidget {
         tournamentId: tour.id,
         tournamentName: tour.name,
         creatorId: tour.creatorId,
+        stage: 'Semifinal',
       );
 
       playoffMatches.addAll([sf1, sf2]);
@@ -1381,6 +1406,7 @@ class TournamentDetailScreen extends StatelessWidget {
       tournamentId: tour.id,
       tournamentName: tour.name,
       creatorId: tour.creatorId,
+      stage: 'Final',
     );
 
     // Launch FixtureDraftScreen to let creator choose date/time/venue for Final
