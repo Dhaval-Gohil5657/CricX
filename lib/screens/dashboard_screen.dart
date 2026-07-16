@@ -14,7 +14,16 @@ import '../constants/app_colors.dart';
 import '../widgets/shimmer_card.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  final GlobalKey? liveMatchesKey;
+  final GlobalKey? quickActionsKey;
+  final GlobalKey? nextRecentMatchesKey;
+
+  const DashboardScreen({
+    super.key,
+    this.liveMatchesKey,
+    this.quickActionsKey,
+    this.nextRecentMatchesKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +71,7 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 // Live Matches
                 Row(
+                  key: liveMatchesKey,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
@@ -147,9 +157,10 @@ class DashboardScreen extends StatelessWidget {
                 // if (role != UserRole.guest) ...[
                 if (role == UserRole.scorer || role == UserRole.organizer) ...[
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
+                    key: quickActionsKey,
                     'QUICK ACTIONS',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textDarkSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -163,9 +174,10 @@ class DashboardScreen extends StatelessWidget {
                 
                 // Scorer / Organizer sees Next Matches, Guest / Player sees Recent Matches
                 if (role == UserRole.scorer || role == UserRole.organizer) ...[
-                  const Text(
+                  Text(
+                    key: nextRecentMatchesKey,
                     'NEXT MATCHES',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textDark,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -215,9 +227,10 @@ class DashboardScreen extends StatelessWidget {
                       },
                     ),
                 ] else ...[
-                  const Text(
+                  Text(
+                    key: nextRecentMatchesKey,
                     'RECENT MATCHES',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textDark,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

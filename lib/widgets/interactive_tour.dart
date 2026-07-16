@@ -6,11 +6,13 @@ class TourStep {
   final GlobalKey targetKey;
   final String title;
   final String description;
+  final int? tabIndex;
 
   const TourStep({
     required this.targetKey,
     required this.title,
     required this.description,
+    this.tabIndex,
   });
 }
 
@@ -35,7 +37,6 @@ class InteractiveTourOverlay extends StatefulWidget {
 class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
   int _currentStepIndex = 0;
   Rect? _targetRect;
-  Rect? _previousRect;
 
   @override
   void initState() {
@@ -57,7 +58,6 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
       final position = renderBox.localToGlobal(Offset.zero);
       final size = renderBox.size;
       setState(() {
-        _previousRect = _targetRect ?? Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
         _targetRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
       });
     } else {
@@ -112,23 +112,9 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
       children: [
         // Backdrop with Cutout
         Positioned.fill(
-          child: _targetRect == null
-              ? CustomPaint(
-                  painter: TourBackdropPainter(targetRect: null),
-                )
-              : TweenAnimationBuilder<Rect?>(
-                  tween: RectTween(
-                    begin: _previousRect ?? _targetRect,
-                    end: _targetRect,
-                  ),
-                  duration: const Duration(milliseconds: 380),
-                  curve: Curves.easeInOutCubic,
-                  builder: (context, animRect, child) {
-                    return CustomPaint(
-                      painter: TourBackdropPainter(targetRect: animRect),
-                    );
-                  },
-                ),
+          child: CustomPaint(
+            painter: TourBackdropPainter(targetRect: _targetRect),
+          ),
         ),
 
         // Blocking Gesture Detector to prevent interaction with background
@@ -174,17 +160,11 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
       bottom: bottom,
       width: cardWidth,
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 320),
+        duration: const Duration(milliseconds: 200),
         transitionBuilder: (Widget child, Animation<double> animation) {
           return FadeTransition(
             opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.0, 0.05),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
+            child: child,
           );
         },
         child: Material(
@@ -231,12 +211,14 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              step.title,
-                              style: const TextStyle(
-                                color: AppColors.primaryTurf,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Text(
+                                step.title,
+                                style: const TextStyle(
+                                  color: AppColors.primaryTurf,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             GestureDetector(

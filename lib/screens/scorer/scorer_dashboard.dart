@@ -5,7 +5,12 @@ import '../organizer/create_tournament_screen.dart';
 import '../../constants/app_colors.dart';
 
 class ScorerDashboard extends StatelessWidget {
-  const ScorerDashboard({super.key});
+  final GlobalKey? quickCreatorsKey;
+
+  const ScorerDashboard({
+    super.key,
+    this.quickCreatorsKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +123,9 @@ class ScorerDashboard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const Row(
-                children: [
+              Row(
+                key: quickCreatorsKey,
+                children: const [
                   Text(
                     '⚡ QUICK CREATORS',
                     style: TextStyle(

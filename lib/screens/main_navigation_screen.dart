@@ -40,6 +40,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     'Directory': GlobalKey(),
   };
 
+  // Inside Sub-Screen Tour Keys
+  final GlobalKey _homeLiveMatchesKey = GlobalKey();
+  final GlobalKey _homeQuickActionsKey = GlobalKey();
+  final GlobalKey _homeNextRecentMatchesKey = GlobalKey();
+  final GlobalKey _matchesSubTabKey = GlobalKey();
+  final GlobalKey _matchesStatusTabKey = GlobalKey();
+  final GlobalKey _tournamentsCreateBtnKey = GlobalKey();
+  final GlobalKey _manageQuickCreatorsKey = GlobalKey();
+  final GlobalKey _directoryTabsKey = GlobalKey();
+
   bool _showTour = false;
   List<TourStep> _tourSteps = [];
 
@@ -106,46 +116,134 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _initializeTourSteps(UserRole role, List<Map<String, dynamic>> navItems) {
     _tourSteps = [];
     
-    // 1. Bottom Nav Tabs
-    for (final item in navItems) {
-      final label = item['label'] as String;
-      final key = _tabKeys[label];
-      if (key == null) continue;
-      
-      if (label == 'Home') {
+    int getTabIndex(String label) {
+      return navItems.indexWhere((item) => item['label'] == label);
+    }
+
+    final homeIndex = getTabIndex('Home');
+    final matchesIndex = getTabIndex('Matches');
+    final tournamentsIndex = getTabIndex('Tournaments');
+    final manageIndex = getTabIndex('Manage');
+    final directoryIndex = getTabIndex('Directory');
+
+    // 1. Home Tab & Inside Home Screen
+    if (homeIndex != -1) {
+      final key = _tabKeys['Home'];
+      if (key != null) {
         _tourSteps.add(TourStep(
           targetKey: key,
           title: 'Home Dashboard',
           description: 'Explore active live matches, today\'s upcoming match schedules, and recent match results.',
+          tabIndex: homeIndex,
         ));
-      } else if (label == 'Matches') {
+      }
+      _tourSteps.add(TourStep(
+        targetKey: _homeLiveMatchesKey,
+        title: 'Live Matches Section',
+        description: 'Stay updated in real-time with ongoing live match scores and key details.',
+        tabIndex: homeIndex,
+      ));
+      if (role == UserRole.scorer || role == UserRole.organizer) {
+        _tourSteps.add(TourStep(
+          targetKey: _homeQuickActionsKey,
+          title: 'Quick Actions',
+          description: 'Quickly access common tools like creating teams, scheduling matches, or starting scorer consoles.',
+          tabIndex: homeIndex,
+        ));
+      }
+      _tourSteps.add(TourStep(
+        targetKey: _homeNextRecentMatchesKey,
+        title: role == UserRole.scorer || role == UserRole.organizer ? 'Upcoming Matches' : 'Recent Matches',
+        description: role == UserRole.scorer || role == UserRole.organizer
+            ? 'Track upcoming match schedules, times, and venues planned for today.'
+            : 'Explore completed match results, highlights, and final scorecards.',
+        tabIndex: homeIndex,
+      ));
+    }
+
+    // 2. Matches Tab & Inside Matches Screen
+    if (matchesIndex != -1) {
+      final key = _tabKeys['Matches'];
+      if (key != null) {
         _tourSteps.add(TourStep(
           targetKey: key,
           title: 'Match Center',
           description: 'Browse matches or tournament fixtures. View categorized lists of live, upcoming, and completed matches.',
+          tabIndex: matchesIndex,
         ));
-      } else if (label == 'Tournaments') {
+      }
+      _tourSteps.add(TourStep(
+        targetKey: _matchesSubTabKey,
+        title: 'Individual & Tournament Matches',
+        description: 'Toggle between friendly individual matches and organized tournament matches.',
+        tabIndex: matchesIndex,
+      ));
+      _tourSteps.add(TourStep(
+        targetKey: _matchesStatusTabKey,
+        title: 'Match Status Filter',
+        description: 'Filter matches by their current state: Live, Upcoming, or Completed.',
+        tabIndex: matchesIndex,
+      ));
+    }
+
+    // 3. Tournaments Tab & Inside Tournaments Screen
+    if (tournamentsIndex != -1) {
+      final key = _tabKeys['Tournaments'];
+      if (key != null) {
         _tourSteps.add(TourStep(
           targetKey: key,
           title: 'Tournaments',
           description: 'Explore tournaments, group standings, fixtures, points tables, and detailed tournament brackets.',
+          tabIndex: tournamentsIndex,
         ));
-      } else if (label == 'Manage') {
+      }
+      _tourSteps.add(TourStep(
+        targetKey: _tournamentsCreateBtnKey,
+        title: 'Tournaments Management',
+        description: 'Manage current tournaments or create a new one to begin tracking tournament fixtures and standing tables.',
+        tabIndex: tournamentsIndex,
+      ));
+    }
+
+    // 4. Manage Tab & Inside Manage Screen
+    if (manageIndex != -1) {
+      final key = _tabKeys['Manage'];
+      if (key != null) {
         _tourSteps.add(TourStep(
           targetKey: key,
           title: 'Manage Console',
           description: 'Access scorer tools to create teams, schedule matches, set up toss rules, and score matches ball-by-ball.',
+          tabIndex: manageIndex,
         ));
-      } else if (label == 'Directory') {
+      }
+      _tourSteps.add(TourStep(
+        targetKey: _manageQuickCreatorsKey,
+        title: 'Quick Creators',
+        description: 'Create teams, schedule matches, or launch tournaments directly from here.',
+        tabIndex: manageIndex,
+      ));
+    }
+
+    // 5. Directory Tab & Inside Directory Screen
+    if (directoryIndex != -1) {
+      final key = _tabKeys['Directory'];
+      if (key != null) {
         _tourSteps.add(TourStep(
           targetKey: key,
           title: 'Rosters & Stats',
           description: 'Explore registered teams and player profiles. View squad rosters and individual player career statistics.',
+          tabIndex: directoryIndex,
         ));
       }
+      _tourSteps.add(TourStep(
+        targetKey: _directoryTabsKey,
+        title: 'Teams & Players Directory',
+        description: 'Switch between the Teams directory and Players list to explore rosters, bios, and career statistics.',
+        tabIndex: directoryIndex,
+      ));
     }
-    
-    // 2. Profile Avatar (if not guest)
+
+    // 6. Header Icons / profile
     if (role != UserRole.guest) {
       _tourSteps.add(TourStep(
         targetKey: _avatarKey,
@@ -154,14 +252,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ));
     }
 
-    // 3. Search Icon
     _tourSteps.add(TourStep(
       targetKey: _searchKey,
       title: 'Smart Search',
       description: 'Quickly find matches, tournaments, teams, or players based on your active tab.',
     ));
 
-    // 4. Filter Icon (if scorer/organizer)
     if (role == UserRole.scorer || role == UserRole.organizer) {
       _tourSteps.add(TourStep(
         targetKey: _filterKey,
@@ -197,15 +293,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     for (final item in navItems) {
       final label = item['label'] as String;
       if (label == 'Home') {
-        screens.add(const DashboardScreen());
+        screens.add(DashboardScreen(
+          liveMatchesKey: _homeLiveMatchesKey,
+          quickActionsKey: _homeQuickActionsKey,
+          nextRecentMatchesKey: _homeNextRecentMatchesKey,
+        ));
       } else if (label == 'Matches') {
-        screens.add(const MatchesScreen());
+        screens.add(MatchesScreen(
+          subTabKey: _matchesSubTabKey,
+          statusTabKey: _matchesStatusTabKey,
+        ));
       } else if (label == 'Tournaments') {
-        screens.add(const OrganizerDashboard());
+        screens.add(OrganizerDashboard(
+          tournamentsMainKey: _tournamentsCreateBtnKey,
+        ));
       } else if (label == 'Manage') {
-        screens.add(const ScorerDashboard());
+        screens.add(ScorerDashboard(
+          quickCreatorsKey: _manageQuickCreatorsKey,
+        ));
       } else if (label == 'Directory') {
-        screens.add(const DirectoryScreen());
+        screens.add(DirectoryScreen(
+          directoryTabsKey: _directoryTabsKey,
+        ));
       }
     }
 
@@ -569,18 +678,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           },
           onStepChanged: (stepIndex) {
             final step = _tourSteps[stepIndex];
-            for (final entry in _tabKeys.entries) {
-              if (entry.value == step.targetKey) {
-                final targetIndex = navItems.indexWhere((item) => item['label'] == entry.key);
-                if (targetIndex != -1) {
-                  setState(() {
-                    _selectedIndex = targetIndex;
-                    _isSearching = false;
-                  });
-                  appState.clearSearchQuery();
-                  _searchController.clear();
+            if (step.tabIndex != null && step.tabIndex != _selectedIndex) {
+              setState(() {
+                _selectedIndex = step.tabIndex!;
+                _isSearching = false;
+              });
+              appState.clearSearchQuery();
+              _searchController.clear();
+            } else {
+              for (final entry in _tabKeys.entries) {
+                if (entry.value == step.targetKey) {
+                  final targetIndex = navItems.indexWhere((item) => item['label'] == entry.key);
+                  if (targetIndex != -1) {
+                    setState(() {
+                      _selectedIndex = targetIndex;
+                      _isSearching = false;
+                    });
+                    appState.clearSearchQuery();
+                    _searchController.clear();
+                  }
+                  break;
                 }
-                break;
               }
             }
           },

@@ -13,7 +13,14 @@ import '../constants/custom_snackbar.dart';
 import '../constants/app_colors.dart';
 
 class MatchesScreen extends StatefulWidget {
-  const MatchesScreen({super.key});
+  final GlobalKey? subTabKey;
+  final GlobalKey? statusTabKey;
+
+  const MatchesScreen({
+    super.key,
+    this.subTabKey,
+    this.statusTabKey,
+  });
 
   @override
   State<MatchesScreen> createState() => _MatchesScreenState();
@@ -124,6 +131,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
     }
 
     final switcher = Container(
+      key: widget.subTabKey,
       margin: const EdgeInsets.fromLTRB(15, 5, 15, 0),
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -171,7 +179,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
             Container(
               color: Colors.transparent,
               height: 38,
-              child: const TabBar(
+              child: TabBar(
+                key: widget.statusTabKey,
                 indicatorColor: AppColors.primaryTurf,
                 indicatorWeight: 3,
                 indicatorSize: TabBarIndicatorSize.label,

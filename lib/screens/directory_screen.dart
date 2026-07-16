@@ -4,7 +4,12 @@ import 'players_screen.dart';
 import '../constants/app_colors.dart';
 
 class DirectoryScreen extends StatelessWidget {
-  const DirectoryScreen({super.key});
+  final GlobalKey? directoryTabsKey;
+
+  const DirectoryScreen({
+    super.key,
+    this.directoryTabsKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +20,8 @@ class DirectoryScreen extends StatelessWidget {
           Container(
             color: Colors.transparent,
             height: 38,
-            child: const TabBar(
+            child: TabBar(
+              key: directoryTabsKey,
               indicatorColor: AppColors.primaryTurf,
               indicatorWeight: 3,
               indicatorSize: TabBarIndicatorSize.label,

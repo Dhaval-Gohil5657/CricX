@@ -9,7 +9,12 @@ import '../../constants/custom_snackbar.dart';
 import '../../constants/app_colors.dart';
 
 class OrganizerDashboard extends StatelessWidget {
-  const OrganizerDashboard({super.key});
+  final GlobalKey? tournamentsMainKey;
+
+  const OrganizerDashboard({
+    super.key,
+    this.tournamentsMainKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +77,7 @@ class OrganizerDashboard extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
+                  key: tournamentsMainKey,
                   onPressed: () {
                     if (role == UserRole.scorer || role == UserRole.organizer) {
                       Navigator.push(
@@ -115,7 +121,8 @@ class OrganizerDashboard extends StatelessWidget {
             Container(
               color: Colors.transparent,
               height: 38,
-              child: const TabBar(
+              child: TabBar(
+                key: tournamentsMainKey,
                 indicatorColor: AppColors.primaryTurf,
                 indicatorWeight: 3,
                 indicatorSize: TabBarIndicatorSize.label,
