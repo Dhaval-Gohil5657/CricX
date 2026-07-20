@@ -12,6 +12,7 @@ class ApiEndpoints {
   // Players Endpoints
   static const String players = '$baseV1/players'; //Working
   static String playerById(String id) => '$baseV1/players/$id'; //Working
+  static String playerStats(String id) => '$baseV1/players/$id/stats';
 
   // Teams Endpoints
   static const String teams = '$baseV1/teams'; //Working

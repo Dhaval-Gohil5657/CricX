@@ -186,16 +186,31 @@ class ApiDatabaseService implements DatabaseService {
     _cachedPlayers.add(newPlayer);
   }
 
+  Map<String, dynamic> _playerStatsToMap(Player player) {
+    return {
+      'careerStats': {
+        'matches': player.matchesPlayed,
+        'runs': player.runsScored,
+        'wickets': player.wicketsTaken,
+        'ballsFaced': player.ballsFaced,
+        'ballsBowled': player.ballsBowled,
+        'runsConceded': player.runsConceded,
+        'highestScore': player.highestScore,
+        'bestBowling': player.bestBowling,
+      }
+    };
+  }
+
   @override
   Future<void> updatePlayerStats(Player player) async {
     final response = await http.put(
-      Uri.parse(ApiEndpoints.playerById(player.id)),
+      Uri.parse(ApiEndpoints.playerStats(player.id)),
       headers: _headers,
-      body: jsonEncode(_playerToMap(player)),
+      body: jsonEncode(_playerStatsToMap(player)),
     );
     
     if (response.statusCode != 200) {
-      throw Exception(_getCleanErrorMessage('Failed to update player', response));
+      throw Exception(_getCleanErrorMessage('Failed to update player stats', response));
     }
     
     _cachedPlayers.removeWhere((p) => p.id == player.id);
