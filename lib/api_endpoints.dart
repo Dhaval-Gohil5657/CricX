@@ -29,6 +29,7 @@ class ApiEndpoints {
   static const String tournaments = '$baseV1/tournaments'; //Working
   static String tournamentById(String id) => '$baseV1/tournaments/$id'; // working
   static String tournamentTeams(String id) => '$baseV1/tournaments/$id/teams'; // working
+  static String declarePlayerOfTheTournament(String id) => '$baseV1/tournaments/$id/player-of-the-tournament';
 
   // Stats
   static const String playerLeaderboard = '$baseV1/stats/players';

@@ -1082,6 +1082,34 @@ class ApiDatabaseService implements DatabaseService {
   }
 
   @override
+  Future<void> declarePlayerOfTheTournament(String tournamentId, String playerId, String playerName) async {
+    try {
+      final response = await http.patch(
+        Uri.parse(ApiEndpoints.declarePlayerOfTheTournament(tournamentId)),
+        headers: _headers,
+        body: jsonEncode({
+          'playerOfTheTournamentId': playerId,
+          'playerOfTheTournamentName': playerName,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('[HTTP PATCH] Response (${ApiEndpoints.declarePlayerOfTheTournament(tournamentId)}): Status ${response.statusCode}');
+      }
+
+      // Update the cache if the tournament exists in cache
+      final idx = _cachedTournaments.indexWhere((t) => t.id == tournamentId);
+      if (idx != -1) {
+        _cachedTournaments[idx].playerOfTheTournamentId = playerId;
+        _cachedTournaments[idx].playerOfTheTournamentName = playerName;
+      }
+    } catch (e) {
+      debugPrint('Error declaring player of the tournament on server: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> checkAndSeedDatabase() async {
     return;
   }

@@ -27,6 +27,7 @@ abstract class DatabaseService {
   // Tournaments
   Future<void> createTournament(Tournament tournament);
   Future<void> updateTournament(Tournament tournament);
+  Future<void> declarePlayerOfTheTournament(String tournamentId, String playerId, String playerName);
   
   // Database setup / seeding
   Future<void> checkAndSeedDatabase();

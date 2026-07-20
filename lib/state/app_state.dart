@@ -1141,14 +1141,18 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void declarePlayerOfTheTournament(String tournamentId, String playerId, String playerName) {
+  Future<void> declarePlayerOfTheTournament(String tournamentId, String playerId, String playerName) async {
     final index = _tournaments.indexWhere((t) => t.id == tournamentId);
     if (index != -1) {
       final tournament = _tournaments[index];
       tournament.playerOfTheTournamentId = playerId;
       tournament.playerOfTheTournamentName = playerName;
-      _db.updateTournament(tournament);
       notifyListeners();
+      try {
+        await _db.declarePlayerOfTheTournament(tournamentId, playerId, playerName);
+      } catch (e) {
+        debugPrint('Error declaring player of the tournament: $e');
+      }
     }
   }
 }
