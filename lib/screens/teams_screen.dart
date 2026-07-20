@@ -205,7 +205,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (isCreator)
+                              if (isCreator && (role == UserRole.scorer || role == UserRole.organizer))
                                 IconButton(
                                   icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.textDarkSecondary),
                                   onPressed: () => _showEditTeamDialog(context, team, appState),
@@ -251,7 +251,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                           letterSpacing: 0.5,
                                         ),
                                       ),
-                                      if (isCreator)
+                                      if (isCreator && (role == UserRole.scorer || role == UserRole.organizer))
                                         TextButton.icon(
                                           onPressed: () => _showAddPlayerDialog(context, team, appState),
                                           icon: const Icon(Icons.add_circle_outline_rounded, size: 14.0, color: AppColors.primaryTurf),
@@ -323,7 +323,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
                                                 player.role,
                                                 style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 11.0),
                                               ),
-                                              if (isCreator) ...[
+                                              if (isCreator && (role == UserRole.scorer || role == UserRole.organizer)) ...[
                                                 const SizedBox(width: 8.0),
                                                 GestureDetector(
                                                   onTap: () => _showEditPlayerDialog(context, player, appState),

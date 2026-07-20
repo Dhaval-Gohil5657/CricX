@@ -57,54 +57,52 @@ class OrganizerDashboard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'No Tournaments Created',
-                  style: TextStyle(
+                Text(
+                  (role == UserRole.scorer || role == UserRole.organizer)
+                      ? 'No Tournaments Created'
+                      : 'No Tournaments Available',
+                  style: const TextStyle(
                     color: AppColors.textDark,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Create a tournament and add teams to start scheduling fixtures and tracking points.',
+                Text(
+                  (role == UserRole.scorer || role == UserRole.organizer)
+                      ? 'Create a tournament and add teams to start scheduling fixtures and tracking points.'
+                      : 'No active or upcoming tournaments available at the moment. Please check back later!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.textDarkSecondary,
                     fontSize: 14,
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  key: tournamentsMainKey,
-                  onPressed: () {
-                    if (role == UserRole.scorer || role == UserRole.organizer) {
+                if (role == UserRole.scorer || role == UserRole.organizer) ...[
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    key: tournamentsMainKey,
+                    onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CreateTournamentScreen(),
                         ),
                       );
-                    } else {
-                      CustomSnackBar.show(
-                        context,
-                        message: 'Please switch your role to Scorer or Organizer to create tournaments.',
-                        type: SnackBarType.warning,
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.add_rounded, color: Colors.white),
-                  label: const Text('Create Tournament'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryTurf,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    },
+                    icon: const Icon(Icons.add_rounded, color: Colors.white),
+                    label: const Text('Create Tournament'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryTurf,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -323,24 +321,48 @@ class OrganizerDashboard extends StatelessWidget {
                         _buildStatChip(Icons.adjust_rounded, '${tour.defaultOvers} Overs'),
                       ],
                     ),
-                    if (tour.status == 'Completed' && tour.playerOfTheTournamentName != null) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(Icons.stars_rounded, color: Colors.amber, size: 14),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Player of the Tournament: ${tour.playerOfTheTournamentName}',
-                            style: const TextStyle(
-                              color: AppColors.textDarkSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    if (tour.status == 'Completed') ...[
+                      ...() {
+                        final winnerTeamList = tour.teams.where((t) => t.id == tour.winnerTeamId);
+                        if (winnerTeamList.isEmpty) return <Widget>[];
+                        return <Widget>[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Text('🏆', style: TextStyle(fontSize: 14)),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Winner: ${winnerTeamList.first.name}',
+                                style: const TextStyle(
+                                  color: AppColors.primaryTurf,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ];
+                      }(),
+                      if (tour.playerOfTheTournamentName != null && tour.playerOfTheTournamentName!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            SizedBox(width: 2,),
+                            const Icon(Icons.stars_rounded, color: Colors.amber, size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Player of the Tournament: ${tour.playerOfTheTournamentName}',
+                              style: const TextStyle(
+                                color: AppColors.textDarkSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
-                    const Divider(color: AppColors.dividerGreen, height: 24),
+                    const Divider(color: AppColors.dividerGreen, height: 16),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

@@ -15,14 +15,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final int initialIndex;
+  final int initialMatchesTab;
+  const MainNavigationScreen({
+    super.key,
+    this.initialIndex = 0,
+    this.initialMatchesTab = 0,
+  });
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   final List<bool> _activatedTabs = [true, false, false, false, false];
   UserRole? _lastRole;
   bool _isSearching = false;
@@ -56,6 +62,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    if (_selectedIndex >= 0 && _selectedIndex < _activatedTabs.length) {
+      _activatedTabs[_selectedIndex] = true;
+    }
     _checkTourStatus();
   }
 
@@ -302,6 +312,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         screens.add(MatchesScreen(
           subTabKey: _matchesSubTabKey,
           statusTabKey: _matchesStatusTabKey,
+          initialTab: widget.initialMatchesTab,
         ));
       } else if (label == 'Tournaments') {
         screens.add(OrganizerDashboard(

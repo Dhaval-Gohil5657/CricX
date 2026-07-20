@@ -15,11 +15,13 @@ import '../constants/app_colors.dart';
 class MatchesScreen extends StatefulWidget {
   final GlobalKey? subTabKey;
   final GlobalKey? statusTabKey;
+  final int initialTab;
 
   const MatchesScreen({
     super.key,
     this.subTabKey,
     this.statusTabKey,
+    this.initialTab = 0,
   });
 
   @override
@@ -169,6 +171,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
     return DefaultTabController(
       length: 3,
+      initialIndex: widget.initialTab,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
@@ -363,8 +366,12 @@ class _MatchesScreenState extends State<MatchesScreen> {
               const SizedBox(height: 8),
               Text(
                 _activeSubTab == 'friendly'
-                    ? 'Schedule a friendly match between two teams to start scoring in real-time.'
-                    : 'Schedule matches under a tournament to track points and statistics.',
+                    ? ((role == UserRole.scorer || role == UserRole.organizer)
+                        ? 'Schedule a friendly match between two teams to start scoring in real-time.'
+                        : 'There are currently no active or scheduled matches. Check back later!')
+                    : ((role == UserRole.scorer || role == UserRole.organizer)
+                        ? 'Schedule matches under a tournament to track points and statistics.'
+                        : 'No tournament matches have been scheduled by organizers yet.'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppColors.textDarkSecondary,
@@ -372,10 +379,10 @@ class _MatchesScreenState extends State<MatchesScreen> {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () {
-                  if (role == UserRole.scorer || role == UserRole.organizer) {
+              if (role == UserRole.scorer || role == UserRole.organizer) ...[
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
                     if (_activeSubTab == 'friendly') {
                       Navigator.push(
                         context,
@@ -400,29 +407,23 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         );
                       }
                     }
-                  } else {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Please switch your role to Scorer or Organizer to schedule matches.',
-                      type: SnackBarType.warning,
-                    );
-                  }
-                },
-                icon: const Icon(Icons.add_rounded, color: Colors.white),
-                label: Text(
-                  _activeSubTab == 'friendly'
-                      ? 'Schedule Match'
-                      : (appState.tournaments.isEmpty ? 'Create Tournament' : 'Schedule Match'),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryTurf,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                  },
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  label: Text(
+                    _activeSubTab == 'friendly'
+                        ? 'Schedule Match'
+                        : (appState.tournaments.isEmpty ? 'Create Tournament' : 'Schedule Match'),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryTurf,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

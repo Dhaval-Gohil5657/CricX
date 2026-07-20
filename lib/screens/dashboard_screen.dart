@@ -10,6 +10,7 @@ import 'scorer/create_team_screen.dart';
 import 'scorer/toss_setup_screen.dart';
 import 'organizer/create_tournament_screen.dart';
 import 'welcome_screen.dart';
+import 'main_navigation_screen.dart';
 import '../constants/app_colors.dart';
 import '../widgets/shimmer_card.dart';
 
@@ -48,6 +49,8 @@ class DashboardScreen extends StatelessWidget {
     }).toList();
     
     final completedMatches = allVisibleMatches.where((m) => m.status == MatchStatus.completed && !(m.resultString == "Match Tied" && !m.isSuperOverPlayed)).toList();
+    // Sort completed matches by date descending (most recent first)
+    completedMatches.sort((a, b) => b.matchDate.compareTo(a.matchDate));
     final now = DateTime.now();
     final upcomingMatches = allVisibleMatches.where((m) {
       return m.status == MatchStatus.upcoming &&
@@ -269,7 +272,7 @@ class DashboardScreen extends StatelessWidget {
                         ],
                       ),
                     )
-                  else
+                  else ...[
                     ListView.builder(
                       padding: EdgeInsets.zero,
                       shrinkWrap: true,
@@ -279,12 +282,49 @@ class DashboardScreen extends StatelessWidget {
                         return _buildRecentMatchCard(context, completedMatches[index]);
                       },
                     ),
-                ],
+                    if (completedMatches.length > 5) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MainNavigationScreen(
+                                  initialIndex: 1,
+                                  initialMatchesTab: 2,
+                                ),
+                              ),
+                              (route) => false,
+                            );
+                          },
+                          icon: const Icon(Icons.history_rounded, size: 16),
+                          label: const Text(
+                            'View More Recent Matches',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.borderGreen.withOpacity(0.6),
+                            foregroundColor: AppColors.primaryTurf,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 if (role == UserRole.guest) ...[
                   const SizedBox(height: 24),
                   _buildGuestPromoCard(context),
                 ],
               ],
+            ],
             ),
           ),
         ),
