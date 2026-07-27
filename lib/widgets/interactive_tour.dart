@@ -46,20 +46,40 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant InteractiveTourOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateTargetRect();
+    });
+  }
+
   void _calculateTargetRect() {
-    if (widget.steps.isEmpty || _currentStepIndex >= widget.steps.length) return;
+    if (!mounted || widget.steps.isEmpty || _currentStepIndex >= widget.steps.length) return;
     
     final step = widget.steps[_currentStepIndex];
     final key = step.targetKey;
-    final context = key.currentContext;
+    final targetContext = key.currentContext;
     
-    if (context != null) {
-      final renderBox = context.findRenderObject() as RenderBox;
-      final position = renderBox.localToGlobal(Offset.zero);
-      final size = renderBox.size;
-      setState(() {
-        _targetRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
-      });
+    if (targetContext != null) {
+      final targetRenderBox = targetContext.findRenderObject() as RenderBox?;
+      final overlayRenderBox = context.findRenderObject() as RenderBox?;
+
+      if (targetRenderBox != null && targetRenderBox.hasSize && overlayRenderBox != null && overlayRenderBox.hasSize) {
+        final position = overlayRenderBox.globalToLocal(targetRenderBox.localToGlobal(Offset.zero));
+        final size = targetRenderBox.size;
+        final newRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+        
+        if (_targetRect != newRect) {
+          setState(() {
+            _targetRect = newRect;
+          });
+        }
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _calculateTargetRect();
+        });
+      }
     } else {
       // Retry in next frame if context isn't ready
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -72,6 +92,7 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
     if (_currentStepIndex < widget.steps.length - 1) {
       setState(() {
         _currentStepIndex++;
+        _targetRect = null;
       });
       if (widget.onStepChanged != null) {
         widget.onStepChanged!(_currentStepIndex);
@@ -88,6 +109,7 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
     if (_currentStepIndex > 0) {
       setState(() {
         _currentStepIndex--;
+        _targetRect = null;
       });
       if (widget.onStepChanged != null) {
         widget.onStepChanged!(_currentStepIndex);
@@ -104,37 +126,47 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
       return const SizedBox.shrink();
     }
 
+    if (_targetRect == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _calculateTargetRect();
+      });
+    }
+
     final currentStep = widget.steps[_currentStepIndex];
-    final mediaQuery = MediaQuery.of(context);
-    final screenSize = mediaQuery.size;
 
-    return Stack(
-      children: [
-        // Backdrop with Cutout
-        Positioned.fill(
-          child: CustomPaint(
-            painter: TourBackdropPainter(targetRect: _targetRect),
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final overlaySize = Size(constraints.maxWidth, constraints.maxHeight);
 
-        // Blocking Gesture Detector to prevent interaction with background
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _nextStep,
-            child: const SizedBox.shrink(),
-          ),
-        ),
+        return Stack(
+          children: [
+            // Backdrop with Cutout
+            Positioned.fill(
+              child: CustomPaint(
+                painter: TourBackdropPainter(targetRect: _targetRect),
+              ),
+            ),
 
-        // Tooltip Card
-        if (_targetRect != null) _buildTooltipCard(currentStep, screenSize),
-      ],
+            // Blocking Gesture Detector to prevent interaction with background
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _nextStep,
+                child: const SizedBox.shrink(),
+              ),
+            ),
+
+            // Tooltip Card
+            if (_targetRect != null) _buildTooltipCard(currentStep, overlaySize),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildTooltipCard(TourStep step, Size screenSize) {
+  Widget _buildTooltipCard(TourStep step, Size overlaySize) {
     final targetCenterY = _targetRect!.top + _targetRect!.height / 2;
-    final showAbove = targetCenterY > screenSize.height / 2;
+    final showAbove = targetCenterY > overlaySize.height / 2;
 
     // Horizontal alignment
     double cardWidth = 260.0;
@@ -142,14 +174,14 @@ class _InteractiveTourOverlayState extends State<InteractiveTourOverlay> {
     double left = targetCenterX - cardWidth / 2;
     
     if (left < 16) left = 16;
-    if (left + cardWidth > screenSize.width - 16) {
-      left = screenSize.width - cardWidth - 16;
+    if (left + cardWidth > overlaySize.width - 16) {
+      left = overlaySize.width - cardWidth - 16;
     }
 
     double? top;
     double? bottom;
     if (showAbove) {
-      bottom = screenSize.height - _targetRect!.top + 12.0;
+      bottom = overlaySize.height - _targetRect!.top + 12.0;
     } else {
       top = _targetRect!.bottom + 12.0;
     }
