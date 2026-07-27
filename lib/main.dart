@@ -6,7 +6,6 @@ import 'screens/welcome_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'constants/app_colors.dart';
 import 'widgets/global_banner_ad.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,12 +28,15 @@ void main() async {
   );
 }
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'CricX: Live Cricket. Simplified.',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

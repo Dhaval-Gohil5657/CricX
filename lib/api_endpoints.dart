@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl = 'https://cricx-kcid.onrender.com/api';
+  static const String baseUrl = 'https://cricx-backend.up.railway.app/api';
   static const String baseV1 = '$baseUrl/v1';
 
   // Auth / Users Endpoints

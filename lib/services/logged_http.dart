@@ -111,8 +111,8 @@ Future<raw_http.Response> _executeWithRetry(
 
       return await requestFn(updatedHeaders);
     } else {
-      debugPrint('[HTTP] Session refresh failed. Logging out...');
-      await AuthService.instance.logout();
+      debugPrint('[HTTP] Session refresh failed. Prompting relogin dialog...');
+      AuthService.instance.handleSessionExpired();
     }
   }
 

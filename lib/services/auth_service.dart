@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'logged_http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api_endpoints.dart';
+import '../main.dart';
+import '../widgets/relogin_dialog.dart';
 
 class AppUser {
   final String uid;
@@ -68,11 +70,36 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  bool _isReloginDialogShowing = false;
+
+  Future<void> handleSessionExpired() async {
+    if (_isReloginDialogShowing) return;
+
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      _isReloginDialogShowing = true;
+      try {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const ReloginDialog(),
+        );
+      } catch (e) {
+        debugPrint('Error displaying relogin dialog: $e');
+        await logout();
+      } finally {
+        _isReloginDialogShowing = false;
+      }
+    } else {
+      await logout();
+    }
+  }
+
   Future<void> refreshSessionInBackground(String refreshToken) async {
     try {
       final success = await refreshSession(refreshToken);
       if (!success) {
-        await logout();
+        await handleSessionExpired();
       }
     } catch (e) {
       debugPrint('Background session refresh error: $e');
